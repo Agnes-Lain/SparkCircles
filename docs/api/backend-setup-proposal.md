@@ -62,7 +62,7 @@
 
 - **D-21 Approved** Active Storage on a private EU bucket (Scaleway Object Storage), no public URLs, object versioning off. Local disk in development and tests. **To approve later:** Active Storage needs the `aws-sdk-s3` gem to talk to an S3-compatible bucket. It isn't installed yet; I'll ask before the first production deploy.
 - **D-22 Changed (follows D-16):** files are encrypted by the app before upload with AES-256-GCM, using Rails' own encryption cipher and a key derived from the app's encryption keys (a small service, no gem). Provider-side encryption alone wouldn't satisfy AC-10.2. Upload goes through the API (multipart, max 10 MB, JPEG/PNG/HEIC); analyzers and previews off; generic filenames.
-- **D-23 Approved** Admins view files only through an audited back office endpoint that decrypts and streams them. Files are deleted **right after the decision** (job at approve/reject), plus a daily safety sweep.
+- **D-23 Changed by the PM** Admins view files only through an audited back office endpoint that decrypts and streams them. Files are kept **up to 30 days after the decision** so an admin can double-check it, then deleted by a daily sweep (spec AC-7.10).
 
 ## 6. Audit log
 
@@ -116,7 +116,7 @@ The app module is named `SparkCircles` (not the default `Api`, which would clash
 
 ## 12. Web back office (new, AC-9.7)
 
-- **D-37 Awaiting PM: how to build the admin web back office with the least effort.** Recommended: **an admin area served by the same Rails app.**
+- **D-37 Approved by the PM (2026-10-02), admin area in the same Rails app: how to build the admin web back office with the least effort.** Recommended: **an admin area served by the same Rails app.**
   - What it is: an `Admin::` namespace (e.g. on `admin.<domain>`) with its own controllers inheriting from `ActionController::Base`, server-rendered ERB views, cookie session + CSRF protection added back **only** for those routes, Devise web login for admins with devise-two-factor and 12 h `timeoutable`. Plain CSS using the design system values, no JavaScript framework (a little Turbo later if useful).
   - Why: it's the Rails you already know (controllers, views, forms); it reuses the same models, Pundit policies, encryption, audit log and jobs, so a rule written once applies to the app and the back office; one deploy, one database, no second API client to build.
   - Trade-offs: the API-only app gets a few middlewares back (cookies, session, flash), scoped to the admin routes; the admin pages need some CSS (if you want Tailwind classes matching the design system, `tailwindcss-rails` is one more gem to approve); the admin area shares the API's deploy, so a bad admin change can affect the API (mitigated by tests and CI).
@@ -126,6 +126,6 @@ The app module is named `SparkCircles` (not the default `Api`, which would clash
 
 ## 13. Open decisions for the PM
 
-1. **D-37 Web back office**: admin area in the same Rails app (recommended), separate Rails app, admin gem, or separate JavaScript app.
+1. ~~**D-37 Web back office**~~ Approved: admin area in the same Rails app. (Alternatives were: separate Rails app, admin gem, or separate JavaScript app.)
 2. **Later, not blocking:** approve `aws-sdk-s3` before the first deploy (D-21); `tailwindcss-rails` only if D-37 is chosen and you want Tailwind in the back office; Dependabot (D-31).
 3. **App domain** (before email flows ship), and the **GDPR advisor** checks (backups reaching erasure at day 37, audit entries after erasure).

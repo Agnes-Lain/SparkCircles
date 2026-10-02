@@ -35,7 +35,7 @@ Files in `docs/marketing/`, each written in **French and English** (French first
 3. **Newsletter or email** `newsletter-<topic>.md` when asked.
 4. **Store listing and bio texts** when asked.
 
-Visual ideas must use the five brand colors (green, violet, sky, cotton pink, sunny yellow) on the soft off-white base, and line icons. Describe them; the designer builds final assets.
+Visual ideas must use the five brand colors (fresh green, lavender, sky, cotton pink, sunny yellow) on the soft off-white base, and line icons. Describe them; the designer builds final assets.
 
 ## Rules
 - **Never invent** features, numbers, testimonials, partnerships or release dates. If a fact isn't in the files, ask the PM.

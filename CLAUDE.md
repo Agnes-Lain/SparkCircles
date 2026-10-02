@@ -17,7 +17,7 @@ Survey insight (80 parents): socializing/organizing events is pain point #1, vac
 
 ## Source of truth
 
-- Design: `docs/SPARKCIRCLES_Design_System_EN.md` (v1.2). Read it before any design or UI work. If something is missing or contradictory, **flag it, don't invent it**.
+- Design: `docs/SPARKCIRCLES_Design_System_EN.md` (v1.3). Read it before any design or UI work. If something is missing or contradictory, **flag it, don't invent it**.
 - Backlog of deferred work: `docs/backlog.md` (maintained by `po`; the PM decides what moves into a spec)
 - Specs: `docs/specs/<feature>.md`
 - Design deliverables: `docs/design/<feature>.md` and `docs/design/mockups/`
