@@ -2,7 +2,7 @@
 
 > Feature slug: `accounts-and-verification` · Author: designer · Date: 2026-10-02 · **Status: Approved by the PM on 2026-10-02**
 >
-> Spec: [`docs/specs/accounts-and-verification.md`](../specs/accounts-and-verification.md) (approved by the PM on 2026-10-02) · Design system: [`docs/SPARKCIRCLES_Design_System_EN.md`](../SPARKCIRCLES_Design_System_EN.md) **v1.3**
+> Spec: [`docs/specs/accounts-and-verification.md`](../specs/accounts-and-verification.md) (approved by the PM on 2026-10-02) · Design system: [`docs/SPARKCIRCLES_Design_System_EN.md`](../SPARKCIRCLES_Design_System_EN.md) **v1.4**
 >
 > Mockups in `docs/design/mockups/`:
 > - Mobile (390px): `accounts-and-verification-signup.html`, `-check-inbox.html`, `-account.html`, `-profile-preview.html` (badge sheet open), `-verify-gate.html`, `-verify-capture.html`, `-verify-status.html`, `-close-account.html`
@@ -26,7 +26,7 @@
 - **Just-in-time verification.** Nothing in sign-up mentions identity documents. Verification is offered when a parent tries to host, and is always reachable from "My account".
 - **The app never reveals whether an email is registered** (AC-1.3, AC-3.2, AC-4.1, and the email change): the copy for those screens is identical whatever happens on the server.
 - **Trust before convenience (P8).** The badge ("Verified ✓" or "Not verified") always sits next to the person's name, before any call to action.
-- **No "please", no "successfully".** Sentence case. Copy below is English; French copy is needed for launch (allow +20% length on every label; buttons wrap to two lines rather than truncate).
+- **No "please", no "successfully".** Sentence case. Copy below is English; French copy is needed for launch (allow +20% length on every label; buttons wrap to two lines rather than truncate). **French uses "tu"** (design system v1.4, voice and tone), and stays warm but serious in verification, rejection, closure and safety messages (e.g. "Vérifie ton identité pour organiser", "Ton compte sera supprimé le 1 nov. 2026"). English uses "you".
 
 ## 1. User paths
 
@@ -141,21 +141,21 @@ The mobile app has **no admin screens** and no admin row in "My account". Admins
 
 Shared rules (design system v1.3):
 - **Loading** = skeleton of the screen's exact structure (`rgba(0,0,0,0.08)`, shimmer 0.5 → 1.0, 1.5s). Never a lone spinner on a whole page. Submissions use the button **Loading** state.
-- **Error banner** (network/server): **Error notification** (error-light bg, error-dark `alert-circle` icon, title 13px/500 Ink, caption error-dark): "We couldn't reach SPARKCIRCLES" / "Check your connection and try again." + Small Secondary "Try again".
+- **Error banner** (network/server): **Error notification** (error-light bg, error-dark `alert-circle` icon, title 13px/500 Ink, caption error-dark): "We couldn't reach SparkCircles" / "Check your connection and try again." + Small Secondary "Try again".
 - **Field error**: Error-dark border on the input, error text under it (Caption, error-dark, leading `alert-circle` 14px), focus moves to the first field in error, announced with `aria-live="polite"`.
 - **Header**: 44px back button + H1 title; optional step counter.
 - **Toast**: Surface, `radius-lg`, Level 3, Body Ink with a green-dark `check` (success) or error-dark `alert-circle` (failure), 3 s.
 - **Success checkmark** (email confirmed, verification sent, verified): green-dark check draws itself in a green-light circle, 300ms, static under reduced motion.
 
 ### S1 Welcome
-- Wordmark "SPARKCIRCLES" (H1, Ink), Body Ink 2 "Organize family life with families near you.", 🦄 32px. Primary Large "Create my account", Ghost Large "Log in". Language link "Français" / "English" (Caption-size link, top right).
+- Ripple horizontal lockup (design system v1.4, section 19; 40 px tall, replaces the H1 wordmark placeholder), Body Ink 2 "Organize family life with families near you.", 🦄 32px. Primary Large "Create my account", Ghost Large "Log in". Language link "Français" / "English" (Caption-size link, top right).
 
 ### S2 Sign up (mockup `signup`) · AC-1.1, 1.2, 1.4, 1.6, 5.1, 5.3
 - Fields: "First name", "Last name" (helper "Others only see the first letter."), "Email", "Password" (helper "At least 10 characters. Avoid common passwords." + eye toggle).
-- Checkboxes, unticked by default: "I'm 18 or older" (required) · "I accept the [terms of use] and the [privacy policy]" (required; links open the documents in a sheet without losing the form) · "Send me news and ideas from SPARKCIRCLES (optional)".
+- Checkboxes, unticked by default: "I'm 18 or older" (required) · "I accept the [terms of use] and the [privacy policy]" (required; links open the documents in a sheet without losing the form) · "Send me news and ideas from SparkCircles (optional)".
 - Primary Large "Create my account". Caption "Already have an account? [Log in]".
 - Field errors (Error state):
-  - Missing 18+ box: "Tick this box to confirm you're 18 or older. SPARKCIRCLES is for adults only."
+  - Missing 18+ box: "Tick this box to confirm you're 18 or older. SparkCircles is for adults only."
   - Missing terms box: "Tick this box to accept the terms and privacy policy."
   - Password: "Use at least 10 characters, and avoid common passwords like 'motdepasse123'."
   - Email format: "Check your email address, it looks incomplete."
@@ -166,7 +166,7 @@ Shared rules (design system v1.3):
 - Mail icon in a 64px Surface circle, H1 "Check your inbox", Body "We've sent a link to **c•••••@gmail.com**. Tap it within 24 hours to confirm your email." Primary "Open my mail app", Ghost "Send the link again". Info card "Can't find it?" / "Look in your spam folder. Unconfirmed accounts are deleted after 7 days." Quiet link "Log out".
 - Only reachable screen for an unconfirmed account (AC-2.3). No tab bar.
 - Resend: Ghost becomes Disabled + Caption "New link sent. You can ask again in a moment." (wait time set by the developer).
-- Success: Today + success checkmark + toast "Email confirmed. Welcome to SPARKCIRCLES!"
+- Success: Today + success checkmark + toast "Email confirmed. Welcome to SparkCircles!"
 
 ### S4 Link expired · AC-2.2, AC-4.3
 - `clock` icon, H1 "This link has expired", Body "Links work for a limited time and only once. We'll send you a fresh one." Primary "Send me a new link".
@@ -212,8 +212,8 @@ Shared rules (design system v1.3):
 - Body "This is exactly what other members see." Public profile card: initials avatar, H3 "Claire M.", badge, `map-pin` "Croix-Rousse, Lyon" (or "Neighborhood not shown"). Label "Never shown to others" + `lock` "Full last name, email, date of birth, identity document and selfie." Primary "Edit my profile".
 
 ### B1 Badge explanation sheet · AC-8.2, 8.3
-- **Verified**: verification icon square (green-light / green-dark `shield-check`), H2 "Identity checked by SPARKCIRCLES", Body "We checked an official ID and a selfie of this person.", rows: green-dark `check` "Their name and face match an official ID" · Ink 2 `x` "This is not a criminal record check". Caption "Always trust your own judgment with your children." Primary "Got it".
-- **Not verified**: neutral icon square, H2 "Not verified yet", Body "This person hasn't checked their identity with SPARKCIRCLES. They can join events open to everyone, but can't host." Primary "Got it". Never says pending, rejected or expired (AC-8.2).
+- **Verified**: verification icon square (green-light / green-dark `shield-check`), H2 "Identity checked by SparkCircles", Body "We checked an official ID and a selfie of this person.", rows: green-dark `check` "Their name and face match an official ID" · Ink 2 `x` "This is not a criminal record check". Caption "Always trust your own judgment with your children." Primary "Got it".
+- **Not verified**: neutral icon square, H2 "Not verified yet", Body "This person hasn't checked their identity with SparkCircles. They can join events open to everyone, but can't host." Primary "Got it". Never says pending, rejected or expired (AC-8.2).
 
 ### A3 Edit profile · AC-6.1, 7.8
 - Initials avatar (photo upload: backlog), "First name", "Last name", "City or neighborhood shown to others" (helper "Optional. Leave empty to hide it."), "Email" read-only row with Small Ghost "Change" → A3b.
@@ -228,7 +228,7 @@ Shared rules (design system v1.3):
 - Pending change visible in A3: Caption under the email row "Waiting for confirmation of n•••@mail.fr" + link "Send the link again".
 
 ### A4 Privacy and messages · AC-5.2, 5.4
-- Checkbox "Send me news and ideas from SPARKCIRCLES", saves immediately (toast "Saved"), Caption "Changed on 2 Oct 2026."
+- Checkbox "Send me news and ideas from SparkCircles", saves immediately (toast "Saved"), Caption "Changed on 2 Oct 2026."
 - Rows "Terms of use" / "Privacy policy" with Caption "Accepted on 2 Oct 2026, version 1.0".
 
 ### A5 Password and devices · AC-3.6, 4.4
@@ -261,7 +261,7 @@ Shared rules (design system v1.3):
 - Caption "Step 2 of 4", H2 "Front of your ID card", Body "Place it flat, inside the frame.", capture frame (Surface card, dashed 1.5px Ink 3 guide, `radius-lg`), tips as Tags "Good light", "All 4 corners visible", "No glare". Shutter (green Base fill, Ink camera icon). Link "Choose from my photos".
 - Check step: photo replaces the frame, H2 "Is everything readable?", Primary "Use this photo", Ghost "Take it again".
 - Expired document detected: field error "This document has expired. Use a valid one." + Ghost "Choose another document".
-- Camera denied: Reminder notification "SPARKCIRCLES needs your camera to take the photo" + Small Secondary "Open settings".
+- Camera denied: Reminder notification "SparkCircles needs your camera to take the photo" + Small Secondary "Open settings".
 
 ### V3 Selfie
 - Caption "Step 3 of 4", H2 "Now a selfie", oval guide, tips "Face the light", "No glasses or hat", "Neutral expression". Same shutter and check step.
@@ -357,7 +357,7 @@ Shared rules (design system v1.3):
 - Touch targets ≥ 44px (checkbox rows full-width; badge tap areas padded; shutter 64px). Web admin: click targets ≥ 44px too.
 - Every field has a visible label; icon-only controls have `aria-label` ("Back", "Show password", "Take the photo", "Close").
 - Errors: icon + text, never color alone; `aria-describedby`, `aria-live="polite"`, focus to first error. Destructive button carries an icon and a clear label.
-- Badges expose meaning (`aria-label="Verified, identity checked by SPARKCIRCLES. Opens an explanation."`).
+- Badges expose meaning (`aria-label="Verified, identity checked by SparkCircles. Opens an explanation."`).
 - Reduced motion: checkmark and toasts appear without animation; shimmer becomes static.
 - Capture also offers "Choose from my photos"; steps announced ("Step 2 of 4, front of your ID card").
 - Email partly masked on screen; passwords hidden by default. `lang` set per language.

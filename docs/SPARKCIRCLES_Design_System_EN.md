@@ -1,11 +1,11 @@
-# SPARKCIRCLES — Design System v1.3
+# SparkCircles — Design System v1.4
 > The Sober Unicorn · Design reference for the whole product team
 
 ---
 
 ## Product context
 
-**SPARKCIRCLES** is a logistics ecosystem for parents combining:
+**SparkCircles** is a logistics ecosystem for parents combining:
 - **Event searching, creation, participation & recommendation**: Help families find, organize and join outings, snack gatherings, and cultural and sports activities, with suggestions tailored to their family and neighborhood.
 - **Community builder**: Create small groups of nearby families who organize daily life together. Each community comes with shared services, starting with:
   - **Shared routine builder**: Parents coordinate recurring tasks, such as school pick-ups, and take turns based on each person's availability.
@@ -24,6 +24,13 @@
 ---
 
 ## Changelog
+
+**v1.4 (October 2, 2026)** — requested by the PM
+- **Brand name written "SparkCircles"** (capital S and C) everywhere in copy, titles and alt text.
+- **New section 19 "Brand"**: the Ripple logo (symbol, wordmark, lockups), file paths, clear space, minimum sizes, light / dark / one-colour usage, app icon rules (iOS and Android), do's and don'ts.
+- **Wordmark placeholder replaced** by the real SVG wordmark "SparkCircles" (section 2).
+- **Voice and tone** added (section 19): French copy uses **"tu"** (informal), warm but serious in sensitive messages (verification, rejection, closure, safety); English uses "you".
+- **Open decision added**: the Events tab `sparkles` icon is close to the brand spark (to test with users).
 
 **v1.3 (October 2, 2026)** — requested by the PM, after review of the "Accounts and verification" design
 - **Primary CTA is now green**: Fresh green **Base** `#A5E07F` fill with **Ink** text (11.25:1, contrast rule 2). Violet is no longer the CTA color. *(Adjusted after PM feedback: white on Dark green felt too strong. Dark green `#2F7A1F` stays for green text and meaningful non-text elements: links, Secondary/Ghost labels and borders, focus, check icons, "Verified ✓" text, checked checkbox.)*
@@ -164,7 +171,7 @@ Used for **illustrations, empty-state backgrounds, card accent bars and the tab 
 Always use `Data display (32px / 500)` for the next upcoming time, and never go below 16px for activity names or the name of the parent on duty.
 
 ### Wordmark
-Until a logo exists, the wordmark is "SPARKCIRCLES" in H1 (28px/500), Ink, used on the Welcome screen only.
+The wordmark is the SVG "SparkCircles" from the Ripple logo (section 19), never typed text. On the Welcome screen use the horizontal lockup; product copy writes the name as plain text "SparkCircles".
 
 ---
 
@@ -430,7 +437,7 @@ Examples:
 - Community: "Sarah offered you her Thursday pick-up turn"
 - Reminder: "Your pick-up turn is tomorrow at 16:30"
 - Confirmed: "Exchange with the Martin family confirmed"
-- Error: "We couldn't reach SPARKCIRCLES" / "Check your connection and try again."
+- Error: "We couldn't reach SparkCircles" / "Check your connection and try again."
 
 Structure: `[dot or icon] [title 13px/500 ink] + [caption 12px/400 in the accent's dark]`. The Error card may carry a Small Secondary button ("Try again").
 
@@ -584,7 +591,7 @@ module.exports = {
 };
 ```
 
-> Note: `green`, `sky` and `pink` override Tailwind's default palettes of the same name. This is intentional so that only the SPARKCIRCLES colors exist in the product. `violet` is no longer defined (renamed `lavender` in v1.3): replace any `violet-*` class with `lavender-*` for Home and recommendations, or `green-*` for Events. Primary button: `bg-green text-ink`; pressed `border-green-dark`; disabled `bg-shell border-dashed border-ink-3 text-ink-3`. Green text, icons, borders and focus always use `green-dark`, never `green` (Base).
+> Note: `green`, `sky` and `pink` override Tailwind's default palettes of the same name. This is intentional so that only the SparkCircles colors exist in the product. `violet` is no longer defined (renamed `lavender` in v1.3): replace any `violet-*` class with `lavender-*` for Home and recommendations, or `green-*` for Events. Primary button: `bg-green text-ink`; pressed `border-green-dark`; disabled `bg-shell border-dashed border-ink-3 text-ink-3`. Green text, icons, borders and focus always use `green-dark`, never `green` (Base).
 
 ---
 
@@ -653,9 +660,69 @@ Recommended design order based on survey pain points:
 - **Tab bar**: five tabs is the practical maximum on mobile. If more modules are added, group some under "More" or inside Community.
 - **Module accents** are a proposal to validate in user testing.
 - **Language switch** (FR/EN at launch): Caption-size text link on the Welcome screen ("Français" / "English"); later also in "My account".
+- **Events icon vs brand spark**: the Events tab uses the `sparkles` line icon, which is close to the spark at the centre of the Ripple logo. A spark in the tab bar could read as "home of the brand" rather than "Events". Keep `sparkles` (two stars, different from the single brand spark) or switch to `calendar-heart` / `party-popper`: to test with users.
 - **Web admin back office**: uses the same tokens, but desktop rules are not defined yet: layout grid and max width, side navigation, data table, keyboard focus ring, image zoom viewer, breakpoints. To define when the back office grows beyond the verification queue.
 
 ---
 
-*Document updated on October 2, 2026 — SPARKCIRCLES v1.3*
+## 19. Brand
+
+### Logo: "Ripple"
+A spark falls into the water and its circles spread to nearby families: the circle of one family reaching the families around it. The symbol is **four open rings** (rounded caps, openings of different sizes, no two aligned) around a **four-point spark**. Ring colors are the accent **Base** stops, from the outside in: **green `#A5E07F`, sky `#8FD3F7`, lavender `#C5B8F5`, pink `#FFB6D3`**, around a **lemon `#FFD93D` spark**. Strokes thin from the centre outward (6.5 → 4.5 on a 96-unit grid) as the ripple loses energy.
+
+The **wordmark** is "SparkCircles", a custom monoline alphabet (stroke 4.8 on a 20-unit x-height, round caps, circle-based bowls). The capital S and C are drawn in the same construction as the lowercase s and c. It is always the SVG, never typed in a font.
+
+### Files (`docs/design/brand/ripple/`)
+
+| File | Use |
+|---|---|
+| `ripple-lockup-horizontal.svg` (= `ripple-logo.svg`) | Main logo on light backgrounds (Shell, Surface) |
+| `ripple-lockup-horizontal-on-dark.svg` | Main logo on Ink `#1A1A1A` (white wordmark) |
+| `ripple-lockup-stacked.svg` / `-on-dark.svg` | Square formats (splash, store, social) |
+| `ripple-symbol.svg` | Symbol alone, pastel |
+| `ripple-symbol-on-dark.svg` | Symbol on an Ink disc (avatars, small placements on light backgrounds) |
+| `ripple-symbol-mono-ink.svg` / `-mono-white.svg` | One-colour symbol (print, embossing, system tints) |
+| `ripple-wordmark.svg` / `-white.svg` | Wordmark alone |
+| `ripple-icon-1024.svg` | iOS app icon master |
+| `ripple-icon-small-1024.svg` | Optional simplified artwork (three rings) for 29–40 px renderings |
+| `ripple-icon-tinted-1024.svg` | iOS tinted-icon source (grayscale) |
+| `ripple-icon-foreground.svg` / `-background.svg` / `-mono.svg` | Android adaptive icon layers and themed (monochrome) icon |
+
+Source geometry: `docs/design/brand/_source/build_ripple.py` (edit there and regenerate; don't hand-edit the SVGs).
+
+### Clear space and minimum sizes
+- **Clear space**: one quarter of the symbol's height on every side of the symbol or lockup. Nothing (text, edges, other logos) enters it.
+- **Minimum sizes** (digital): symbol **24 px** on dark backgrounds, **32 px** on light backgrounds (the pastel rings are low-contrast on Shell); horizontal lockup **28 px** tall; stacked lockup **64 px** tall; wordmark alone **14 px** cap height.
+- In the app, the horizontal lockup is shown at **32–40 px** tall (Welcome and sign-in headers only). Other screens use no logo.
+
+### Light, dark and one-colour usage
+- **Light** (Shell or Surface): pastel symbol + **Ink** wordmark (16.25:1 on Shell, 17.4:1 on Surface). The pastel rings are 1.4–1.7:1 on light backgrounds, acceptable for a logo but never smaller than the minimum size; for small placements on light backgrounds prefer `ripple-symbol-on-dark.svg`.
+- **Dark** (Ink `#1A1A1A`): pastel symbol + **white** wordmark (17.4:1). This is the strongest version (rings 9.6–12.6:1 on Ink).
+- **One colour**: Ink on light, white on dark. Use when colour is unavailable or the system tints the mark.
+- Never place the logo on a module accent background, a photo or a pattern without an Ink or Surface plate.
+
+### App icon
+- **Main icon**: pastel ripple on an **Ink `#1A1A1A`** square. iOS master is 1024×1024, square, opaque, no rounded corners or mask (the system applies them).
+- **Small sizes**: four rings stay recognisable down to 29 px but the openings close up; `ripple-icon-small-1024.svg` (three rings, heavier strokes) is the approved fallback artwork if crispness at 29–40 px matters.
+- **iOS tinted**: grayscale source (white ripple on Ink); the system applies the tint. A dark-mode variant is the main icon itself.
+- **Android adaptive**: foreground ripple inside the **66 dp safe circle** of the 108 dp canvas, background layer plain **Ink**; themed icon uses the one-colour monochrome layer.
+- No text, no gradient, no outline, no shadow in the icon.
+
+### Do's and don'ts
+- **Do** use the SVG files as delivered, keep the ring order and openings exactly, respect clear space and minimum sizes.
+- **Do** write the name "SparkCircles" in copy (capital S and C), never "SPARKCIRCLES" or "Sparkcircles".
+- **Don't** recolour the rings outside their Base colors, swap their order, close the openings, rotate the symbol, add gradients, outlines, glows or shadows.
+- **Don't** stretch, condense or re-letter the wordmark, or type it in another font.
+- **Don't** use the spark alone as a second logo; it is part of the symbol. (The Events tab `sparkles` icon is close to it: open decision, section 18.)
+- **Don't** add emoji to the logo or icon.
+
+### Voice and tone
+- Warm, efficient, reassuring. Sentence case. No "please", no "successfully".
+- **French uses "tu"** (informal), consistently across the whole app: "Vérifie ton identité pour organiser", "Consulte ta boîte mail".
+- **Warm but serious in sensitive messages** (identity verification, rejection, account closure, safety): plain words, no jokes, no exclamation marks, say what happens and what to do next, still with "tu".
+- **English uses "you"**.
+
+---
+
+*Document updated on October 2, 2026 — SparkCircles v1.4*
 *To be updated after each user testing cycle.*
