@@ -19,6 +19,7 @@ module Api
       before_action :set_locale
       before_action :authenticate_user!
       before_action :enforce_account_gates!
+      after_action :renew_token_if_due
 
       rescue_from ActiveRecord::RecordNotFound, with: -> { render_error(:not_found, :not_found) }
       rescue_from ActionController::ParameterMissing, with: -> { render_error(:bad_request, :bad_request) }
@@ -43,6 +44,17 @@ module Api
              Warden::JWTAuth::Errors::WrongScope, Warden::JWTAuth::Errors::WrongAud, ActiveRecord::RecordNotFound
         @current_user = nil
         false
+      end
+
+      # BUG-13 (AC-3.4): a device that keeps using the app gets a renewed token in the
+      # response's Authorization header; the app stores it in place of the old one.
+      def renew_token_if_due
+        return unless current_user && current_jti && response.successful?
+
+        row = current_user.allowlisted_jwts.find_by(jti: current_jti)
+        return unless row&.renewal_due?
+
+        response.headers["Authorization"] = "Bearer #{current_user.issue_token!(device_name: row.device_name, device_id: row.device_id)}"
       end
 
       def bearer_token

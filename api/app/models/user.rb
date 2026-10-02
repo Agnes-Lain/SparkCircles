@@ -58,17 +58,28 @@ class User < ApplicationRecord
     false
   end
 
-  def issue_token!(device_name: nil)
+  def issue_token!(device_name: nil, device_id: nil)
     token, payload = Warden::JWTAuth::UserEncoder.new.call(self, :user, nil)
-    allowlisted_jwts.create!(jti: payload["jti"], aud: payload["aud"], exp: Time.zone.at(payload["exp"]),
-                             device_name: device_name.to_s.first(100).presence, last_used_at: Time.current)
+    attributes = { jti: payload["jti"], aud: payload["aud"], exp: Time.zone.at(payload["exp"]),
+                   device_name: device_name.to_s.first(100).presence, last_used_at: Time.current }
+    attributes[:device_id] = device_id if device_id
+    allowlisted_jwts.create!(attributes)
     token
   end
 
+  # Logs out every device, except the device that holds `except_jti` (its renewed
+  # tokens included) when given.
   def revoke_all_tokens!(except_jti: nil)
     scope = allowlisted_jwts
-    scope = scope.where.not(jti: except_jti) if except_jti
+    if except_jti && (device_id = allowlisted_jwts.where(jti: except_jti).pick(:device_id))
+      scope = scope.where.not(device_id: device_id)
+    end
     scope.delete_all
+  end
+
+  def revoke_device!(jti)
+    device_id = allowlisted_jwts.where(jti: jti).pick(:device_id)
+    allowlisted_jwts.where(device_id: device_id).delete_all if device_id
   end
 
   # ---- Roles (AC-1.5, AC-1.7, AC-9.6) ----
@@ -98,6 +109,14 @@ class User < ApplicationRecord
   end
 
   def security_locked? = security_locked_at.present?
+
+  # BUG-07: an unknown email costs the same bcrypt work as a wrong password, so the
+  # response time doesn't reveal whether an account exists (AC-3.2).
+  def self.spend_password_check_time(password)
+    @dummy_password_digest ||= Devise::Encryptor.digest(self, SecureRandom.hex(16))
+    Devise::Encryptor.compare(self, @dummy_password_digest, password.to_s)
+    nil
+  end
 
   # Admin web sessions only (parents use tokens, see AllowlistedJwt).
   def timeout_in = 12.hours

@@ -11,6 +11,7 @@ module Admin
 
     def create
       user = User.find_by(email: params[:email].to_s.strip.downcase)
+      User.spend_password_check_time(params[:password]) unless user
       authenticated = user && !user.security_locked? &&
         user.valid_for_authentication? { user.valid_password?(params[:password].to_s) }
 

@@ -27,6 +27,13 @@ RSpec.describe "Sessions", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    it "BUG-07 runs a password check for unknown emails too, so timing doesn't reveal accounts" do
+      expect(Devise::Encryptor).to receive(:compare).once.and_call_original
+
+      log_in(email: "nobody@example.com")
+      expect(error_code).to eq("invalid_credentials")
+    end
+
     it "AC-3.3 blocks the account for 15 minutes after 5 failures in 15 minutes and emails the owner" do
       expect { 5.times { log_in(password: "wrong-password-1") } }
         .to have_enqueued_mail(AccountMailer, :account_locked).with(user)
@@ -128,6 +135,49 @@ RSpec.describe "Sessions", type: :request do
         get "/api/v1/me", headers: headers
         expect(response).to have_http_status(:unauthorized)
       end
+    end
+  end
+end
+
+RSpec.describe "BUG-13 token renewal", type: :request do
+  let(:user) { create(:user) }
+
+  it "AC-3.4 renews the token while the device is used, so it never hits a hard expiry" do
+    headers = auth_headers(user)
+
+    travel 10.days do
+      get "/api/v1/me", headers: headers
+      expect(response.headers["Authorization"]).to be_nil
+    end
+
+    renewed = nil
+    travel 40.days do
+      get "/api/v1/me", headers: headers
+      renewed = response.headers["Authorization"]
+      expect(renewed).to start_with("Bearer ")
+    end
+
+    travel 65.days do
+      get "/api/v1/me", headers: { "Authorization" => renewed }
+      expect(response).to have_http_status(:ok)
+    end
+    travel 90.days do
+      get "/api/v1/me", headers: { "Authorization" => renewed }
+      expect(response).to have_http_status(:ok)
+      get "/api/v1/me", headers: headers
+      expect(response).to have_http_status(:unauthorized) # the first token reached its 60-day expiry
+    end
+  end
+
+  it "AC-3.5 logging out a device also ends its renewed token" do
+    headers = auth_headers(user)
+    renewed = nil
+    travel 40.days do
+      get "/api/v1/me", headers: headers
+      renewed = { "Authorization" => response.headers["Authorization"] }
+      delete "/api/v1/sessions/current", headers: headers
+      get "/api/v1/me", headers: renewed
+      expect(response).to have_http_status(:unauthorized)
     end
   end
 end

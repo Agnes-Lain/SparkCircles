@@ -318,10 +318,11 @@ Devise.setup do |config|
 
   # ==> devise-jwt (mobile app tokens)
   # One token per device, kept in the allowlisted_jwts table. Inactivity (30 days)
-  # is enforced by User.jwt_revoked?; the hard expiry below is only a safety net.
+  # is enforced by User.jwt_revoked?; tokens last 60 days and the API sends a renewed
+  # token while the device is used (Api::V1::BaseController#renew_token_if_due).
   config.jwt do |jwt|
     jwt.secret = ENV.fetch("DEVISE_JWT_SECRET_KEY") { Rails.application.secret_key_base }
-    jwt.expiration_time = 1.year.to_i
+    jwt.expiration_time = 60.days.to_i
     jwt.dispatch_requests = []
     jwt.revocation_requests = []
   end

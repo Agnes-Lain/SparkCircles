@@ -11,7 +11,10 @@ module Api
         user = User.find_by(email: params.require(:email).to_s.strip.downcase)
         password = params.require(:password).to_s
 
-        return render_error(:unauthorized, :invalid_credentials) unless user
+        unless user
+          User.spend_password_check_time(password)
+          return render_error(:unauthorized, :invalid_credentials)
+        end
         return render_error(:locked, :account_locked) if user.security_locked?
 
         authenticated = user.valid_for_authentication? { user.valid_password?(password) }
@@ -23,7 +26,7 @@ module Api
 
       # AC-3.5: only this device.
       def destroy
-        current_user.allowlisted_jwts.where(jti: current_jti).delete_all
+        current_user.revoke_device!(current_jti)
         head :no_content
       end
 
