@@ -5,6 +5,7 @@ Rails 8.1 API-only backend. Setup decisions: [`docs/api/backend-setup-proposal.m
 ## Requirements
 
 - Ruby 4.0.7 (rbenv, see `.ruby-version`)
+- libvips (`brew install vips`): strips metadata from ID photos before they are stored
 - PostgreSQL 18 on port **5433** (`brew install postgresql@18`, `port = 5433` in `/opt/homebrew/var/postgresql@18/postgresql.conf`, `brew services start postgresql@18`)
 
 On this Mac, native gems (`pg`, `bcrypt`, …) only compile with:

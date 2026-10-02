@@ -36,6 +36,12 @@ gem "devise-two-factor", "~> 6.4"
 # Authorization policies [https://github.com/varvet/pundit]
 gem "pundit", "~> 2.5"
 
+# Strip metadata (EXIF, GPS) from ID photos before they are stored, with libvips
+gem "image_processing", "~> 1.14"
+
+# QR code for the admin authenticator setup [https://github.com/whomwah/rqrcode]
+gem "rqrcode", "~> 3.1"
+
 # Pagination [https://github.com/ddnexus/pagy]
 gem "pagy", "~> 43.6"
 

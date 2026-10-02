@@ -29,10 +29,30 @@ RSpec.describe "Identity verification", type: :request do
 
       verification = user.verifications.last
       stored = verification.document_front.download
-      original = file_fixture("photo.jpg").binread
-      expect(stored).not_to include(original.byteslice(0, 20))
+      expect(stored).not_to start_with("\xFF\xD8\xFF".b)
       expect(verification.document_front.content_type).to eq("application/octet-stream")
-      expect(verification.read_encrypted(:document_front)).to eq(original)
+      expect(verification.read_encrypted(:document_front)).to start_with("\xFF\xD8\xFF".b)
+      expect(verification.front_content_type).to eq("image/jpeg")
+    end
+
+    it "removes EXIF and GPS metadata before encryption and storage" do
+      original = Vips::Image.new_from_buffer(file_fixture("photo_with_gps.jpg").binread, "")
+      expect(original.get_fields).to include("exif-ifd3-GPSLatitude")
+
+      submit(valid_params.merge(document_front: upload("photo_with_gps.jpg")))
+
+      stored = user.verifications.last.read_encrypted(:document_front)
+      image = Vips::Image.new_from_buffer(stored, "")
+      expect(image.get_fields.grep(/exif|xmp|iptc|gps|icc/i)).to be_empty
+      expect(stored).not_to include("Exif", "QA Camera")
+    end
+
+    it "keeps PNG photos as PNG, without metadata" do
+      submit
+
+      verification = user.verifications.last
+      expect(verification.selfie_content_type).to eq("image/png")
+      expect(verification.read_encrypted(:selfie)).to start_with("\x89PNG".b)
     end
 
     it "AC-7.3 needs only the front for a passport" do

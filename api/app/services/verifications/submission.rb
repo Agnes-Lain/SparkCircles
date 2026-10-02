@@ -21,13 +21,16 @@ module Verifications
       errors = validate
       return Result.new(:invalid, errors) if errors.any?
 
+      errors = sanitize_images
+      return Result.new(:invalid, errors) if errors.any?
+
       verification = nil
       renewal = @user.verified? # AC-7.15
       User.transaction do
         verification = @user.verifications.build(document_type: document_type, submitted_at: Time.current, renewal: renewal)
-        files.each do |name, upload|
-          verification.public_send("#{CONTENT_TYPE_COLUMNS[name]}=", upload.content_type)
-          verification.attach_encrypted(name, upload, filename: FILES[name])
+        sanitized.each do |name, image|
+          verification.public_send("#{CONTENT_TYPE_COLUMNS[name]}=", image.content_type)
+          verification.attach_encrypted(name, image.data, filename: FILES[name])
         end
         verification.save!
         @user.update!(date_of_birth: date_of_birth, verification_status: renewal ? "verified" : "pending")
@@ -72,6 +75,21 @@ module Verifications
       end
       errors
     end
+
+    # Metadata (EXIF, GPS...) is removed before encryption and storage; files libvips
+    # can't read as images are refused.
+    def sanitize_images
+      errors = ActiveModel::Errors.new(Verification.new)
+      @sanitized = files.to_h do |name, upload|
+        [ name, ImageSanitizer.call(upload, content_type: upload.content_type) ]
+      rescue ImageSanitizer::InvalidImage
+        errors.add(name, :invalid_type)
+        [ name, nil ]
+      end
+      errors
+    end
+
+    def sanitized = @sanitized
 
     # The declared content type must match the file's first bytes (JPEG, PNG or HEIC).
     def image_signature?(upload)
