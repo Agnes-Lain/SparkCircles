@@ -29,7 +29,6 @@ Project rules for every agent are in [CLAUDE.md](CLAUDE.md). Agent definitions a
 | `CLAUDE.md` | Product context, workflow, tech stack, non-negotiables, git rules |
 | `.claude/agents/` | The five subagent definitions |
 | `docs/SPARKCIRCLES_Design_System_EN.md` | Design system v1.2, the source of truth for all UI |
-| `docs/design/canvas/` | Exports from the [Claude design canvas](https://claude.ai/artifact/GreNxZD3DfX1xKLN4B4AyS). `Variant.dc.html` is the validated v1.2 "Today" dashboard. These files need the canvas runtime and don't render standalone. |
 | `docs/specs/`, `docs/design/`, `docs/api/`, `docs/qa/`, `docs/marketing/` | Handoff files between agents, named after the feature slug |
 
 ## Getting started
