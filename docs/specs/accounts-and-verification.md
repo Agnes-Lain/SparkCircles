@@ -2,7 +2,7 @@
 
 > Feature slug: `accounts-and-verification` · Author: po · **Status: Approved by the PM on 2026-10-02** · Date: 2026-10-02
 >
-> Amended 2026-10-02 at the PM's request: email change, web admin
+> Amended 2026-10-02 at the PM's request: email change, web admin, early renewal (AC-7.15)
 >
 > **Scope: v1 only, for parents and admins.** It is the foundation every module builds on. Everything deferred (service providers, paid plans, automated verification, extra admin roles…) is in [`docs/backlog.md`](../backlog.md).
 >
@@ -123,6 +123,7 @@ Verification statuses: **not verified**, **pending**, **verified**, **rejected**
 - **AC-7.11** Given an approved verification, then it expires on the expiry date printed on the document used, or 2 years after approval, whichever comes first (confirmed by the PM: shorter than usual because the app concerns children's safety).
 - **AC-7.12** Given a verified parent, when their verification is 30 days and then 7 days from expiry, then they receive a reminder inviting them to verify again with a valid document.
 - **AC-7.13** Given a verification that reaches its expiry date, then the status becomes "expired", the parent can no longer host new events or access anything restricted to verified users, and other members see them as not verified until a new verification is approved.
+- **AC-7.15** Given a verified parent whose verification has not expired, when they submit a new verification early (renewal), then they stay "verified" and keep every verified right until the old verification expires or the new one is decided, whichever comes first; the renewal is shown as "renewal pending". If the renewal is approved, the new expiry date applies (AC-7.11); if it is rejected, they keep the old verification until it expires and can submit again. This overrides AC-7.3 and AC-7.5 for renewals only (PM decision 2026-10-02).
 - **AC-7.14** Given these rules, then they are enforced by the backend: a parent without a valid verification cannot create an event even by calling the API directly.
 
 ### US-8: Verification status is visible and usable to restrict access
