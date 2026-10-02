@@ -102,9 +102,10 @@ class User < ApplicationRecord
   # Admin web sessions only (parents use tokens, see AllowlistedJwt).
   def timeout_in = 12.hours
 
-  # Devise emails go through Active Job.
-  def send_devise_notification(notification, *args)
-    devise_mailer.send(notification, self, *args).deliver_later
+  # Devise emails go through Active Job, without the token in the job arguments
+  # (see DeviseNotificationJob, AC-10.6).
+  def send_devise_notification(notification, *_args)
+    DeviseNotificationJob.perform_later(self, notification.to_s)
   end
 
   # ---- Profile and visibility (US-6) ----

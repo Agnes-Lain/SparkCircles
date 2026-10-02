@@ -80,7 +80,7 @@ RSpec.describe "Back office members", type: :request do
 
       expect do
         post "/admin/members/#{member.id}/restore_email", params: { email_change_id: report.id }
-      end.to have_enqueued_mail(AccountMailer, :reset_password_instructions)
+      end.to have_enqueued_job(DeviseNotificationJob).with(anything, "reset_password_instructions")
 
       expect(member.reload).to have_attributes(email: "member@example.com", security_locked_at: nil)
       expect(report.reload.restored_at).to be_present

@@ -11,6 +11,7 @@ RSpec.describe "Email change", type: :request do
       original.call(record, raw, *rest)
     end
     post "/api/v1/me/email_change", params: { email: email, current_password: password }, headers: with, as: :json
+    perform_enqueued_jobs(only: DeviseNotificationJob)
     token
   end
 
@@ -19,14 +20,16 @@ RSpec.describe "Email change", type: :request do
   end
 
   it "AC-13.1 changes nothing and sends nothing with a wrong password" do
-    expect { request_change("new@example.com", password: "wrong-password-1") }.not_to have_enqueued_mail
+    expect { request_change("new@example.com", password: "wrong-password-1") }
+      .to not_change(ActionMailer::Base.deliveries, :count).and not_have_enqueued_mail
 
     expect(error_code).to eq("invalid_password")
     expect(user.reload.unconfirmed_email).to be_nil
   end
 
   it "AC-13.2 sends a link to the new address and keeps the old email for login" do
-    expect { request_change("new@example.com") }.to have_enqueued_mail(AccountMailer, :confirmation_instructions)
+    request_change("new@example.com")
+    expect(ActionMailer::Base.deliveries.last.to).to eq([ "new@example.com" ])
 
     expect(response).to have_http_status(:accepted)
     expect(json).to eq("status" => "check_new_inbox")

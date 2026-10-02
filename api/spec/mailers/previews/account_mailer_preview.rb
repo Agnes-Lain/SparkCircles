@@ -11,8 +11,9 @@ class AccountMailerPreview < ActionMailer::Preview
   def email_changed = AccountMailer.email_changed(user)
 
   def email_changed_notice
-    change = EmailChange.new(user: user, previous_email: "old@example.com", new_email: user.email, changed_at: Time.current)
-    AccountMailer.email_changed_notice(change, "preview-token")
+    change = EmailChange.new(id: SecureRandom.uuid, user: user, previous_email: "old@example.com", new_email: user.email,
+                             changed_at: Time.current)
+    AccountMailer.email_changed_notice(change)
   end
 
   def closure_confirmation

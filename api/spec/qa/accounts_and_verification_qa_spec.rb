@@ -210,7 +210,6 @@ RSpec.describe "QA: accounts and verification", type: :request do
     end
 
     it "AC-11.6 the statistic row does not reveal the exact day of erasure (months only)" do
-      pending "BUG-06: the statistic id is a UUIDv7, whose first 48 bits are the creation time in milliseconds"
       create(:user, closed_at: 31.days.ago)
       EraseClosedAccountsJob.perform_now
 
@@ -270,20 +269,25 @@ RSpec.describe "QA: accounts and verification", type: :request do
     end
 
     it "BUG-03 AC-10.6: one-time link tokens never appear in application logs" do
-      pending "BUG-03: deliver_later logs mailer job arguments (raw Devise and report tokens) at info level"
+      # Developer fix round: tokens are no longer passed to jobs (DeviseNotificationJob creates or
+      # reads them when it runs), so this example now takes the token from the email that was sent
+      # and checks the logs and the stored job arguments.
       user = create(:user, email: "reset@example.com")
       io = StringIO.new
       previous = ActiveJob::Base.logger
       ActiveJob::Base.logger = ActiveSupport::Logger.new(io).tap { |logger| logger.level = :info }
       begin
         post "/api/v1/password_resets", params: { email: "reset@example.com" }, as: :json
+        stored_arguments = enqueued_jobs.map { |job| job["arguments"] }.inspect
+        perform_enqueued_jobs
       ensure
         ActiveJob::Base.logger = previous
       end
-      raw_token = enqueued_jobs.last[:args].last["args"][1]
+      raw_token = CGI.unescape(ActionMailer::Base.deliveries.last.text_part.body.to_s[/reset-password\?token=(\S+)/, 1])
       expect(raw_token).to be_present
       expect(user.reload.reset_password_token).not_to eq(raw_token) # stored digested in the users table
       expect(io.string).not_to include(raw_token)
+      expect(stored_arguments).not_to include(raw_token)
     end
 
     it "AC-7.15 (new requirement, not implemented yet): a verified parent who renews early keeps their badge" do

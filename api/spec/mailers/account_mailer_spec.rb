@@ -29,10 +29,13 @@ RSpec.describe AccountMailer do
 
   it "AC-13.7 sends the notice to the old address with a This wasn't me link" do
     change = create(:email_change, user: user, previous_email: "old@example.com")
-    mail = described_class.email_changed_notice(change, "report-token")
+    mail = described_class.email_changed_notice(change)
 
     expect(mail.to).to eq([ "old@example.com" ])
-    expect(mail.text_part.body.to_s).to include("this-wasnt-me?token=report-token", "Ce n'était pas moi")
+    body = mail.text_part.body.to_s
+    expect(body).to include("this-wasnt-me?token=", "Ce n'était pas moi")
+    token = CGI.unescape(body[/this-wasnt-me\?token=(\S+)/, 1])
+    expect(EmailChange.find_by_token_for(:report, token)).to eq(change)
   end
 
   it "AC-10.6 never puts sensitive data other than the first name in emails" do

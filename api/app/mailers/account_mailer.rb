@@ -38,11 +38,12 @@ class AccountMailer < ApplicationMailer
     compose(user, :email_changed)
   end
 
-  # AC-13.7: sent to the old address, with the "This wasn't me" link.
-  def email_changed_notice(email_change, token)
+  # AC-13.7: sent to the old address, with the "This wasn't me" link. The token is
+  # created here, never passed through the job queue (AC-10.6).
+  def email_changed_notice(email_change)
     user = email_change.user
     compose(user, :email_changed_notice, to: email_change.previous_email,
-            action: app_link("this-wasnt-me", token),
+            action: app_link("this-wasnt-me", email_change.generate_token_for(:report)),
             values: { date: I18n.l(email_change.changed_at.to_date, format: :long, locale: user.locale) })
   end
 

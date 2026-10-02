@@ -42,7 +42,7 @@ module Accounts
         keep_jti = @current_user&.id == user.id ? @current_jti : nil
         user.revoke_all_tokens!(except_jti: keep_jti)
         AccountMailer.email_changed(user).deliver_later
-        AccountMailer.email_changed_notice(change, change.generate_token_for(:report)).deliver_later
+        AccountMailer.email_changed_notice(change).deliver_later
       end
       Result.new(:email_changed, user)
     rescue ActiveRecord::RecordNotUnique
