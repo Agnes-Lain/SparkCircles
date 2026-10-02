@@ -164,7 +164,7 @@ RSpec.describe "QA round 2: accounts and verification", type: :request do
       expect(response).to redirect_to("/admin/login")
     end
 
-    it "PM review: passing only the password step ends the admin's live back office session" do
+    it "R2-03 passing only the password step keeps the admin's live back office session" do
       admin = create(:user, :admin)
       admin_log_in(admin)
       live_cookie = cookies["_sparkcircles_admin"]
@@ -177,7 +177,7 @@ RSpec.describe "QA round 2: accounts and verification", type: :request do
 
       cookies["_sparkcircles_admin"] = live_cookie
       get "/admin/verifications"
-      expect(response).to redirect_to("/admin/login") # documents the current behaviour (see report)
+      expect(response).to have_http_status(:ok) # developer R2 fix: updated from the round-2 behaviour
     end
 
     it "serves the authenticator setup page uncached, with the SparkCircles issuer and a labelled QR code" do

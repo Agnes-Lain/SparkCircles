@@ -41,11 +41,26 @@ RSpec.describe "Back office authentication", type: :request do
     end
   end
 
+  it "R2-03 a password step without the code elsewhere keeps the live session; the code locks only the pending login" do
+    admin_log_in(admin)
+    live_cookie = cookies["_sparkcircles_admin"]
+
+    other = open_session
+    other.post "/admin/login", params: { email: admin.email, password: "correct-horse-battery" }
+    5.times { other.post "/admin/login/code", params: { code: "000000" } }
+
+    cookies["_sparkcircles_admin"] = live_cookie
+    get "/admin/verifications"
+    expect(response).to have_http_status(:ok)
+  end
+
   it "BUG-04 logging in again elsewhere ends the previous back office session" do
     admin_log_in(admin)
     first_cookie = cookies["_sparkcircles_admin"]
     reset!
+    travel 31.seconds # a new authenticator code (each code works once)
     admin_log_in(admin)
+    expect(response).to redirect_to("/admin")
 
     cookies["_sparkcircles_admin"] = first_cookie
     get "/admin/verifications"

@@ -11,7 +11,8 @@
     }
     document.addEventListener("click", function (event) {
       var opener = event.target.closest("[data-dialog-open]");
-      if (opener) { event.preventDefault(); open(document.getElementById(opener.dataset.dialogOpen), opener); }
+      var target = opener && document.getElementById(opener.dataset.dialogOpen);
+      if (target) { event.preventDefault(); open(target, opener); }
       var closer = event.target.closest("[data-dialog-close]");
       if (closer) { event.preventDefault(); closer.closest("dialog").close(); }
     });

@@ -1,4 +1,9 @@
 en:
+  admin:
+    nav:
+      open_reports:
+        one: "%{count} open report"
+        other: "%{count} open reports"
   date:
     formats:
       long: "%-d %b %Y"

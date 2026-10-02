@@ -15,7 +15,7 @@
         <nav aria-label="Admin">
           <%= nav_link "Verifications", admin_verifications_path, active: controller_name == "verifications" %>
           <%= nav_link admin_members_path, active: controller_name == "members" do %>
-            Members<% if open_reports_count.positive? %><span class="badge badge-yellow nav-count" aria-label="<%= pluralize(open_reports_count, 'open report') %>"><%= open_reports_count %></span><% end %>
+            Members<% if open_reports_count.positive? %><span class="badge badge-yellow nav-count"><span aria-hidden="true"><%= open_reports_count %></span><span class="visually-hidden"><%= t("admin.nav.open_reports", count: open_reports_count) %></span></span><% end %>
           <% end %>
         </nav>
         <span><%= current_admin.display_name %></span>

@@ -16,7 +16,7 @@ RSpec.describe "Back office \"This wasn't me\" reports (design section 8)", type
     body = response.body
     expect(body.index("This wasn't me")).to be < body.index("Find a member")
     expect(body).to include("1 open", "These accounts are locked until you act", "30 h", "Over 24 h", "Review")
-    expect(body).to include('aria-label="1 open report"')
+    expect(body).to include('<span class="visually-hidden">1 open report</span>')
   end
 
   it "W5 shows the open report first with the Locked badge" do
@@ -58,6 +58,25 @@ RSpec.describe "Back office \"This wasn't me\" reports (design section 8)", type
       expect(response.body).to include("This email can't be restored", "Another account uses it now")
       expect(member.reload.email).to eq("attacker@example.com")
     end
+  end
+
+  it "R2-01 AC-13.10 shows no action on a report about the admin's own account, only an explanation" do
+    create(:email_change, user: admin, reported_at: 1.hour.ago)
+
+    get "/admin/members/#{admin.id}", params: { reason: "email_change_report" }
+
+    expect(response.body).to include("This report is about your own account. Another admin handles it.")
+    expect(response.body).not_to include("Restore previous email", "Close without restoring", 'data-dialog-open="restore-dialog"')
+  end
+
+  it "R2-02 reads the nav count with the right plural in both locales" do
+    create(:email_change, user: create(:user), reported_at: 2.hours.ago)
+
+    get "/admin/members"
+    expect(response.body).to include('<span class="visually-hidden">2 open reports</span>')
+    expect(I18n.t("admin.nav.open_reports", count: 1, locale: :en)).to eq("1 open report")
+    expect(I18n.t("admin.nav.open_reports", count: 2, locale: :fr)).to eq("2 signalements ouverts")
+    expect(I18n.t("admin.nav.open_reports", count: 1, locale: :fr)).to eq("1 signalement ouvert")
   end
 
   describe "AC-13.10 close without restoring" do

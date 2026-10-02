@@ -131,7 +131,7 @@ class User < ApplicationRecord
 
   def start_admin_session!
     nonce = SecureRandom.urlsafe_base64(32)
-    update_columns(admin_session_digest: self.class.admin_nonce_digest(nonce))
+    update_columns(admin_session_digest: self.class.admin_nonce_digest(nonce), admin_pending_digest: nil)
     nonce
   end
 
@@ -141,7 +141,20 @@ class User < ApplicationRecord
   end
 
   def end_admin_session!
-    update_columns(admin_session_digest: nil)
+    update_columns(admin_session_digest: nil, admin_pending_digest: nil)
+  end
+
+  # Password step only (QA R2-03): its own nonce, so the live session stays untouched
+  # until the second factor succeeds (complete_login! then rotates the live nonce).
+  def start_admin_login!
+    nonce = SecureRandom.urlsafe_base64(32)
+    update_columns(admin_pending_digest: self.class.admin_nonce_digest(nonce))
+    nonce
+  end
+
+  def admin_login_pending?(nonce)
+    nonce.present? && admin_pending_digest.present? &&
+      ActiveSupport::SecurityUtils.secure_compare(self.class.admin_nonce_digest(nonce), admin_pending_digest)
   end
 
   def self.admin_nonce_digest(nonce) = OpenSSL::Digest::SHA256.hexdigest(nonce.to_s)
@@ -152,7 +165,7 @@ class User < ApplicationRecord
   def register_otp_failure!
     attempts = otp_failed_attempts + 1
     if attempts >= MAX_OTP_ATTEMPTS
-      update_columns(otp_failed_attempts: 0, otp_locked_until: OTP_LOCK_DURATION.from_now, admin_session_digest: nil)
+      update_columns(otp_failed_attempts: 0, otp_locked_until: OTP_LOCK_DURATION.from_now, admin_pending_digest: nil)
     else
       update_columns(otp_failed_attempts: attempts)
     end

@@ -8,6 +8,7 @@ module Admin
     protect_from_forgery with: :exception
     layout "admin"
 
+    around_action :use_english
     before_action :refuse_bearer_tokens
     before_action :authenticate_admin!
     before_action :forbid_caching
@@ -19,6 +20,11 @@ module Admin
     helper_method :current_admin, :open_reports_count
 
     private
+
+    # The back office is in English (QA R2-02: plurals and dates use English rules).
+    def use_english(&)
+      I18n.with_locale(:en, &)
+    end
 
     def open_reports_count
       @open_reports_count ||= EmailChange.open_reports.count

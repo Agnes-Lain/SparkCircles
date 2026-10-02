@@ -242,6 +242,7 @@ CREATE TABLE public.users (
     admin_session_digest character varying,
     otp_failed_attempts integer DEFAULT 0 NOT NULL,
     otp_locked_until timestamp(6) without time zone,
+    admin_pending_digest character varying,
     CONSTRAINT users_locale_check CHECK (((locale)::text = ANY (ARRAY[('fr'::character varying)::text, ('en'::character varying)::text]))),
     CONSTRAINT users_verification_status_check CHECK (((verification_status)::text = ANY (ARRAY[('not_verified'::character varying)::text, ('pending'::character varying)::text, ('verified'::character varying)::text, ('rejected'::character varying)::text, ('expired'::character varying)::text])))
 );
@@ -634,6 +635,7 @@ ALTER TABLE ONLY public.verifications
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261003150000'),
 ('20261003090300'),
 ('20261003090200'),
 ('20261003090100'),

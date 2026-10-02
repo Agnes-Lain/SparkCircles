@@ -1,7 +1,8 @@
 module Admin
   # Shared by the second-factor steps of W0. The admin passed the password step less
-  # than 10 minutes ago, and the cookie's nonce is still the one stored on the account
-  # (QA BUG-01): replaying an older cookie never brings back a pending login.
+  # than 10 minutes ago, and the cookie's pending-login nonce is still the one stored on
+  # the account (QA BUG-01): replaying an older cookie never brings back a pending login.
+  # The live session is only replaced once the code is right (QA R2-03).
   module SecondFactor
     extend ActiveSupport::Concern
 
@@ -24,7 +25,7 @@ module Admin
       if user&.admin? && user.otp_locked?
         reset_session
         redirect_to admin_login_path, alert: LOCKED_MESSAGE
-      elsif user&.admin? && user.admin_session_valid?(session[:admin_nonce])
+      elsif user&.admin? && user.admin_login_pending?(session[:admin_login_nonce])
         @pending_admin = user
       else
         reset_session

@@ -19,10 +19,14 @@
   <% if report.open_report? %>
     <p>The member says they didn't change their email. Their account is locked and logged out everywhere.</p>
     <p class="caption">Before restoring: check that the new address isn't one the member uses, for example by replying to the report from the previous address.</p>
-    <div class="actions">
-      <button type="button" class="btn btn-primary" data-dialog-open="restore-dialog">Restore previous email</button>
-      <button type="button" class="btn btn-ghost" data-dialog-open="close-report-dialog">Close without restoring</button>
-    </div>
+    <% if Admin::MemberPolicy.new(current_admin, report.user).restore_email? %>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" data-dialog-open="restore-dialog">Restore previous email</button>
+        <button type="button" class="btn btn-ghost" data-dialog-open="close-report-dialog">Close without restoring</button>
+      </div>
+    <% else %>
+      <p class="caption">This report is about your own account. Another admin handles it.</p>
+    <% end %>
   <% elsif report.restored_at %>
     <% by = User.find_by(id: report.restored_by_id) %>
     <p class="caption">Restored on <%= admin_datetime(report.restored_at) %><%= " by #{by.display_name}" if by %>. Reset link sent to <%= masked_email(report.previous_email) %>.</p>

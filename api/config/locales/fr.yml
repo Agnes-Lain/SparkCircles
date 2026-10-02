@@ -1,4 +1,9 @@
 fr:
+  admin:
+    nav:
+      open_reports:
+        one: "%{count} signalement ouvert"
+        other: "%{count} signalements ouverts"
   date:
     formats:
       default: "%d/%m/%Y"

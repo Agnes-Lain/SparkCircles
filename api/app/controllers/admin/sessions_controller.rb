@@ -19,7 +19,7 @@ module Admin
         reset_session
         session[:admin_pending_user_id] = user.id
         session[:admin_pending_at] = Time.current.to_i
-        session[:admin_nonce] = user.start_admin_session!
+        session[:admin_login_nonce] = user.start_admin_login!
         redirect_to user.otp_secret.present? ? admin_two_factor_path : admin_two_factor_setup_path
       else
         @login_error = user&.access_locked? ? "Too many attempts. Try again in 15 minutes." : "Email or password doesn't match"
