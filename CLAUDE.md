@@ -21,7 +21,6 @@ Survey insight (80 parents): socializing/organizing events is pain point #1, vac
 - Backlog of deferred work: `docs/backlog.md` (maintained by `po`; the PM decides what moves into a spec)
 - Specs: `docs/specs/<feature>.md`
 - Design deliverables: `docs/design/<feature>.md` and `docs/design/mockups/`
-- Validated "Today" dashboard mockup (reference for v1.2): `docs/design/canvas/Variant.dc.html`. `Main.dc.html` is the earlier palette, kept for history; `Nav.dc.html` shows each tab active. Canvas files are exports from the Claude design canvas and don't render standalone. Read them as markup, don't edit them.
 - API contracts: `docs/api/<feature>.md`
 - QA reports: `docs/qa/<feature>.md`
 - Marketing drafts (French + English): `docs/marketing/` (release announcements, social posts, newsletters)
