@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": [
+        "-c",
+        "export PATH=\"$HOME/.rbenv/shims:$PATH\" && cd api && bin/rails server -p 3000 -b 127.0.0.1"
+      ],
+      "port": 3000
+    }
+  ]
+}
