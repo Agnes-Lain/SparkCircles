@@ -1,0 +1,11 @@
+<p><%= @greeting %></p>
+<% @lines.each do |line| %>
+  <p><%= line %></p>
+<% end %>
+<% if @note %>
+  <p><em><%= @note %></em></p>
+<% end %>
+<% if @action_url %>
+  <p><a href="<%= @action_url %>" class="button"><%= @action_label %></a></p>
+<% end %>
+<p><%= t("account_mailer.signature") %></p>

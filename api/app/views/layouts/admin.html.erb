@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>SparkCircles admin</title>
+    <%= csrf_meta_tags %>
+    <%= render "admin/shared/styles" %>
+  </head>
+  <body>
+    <% if current_admin %>
+      <header class="topbar">
+        <%= link_to admin_root_path, class: "logo", "aria-label": "SparkCircles admin, verifications" do %><%= render "admin/shared/logo" %><% end %>
+        <nav aria-label="Admin">
+          <%= nav_link "Verifications", admin_verifications_path, active: controller_name == "verifications" %>
+          <%= nav_link admin_members_path, active: controller_name == "members" do %>
+            Members<% if open_reports_count.positive? %><span class="badge badge-yellow nav-count"><span aria-hidden="true"><%= open_reports_count %></span><span class="visually-hidden"><%= t("admin.nav.open_reports", count: open_reports_count) %></span></span><% end %>
+          <% end %>
+        </nav>
+        <span><%= current_admin.display_name %></span>
+        <%= button_to "Log out", admin_logout_path, method: :delete, class: "btn-link" %>
+      </header>
+    <% end %>
+    <main class="content">
+      <%= render "admin/shared/flash" %>
+      <%= yield %>
+    </main>
+    <%= render "admin/shared/dialog_script" %>
+  </body>
+</html>

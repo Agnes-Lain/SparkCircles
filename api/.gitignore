@@ -1,0 +1,28 @@
+# See https://help.github.com/articles/ignoring-files for more about ignoring files.
+
+/.bundle
+
+# Environment files and secrets: never commit them.
+/.env*
+/config/master.key
+/config/credentials/*.key
+
+# Logs and temporary files
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/tmp/pids/*
+!/tmp/pids/
+!/tmp/pids/.keep
+
+# Uploaded files in development and test
+/storage/*
+!/storage/.keep
+/tmp/storage/*
+!/tmp/storage/
+!/tmp/storage/.keep
+
+/vendor/bundle
+/coverage
+/spec/examples.txt

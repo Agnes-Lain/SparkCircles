@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>SparkCircles · Verification queue</title>
+<!-- Accounts and verification v1 mockup (revision 2). Tokens: docs/SPARKCIRCLES_Design_System_EN.md v1.3. Design: docs/design/accounts-and-verification.md -->
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F8F7F4;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1A1A1A}
+.meta{width:390px;margin:16px auto 8px;font-size:12px;line-height:1.5;color:#6E6E6E}
+.screen{width:390px;min-height:844px;margin:0 auto 32px;background:#F8F7F4;padding:16px 16px 48px;display:flex;flex-direction:column;gap:24px;border:.5px solid rgba(0,0,0,.08);border-radius:24px;position:relative;overflow:hidden}
+h1{margin:0;font-size:28px;line-height:1.2;font-weight:500}
+h2{margin:0;font-size:20px;line-height:1.3;font-weight:500}
+p{margin:0}
+.h3{font-size:16px;line-height:1.4;font-weight:500;color:#1A1A1A}
+.body{font-size:14px;line-height:1.6;color:#4A4A4A}
+.ink{color:#1A1A1A}
+.cap{font-size:12px;line-height:1.5;color:#6E6E6E}
+.label{font-size:11px;line-height:1.4;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#4A4A4A;margin:0}
+.data{font-size:32px;line-height:1;font-weight:500;color:#1A1A1A}
+.stack{display:flex;flex-direction:column}
+.g4{gap:4px}.g8{gap:8px}.g12{gap:12px}.g16{gap:16px}.g24{gap:24px}
+.card{background:#FFFFFF;border:.5px solid rgba(0,0,0,.08);border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.04);padding:16px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;border-radius:100px;font-family:inherit;font-size:15px;line-height:1.4;font-weight:500;padding:14px 28px;border:0;cursor:pointer}
+.btn-primary{background:#A5E07F;color:#1A1A1A}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-primary:active{transform:scale(.97);box-shadow:inset 0 0 0 1.5px #2F7A1F}
+.btn-destructive{background:#B42318;color:#FFFFFF}
+.btn-ghost{background:transparent;border:1.5px solid #2F7A1F;color:#2F7A1F}
+.btn-sm{width:auto;min-height:44px;font-size:12px;padding:7px 14px}
+.btn-secondary{background:#E6F7DD;color:#2F7A1F}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn-primary[disabled],.btn-destructive[disabled]{opacity:1;background:#F8F7F4;color:#6E6E6E;border:1.5px dashed #6E6E6E;transform:none;box-shadow:none}
+.btn:focus-visible{outline:2px solid #2F7A1F;outline-offset:2px}
+.link{color:#2F7A1F;font-size:14px;line-height:1.6;font-weight:500;text-decoration:none;display:inline-flex;align-items:center;min-height:44px}
+.link-quiet{color:#4A4A4A;font-size:14px;line-height:1.6;text-decoration:underline;display:inline-flex;align-items:center;min-height:44px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:14px;line-height:1.6;color:#4A4A4A}
+.input{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1.5px solid #6E6E6E;border-radius:12px;padding:10px 14px;font-size:14px;line-height:1.6;background:#FFFFFF;color:#1A1A1A;min-height:44px}
+.input.focus{border-color:#2F7A1F}
+.input.error{border-color:#B42318}
+.err{display:flex;gap:4px;align-items:center;font-size:12px;line-height:1.5;color:#B42318}
+.ph{color:#6E6E6E}
+.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;line-height:1.4;font-weight:500;white-space:nowrap}
+.b-pink{background:#FFEEF5;color:#B03A78}
+.b-yellow{background:#FFF6CC;color:#8F5E00}
+.b-lavender{background:#EDE9FD;color:#6B5BC4}
+.b-green{background:#E6F7DD;color:#2F7A1F}
+.b-neutral{background:#F8F7F4;color:#4A4A4A;border:.5px solid rgba(0,0,0,.08)}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none;background:#F8F7F4;color:#4A4A4A}
+.ico svg.i{width:18px;height:18px}
+.ico-verify{background:#E6F7DD;color:#2F7A1F}
+.back{width:44px;height:44px;border:0;background:transparent;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#1A1A1A;margin-left:-12px;padding:0;cursor:pointer}
+.row{display:flex;align-items:center;gap:12px;min-height:52px}
+.sep{border-top:.5px solid rgba(0,0,0,.08)}
+.note{padding:12px 16px;border-radius:16px;display:flex;gap:12px;align-items:flex-start}
+.note-y{background:#FFF6CC}.note-y .dot{background:#8F5E00}.note-y .cap{color:#8F5E00}
+.note-g{background:#E6F7DD}.note-g .dot{background:#2F7A1F}.note-g .cap{color:#2F7A1F}
+.note-e{background:#FDECEC}.note-e .cap{color:#B42318}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none}
+.note-t{font-size:13px;line-height:1.4;font-weight:500;color:#1A1A1A}
+.check{display:flex;gap:12px;align-items:flex-start;min-height:44px;padding:10px 0;font-size:14px;line-height:1.6;color:#1A1A1A}
+.box{width:24px;height:24px;border:1.5px solid #6E6E6E;border-radius:8px;background:#FFFFFF;flex:none}
+.av{display:flex;align-items:center;justify-content:center;border-radius:50%;font-weight:500;flex:none}
+.av-lg{width:44px;height:44px;font-size:15px}
+.av-md{width:36px;height:36px;font-size:13px}
+.spacer{flex:1}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+.meta{width:1280px;margin:16px auto 8px}
+.web{width:1280px;min-height:800px;margin:0 auto 32px;background:#F8F7F4;border:.5px solid rgba(0,0,0,.08);border-radius:16px;overflow:hidden;position:relative}
+.topbar{height:64px;background:#FFFFFF;border-bottom:.5px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:32px;padding:0 32px}
+.wordmark{font-size:16px;line-height:1.4;font-weight:500;color:#1A1A1A;letter-spacing:.02em}
+.nav a{font-size:14px;line-height:1.6;color:#4A4A4A;text-decoration:none;display:inline-flex;align-items:center;min-height:44px;margin-right:24px;border-bottom:2px solid transparent}
+.nav a.active{color:#1A1A1A;font-weight:500;border-bottom-color:#2F7A1F}
+.container{max-width:1040px;margin:0 auto;padding:32px 0 48px;display:flex;flex-direction:column;gap:24px}
+.table{width:100%;border-collapse:collapse}
+.table th{text-align:left;font-size:11px;line-height:1.4;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#4A4A4A;padding:12px 16px;border-bottom:.5px solid rgba(0,0,0,.08)}
+.table td{padding:0 16px;height:56px;border-bottom:.5px solid rgba(0,0,0,.08);font-size:14px;line-height:1.6;color:#4A4A4A}
+.table tr:last-child td{border-bottom:0}
+a:focus-visible,button:focus-visible{outline:2px solid #2F7A1F;outline-offset:2px}
+</style>
+</head>
+<body>
+<p class="meta">W1 · Web admin back office · verification queue, 4 waiting, oldest first · AC-9.1, 9.3 · 1280px desktop, design system v1.3 tokens. Layout, table and top navigation are proposals (web gaps W-G1 to W-G4).</p>
+<div class="web">
+<header class="topbar"><span class="wordmark">SparkCircles · Admin</span><nav class="nav" style="flex:1"><a class="active" href="#" aria-current="page">Verifications</a><a href="#">Members</a></nav><span class="body">Claire M.</span><a class="link-quiet" href="#">Log out</a></header>
+<main class="container">
+  <div class="stack g4">
+    <h1>Verifications</h1>
+    <p class="body">4 waiting · oldest first · target: decision within 48 hours</p>
+  </div>
+
+  <section class="card" style="display:flex;align-items:center;gap:32px;padding:24px" aria-label="Oldest waiting verification">
+    <div class="stack g4" style="flex:1">
+      <div style="display:flex;align-items:center;gap:8px"><p class="label">Oldest waiting</p><span class="badge b-yellow">Over 24 h</span></div>
+      <p class="h3">Thomas R.</p>
+      <p class="cap">ID card · sent 1 Oct, 07:40</p>
+    </div>
+    <div class="stack" style="align-items:flex-end"><p class="data">31 h</p><p class="cap">waiting</p></div>
+    <button class="btn btn-primary" style="width:auto">Review</button>
+  </section>
+
+  <section class="stack g12">
+    <p class="label">Next</p>
+    <div class="card" style="padding:0">
+      <table class="table">
+        <thead><tr><th scope="col">Member</th><th scope="col">Document</th><th scope="col">Sent</th><th scope="col">Waiting</th><th scope="col"><span style="position:absolute;left:-9999px">Action</span></th></tr></thead>
+        <tbody>
+          <tr><td class="h3">Inès B.</td><td>Passport</td><td>2 Oct, 09:12</td><td class="h3">6 h</td><td style="text-align:right"><a class="link" href="#">Review</a></td></tr>
+          <tr><td class="h3">Marc D.</td><td>Residence permit</td><td>2 Oct, 11:30</td><td class="h3">3 h</td><td style="text-align:right"><a class="link" href="#">Review</a></td></tr>
+          <tr><td class="h3">Claire M. <span class="cap">(you)</span></td><td>Driving licence</td><td>2 Oct, 13:58</td><td class="h3" style="color:#6E6E6E">1 h</td><td style="text-align:right"><span class="cap">Your own verification. Another admin reviews it.</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div><button class="btn btn-ghost" style="width:auto"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Find a member</button></div>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<script>
+  // Back office dialogs (BUG-14): native <dialog> opened with showModal(), so the rest of the
+  // page is inert, Escape closes it and focus goes back to the button that opened it.
+  // Focus moves to the dialog title on open (design section 8).
+  (function () {
+    function open(dialog, opener) {
+      dialog._opener = opener || document.activeElement;
+      dialog.showModal();
+      var title = dialog.querySelector("h2");
+      if (title) { title.setAttribute("tabindex", "-1"); title.focus(); }
+    }
+    document.addEventListener("click", function (event) {
+      var opener = event.target.closest("[data-dialog-open]");
+      var target = opener && document.getElementById(opener.dataset.dialogOpen);
+      if (target) { event.preventDefault(); open(target, opener); }
+      var closer = event.target.closest("[data-dialog-close]");
+      if (closer) { event.preventDefault(); closer.closest("dialog").close(); }
+    });
+    document.querySelectorAll("dialog.modal").forEach(function (dialog) {
+      dialog.addEventListener("close", function () { if (dialog._opener) dialog._opener.focus(); });
+      if (dialog.dataset.openOnLoad === "true") open(dialog, document.querySelector('[data-dialog-open="' + dialog.id + '"]'));
+    });
+    // W2: show the validity date the approval will give (AC-7.11).
+    var expiry = document.getElementById("document_expires_on");
+    var output = document.getElementById("validity-until");
+    if (expiry && output) {
+      var cap = new Date(output.dataset.cap + "T00:00:00");
+      expiry.addEventListener("input", function () {
+        if (!expiry.value) return;
+        var doc = new Date(expiry.value + "T00:00:00");
+        var until = doc < cap ? doc : cap;
+        output.textContent = until.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) +
+          (doc < cap ? " (the document's expiry date)" : " (2 years, before the document expires)");
+      });
+    }
+  })();
+</script>

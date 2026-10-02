@@ -1,0 +1,15 @@
+<%= @greeting %>
+
+<% @lines.each do |line| %>
+<%= line %>
+
+<% end %>
+<% if @note %>
+<%= @note %>
+
+<% end %>
+<% if @action_url %>
+<%= @action_label %>: <%= @action_url %>
+
+<% end %>
+<%= t("account_mailer.signature") %>

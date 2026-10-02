@@ -1,0 +1,127 @@
+<p><%= target_link "← Members", admin_members_path %></p>
+<div class="title-row">
+  <h1><%= @member.first_name %> <%= @member.last_name %></h1>
+  <% if @member.security_locked? %><span class="badge badge-yellow"><%= admin_icon(:lock, size: 12) %> Locked</span><% end %>
+</div>
+<p class="caption"><%= admin_icon(:lock, size: 14) %> Your access is recorded: <%= reason_phrase(@reason) %>.</p>
+
+<% if @restore_error %>
+  <div class="notification notification-error" role="alert"><%= admin_icon(:alert_circle) %>
+    <span><strong>This email can't be restored</strong><br>Another account uses it now. Contact the member through the report and decide the next step with the team.</span></div>
+<% end %>
+<% if @close_error %>
+  <div class="notification notification-error" role="alert"><%= admin_icon(:alert_circle) %>
+    <span>Not closed: write why you're closing the report. It's recorded in the audit log.</span></div>
+<% end %>
+
+<% if @open_report %>
+  <%= render "admin/members/report_card", report: @open_report %>
+<% end %>
+
+<div class="card">
+  <dl>
+    <dt>Email</dt><dd><%= @member.email %></dd>
+    <dt>Roles</dt><dd><%= @member.role_names.map(&:humanize).join(", ") %></dd>
+    <dt>Verification</dt>
+    <dd><%= verification_badge(@member) %>
+      <% if @member.verified? %> until <%= admin_date(@member.verification_expires_on) %><% end %></dd>
+    <% if @member.closed? %><dt>Account</dt><dd>Closed, erased on <%= admin_date(@member.erasure_on) %></dd><% end %>
+  </dl>
+
+  <% policy = Admin::MemberPolicy.new(current_admin, @member) %>
+  <div class="actions">
+    <% if @member.verified? && policy.revoke_verification? %>
+      <button type="button" class="btn btn-destructive" data-dialog-open="revoke-dialog"><%= admin_icon(:shield_x) %> Remove verification</button>
+    <% end %>
+    <% if policy.grant_admin? %>
+      <button type="button" class="btn btn-ghost" data-dialog-open="role-dialog">Give admin role</button>
+    <% elsif policy.remove_admin? %>
+      <button type="button" class="btn btn-ghost" data-dialog-open="role-dialog">Remove admin role</button>
+    <% end %>
+  </div>
+</div>
+
+<% if @past_reports.any? %>
+  <% if @past_reports.size > 1 %>
+    <details>
+      <summary>Past reports (<%= @past_reports.size %>)</summary>
+      <% @past_reports.each do |report| %><%= render "admin/members/report_card", report: report, close_reasons: @close_reasons %><% end %>
+    </details>
+  <% else %>
+    <%= render "admin/members/report_card", report: @past_reports.first, close_reasons: @close_reasons %>
+  <% end %>
+<% end %>
+
+<% if @open_report && Admin::MemberPolicy.new(current_admin, @member).restore_email? %>
+  <dialog class="modal" id="restore-dialog" aria-labelledby="restore-title">
+    <div class="card">
+      <h2 id="restore-title">Restore the previous email?</h2>
+      <p><strong><%= masked_email(@open_report.previous_email) %></strong> becomes the login email again. We'll send a password reset link to it, the account unlocks, and <strong><%= masked_email(@open_report.new_email) %></strong> no longer works for this account.</p>
+      <%= form_with url: restore_email_admin_member_path(@member), method: :post do |f| %>
+        <%= hidden_field_tag :email_change_id, @open_report.id %>
+        <div class="actions">
+          <%= f.submit "Restore and send the link", class: "btn btn-primary" %>
+          <button type="button" class="btn btn-ghost" data-dialog-close>Cancel</button>
+        </div>
+      <% end %>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="close-report-dialog" aria-labelledby="close-report-title" data-open-on-load="<%= @close_error %>">
+    <div class="card">
+      <h2 id="close-report-title">Close without restoring?</h2>
+      <p>The account keeps <strong><%= masked_email(@open_report.new_email) %></strong>, unlocks, and the member sets a new password through a link sent to <strong><%= masked_email(@open_report.new_email) %></strong>.</p>
+      <%= form_with url: close_report_admin_member_path(@member), method: :post do |f| %>
+        <%= hidden_field_tag :email_change_id, @open_report.id %>
+        <div class="field <%= 'field-error' if @close_error %>">
+          <%= f.label :note, "Why are you closing it? (recorded in the audit log)" %>
+          <%= f.text_area :note, rows: 3, maxlength: 1000, required: true, "aria-describedby": ("close-error" if @close_error) %>
+          <% if @close_error %><%= render "admin/shared/field_error", id: "close-error", message: "Write why you're closing the report." %><% end %>
+        </div>
+        <div class="actions">
+          <%= f.submit "Close the report", class: "btn btn-primary" %>
+          <button type="button" class="btn btn-ghost" data-dialog-close>Cancel</button>
+        </div>
+      <% end %>
+    </div>
+  </dialog>
+<% end %>
+
+<dialog class="modal" id="revoke-dialog" aria-labelledby="revoke-title">
+  <div class="card">
+    <h2 id="revoke-title">Remove this verification?</h2>
+    <p>The member will see "Your verification was removed" with your note, and can't host new events.</p>
+    <%= form_with url: revoke_verification_admin_member_path(@member), method: :post do |f| %>
+      <fieldset style="border: 0; padding: 0; margin: 0 0 16px">
+        <legend class="visually-hidden">Reason</legend>
+        <% { "safety_report" => "Safety report", "other" => "Other" }.each do |value, label| %>
+          <label class="radio"><%= f.radio_button :revocation_reason, value, required: true %> <span><%= label %></span></label>
+        <% end %>
+      </fieldset>
+      <div class="field">
+        <%= f.label :note, "Note for the member" %>
+        <%= f.text_area :note, rows: 3, maxlength: 500 %>
+      </div>
+      <div class="actions">
+        <%= f.button type: "submit", class: "btn btn-destructive" do %><%= admin_icon(:shield_x) %> Remove verification<% end %>
+        <button type="button" class="btn btn-ghost" data-dialog-close>Cancel</button>
+      </div>
+    <% end %>
+  </div>
+</dialog>
+
+<% if Admin::MemberPolicy.new(current_admin, @member).grant_admin? || Admin::MemberPolicy.new(current_admin, @member).remove_admin? %>
+  <% granting = Admin::MemberPolicy.new(current_admin, @member).grant_admin? %>
+  <dialog class="modal" id="role-dialog" aria-labelledby="role-title">
+    <div class="card">
+      <h2 id="role-title"><%= granting ? "Give the admin role?" : "Remove the admin role?" %></h2>
+      <p><%= granting ? "#{@member.display_name} will see identity documents and members' personal data. Every access is recorded." : "#{@member.display_name} loses access to the back office at once. Their account stays." %></p>
+      <%= form_with url: (granting ? grant_admin_admin_member_path(@member) : remove_admin_admin_member_path(@member)), method: :post do |f| %>
+        <div class="actions">
+          <%= f.submit (granting ? "Give admin role" : "Remove admin role"), class: "btn btn-primary" %>
+          <button type="button" class="btn btn-ghost" data-dialog-close>Cancel</button>
+        </div>
+      <% end %>
+    </div>
+  </dialog>
+<% end %>
