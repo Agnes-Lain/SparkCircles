@@ -1,6 +1,6 @@
 # API contract: Accounts and verification (v1)
 
-> Feature slug: `accounts-and-verification` · Author: developer · Date: 2026-10-02
+> Feature slug: `accounts-and-verification` · Author: developer · Date: 2026-10-02 · Updated 2026-10-03 (QA fix round: token renewal, AC-7.15 renewals, AC-13.10, revocation message)
 >
 > Spec: [`specs/accounts-and-verification.md`](../specs/accounts-and-verification.md) · Design: [`design/accounts-and-verification.md`](../design/accounts-and-verification.md) · Setup: [`backend-setup-proposal.md`](backend-setup-proposal.md)
 >
@@ -18,6 +18,7 @@
 
 - `POST /sessions` (and the other endpoints that log a device in) returns `{ "token": "<jwt>" }`. The app stores it in secure storage and sends `Authorization: Bearer <jwt>` on every request.
 - One token = one device. A token stops working when: the user logs out on that device, logs out everywhere, resets or changes the password, confirms an email change on another device, closes the account, reports "This wasn't me", or **doesn't use it for 30 days** (AC-3.4). Then the API answers `401 unauthorized` and the app shows Log in.
+- **Token renewal (AC-3.4):** a token is valid 60 days. While a device keeps using the app, a response may carry a renewed token in its `Authorization: Bearer <jwt>` header (when less than 30 days are left). The app replaces the stored token with it. The previous token keeps working until its own expiry; logging out the device ends both.
 - A token never grants admin access, even for an admin (AC-9.7).
 
 ### Account gates
@@ -85,13 +86,15 @@ Returned by `GET /me` and by every endpoint that logs a device in. Only the owne
     "expires_soon": false,
     "revoked": false,
     "submitted_at": "2026-10-02T12:05:00Z",
-    "rejection": null
+    "rejection": null,
+    "renewal": null
   }
 }
 ```
 
 - `verification.status`: `not_verified` · `pending` · `verified` · `rejected` · `expired` (AC-7.x). `verified` is the server rule (status verified **and** not past `expires_on`, AC-8.5). `expires_soon` is true within 30 days of expiry (A1 "Expires soon"). `revoked` is true when an admin removed the verification (A1 "Removed"; status is then `not_verified`).
-- `rejection` (when `rejected` or `revoked`): `{ "reason": "photo_blurry", "message": "The photo is blurry. Take a new one in good light.", "note": "optional admin note" }`. Reason keys: `photo_blurry`, `document_cut_off`, `document_expired`, `document_not_accepted`, `selfie_mismatch`, `name_mismatch` (design W3); revocation uses `safety_report` or `other`.
+- `rejection` (when `rejected` or `revoked`): `{ "reason": "photo_blurry", "message": "The photo is blurry. Take a new one in good light.", "note": "optional admin note" }`. Reason keys: `photo_blurry`, `document_cut_off`, `document_expired`, `document_not_accepted`, `selfie_mismatch`, `name_mismatch` (design W3); revocation uses `safety_report` or `other`, also with a plain-words `message` (AC-7.9).
+- `renewal` (AC-7.15): `null`, or, while the parent is still verified and has sent a new verification early, `{ "status": "pending" | "rejected", "submitted_at": "…", "rejection": null | { reason, message, note } }`. The app shows "Renewal pending"; `status` stays `verified` and `verified` stays `true` until the old verification expires or the renewal is decided. A rejected renewal keeps the old expiry and can be sent again.
 - `closure` (during the grace period): `{ "closed_at": "…", "erasure_on": "2026-11-01" }`.
 - `pending_email`: the new address waiting for confirmation (A3 caption), else `null`.
 
@@ -209,9 +212,10 @@ Only these fields, whatever the requester's role (AC-6.4). `verified` is a boole
 | `selfie` | same |
 | `date_of_birth` | `YYYY-MM-DD`, 18+ |
 
-- `201` `{ "verification": { … "status": "pending" } }`. Files are encrypted by the server before storage (AC-10.2).
-- `409 verification_pending` if one is already pending (AC-7.5).
-- `422 validation_failed` (`blank`, `invalid_type`, `too_large`, `invalid`).
+- `201` `{ "verification": { … "status": "pending" } }`. For a parent who is still verified (renewal, AC-7.15): `"status": "verified"` with `"renewal": { "status": "pending" }`.
+- Photos are re-encoded by the server without any metadata (EXIF, GPS), then encrypted before storage (AC-10.2). PNG stays PNG; JPEG and HEIC are stored as JPEG.
+- `409 verification_pending` if one is already pending, renewals included (AC-7.5).
+- `422 validation_failed` (`blank`, `invalid_type` for files that aren't readable images, `too_large`, `invalid`).
 
 ### Verification rule used by every module (AC-7.1, 7.14, 8.4, 8.5)
 
@@ -239,7 +243,9 @@ The file contains: account (names, email, locale, dates), profile, roles, consen
 
 ## 9. Web back office (not part of the JSON API)
 
-Server-rendered pages under `/admin`, cookie session with CSRF protection, password + 6-digit authenticator code (AC-9.5), logged out after 12 hours of inactivity. Any request with a mobile token is refused there (AC-9.7). Pages: log in + code (W0), verification queue (W1), review with approve / not accepted (W2, W3), member search with a reason (W4), member detail with role changes, verification removal and "This wasn't me" reports (W5). Every view of sensitive data writes an audit entry (AC-10.4).
+Server-rendered pages under `/admin`, cookie session with CSRF protection, password + 6-digit authenticator code (AC-9.5), logged out after 12 hours of inactivity. Any request with a mobile token is refused there (AC-9.7). Pages: log in + code (W0, QR code setup at the first login; 5 wrong codes lock the code step for 15 minutes; logout ends the session on the server), verification queue (W1), review with approve / not accepted (W2, W3), "This wasn't me" reports and member search with a reason (W4), member detail with role changes, verification removal and the open report (W5: "Restore previous email" or "Close without restoring", both confirmed in a dialog; both invalidate the current password, end every device session and send a reset link; closing needs a reason kept encrypted in the audit log; no admin acts on their own account, AC-13.8, AC-13.10). Every view of sensitive data writes an audit entry (AC-10.4).
+
+One-time tokens (confirmation, reset, "This wasn't me") never go through job arguments or logs: the email jobs read or create them when they run (AC-10.6).
 
 ## 10. Acceptance criteria → endpoints
 
@@ -265,6 +271,7 @@ Server-rendered pages under `/admin`, cookie session with CSRF protection, passw
 | 7.8 | `PATCH /me` |
 | 7.10 | job: erase ID files 30 days after the decision |
 | 7.11–7.13 | approval rule + daily expiry/reminder job |
+| 7.15 | `POST /verification` renewal, `verification.renewal`, back office decision |
 | 8.3 | app copy (B1) |
 | 9.4, 9.5, 9.7 | back office auth |
 | 10.1–10.3, 10.6 | encryption, filtered logs, no sensitive data in URLs |
@@ -274,4 +281,5 @@ Server-rendered pages under `/admin`, cookie session with CSRF protection, passw
 | 11.4–11.8 | job: erase closed accounts after 30 days |
 | 12.1–12.3 | `/data_export` |
 | 13.1–13.6, 13.9 | `POST /me/email_change`, `POST /email_confirmations` |
-| 13.7, 13.8 | `POST /email_change_reports`, back office W5 |
+| 13.7, 13.8 | `POST /email_change_reports`, back office W4/W5 (restore) |
+| 13.10 | back office W5 (close without restoring) |
