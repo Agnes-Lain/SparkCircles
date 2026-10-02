@@ -1,12 +1,171 @@
 # QA report: Accounts and verification (v1)
 
-> Feature slug: `accounts-and-verification` · Author: qa · Date: 2026-10-02
+> Feature slug: `accounts-and-verification` · Author: qa
 >
-> PR: [#2](https://github.com/Agnes-Lain/SparkCircles/pull/2), branch `feat/accounts-and-verification`. App code tested at commit `5de0dde`. Later commits on the branch (`cf61ac5`, `40f6a00`, `bf708fd`) only touch docs.
-> Sources: [spec](../specs/accounts-and-verification.md) (approved; AC-7.15 added later), [design](../design/accounts-and-verification.md) (approved), [API contract](../api/accounts-and-verification.md), [design system](../SPARKCIRCLES_Design_System_EN.md) (v1.3 at PR time, v1.4 since).
+> PR: [#2](https://github.com/Agnes-Lain/SparkCircles/pull/2), branch `feat/accounts-and-verification`.
+> - **Round 1** (2026-10-02): code at `5de0dde`. Verdict FAIL.
+> - **Round 2** (2026-10-03, re-test after the developer's fix round): code at `f973051`.
+>
+> Sources: [spec](../specs/accounts-and-verification.md) (approved, with AC-7.15 and AC-13.10 added on 2026-10-02), [design](../design/accounts-and-verification.md) (approved, with section 8 for reports), [API contract](../api/accounts-and-verification.md) (updated 2026-10-03), [design system](../SPARKCIRCLES_Design_System_EN.md) v1.4.
 > Scope: backend only. That means the Rails API in `api/` and the ERB admin web back office. There is no mobile app yet.
 
-## Verdict: **FAIL**
+## Round 2 (re-test, 2026-10-03)
+
+### Round 2 verdict: **PASS WITH ISSUES**
+
+- **Round 1 bugs:** all 15 (BUG-01 to BUG-15) are fixed, and I checked each fix with evidence. That includes the 4 majors.
+- **New and changed requirements:** all implemented, and they behave as specified (AC-7.15, AC-13.10 with design section 8, EXIF stripping, breached-password list, 2FA QR code, SparkCircles brand, French "tu", 60-day renewed device tokens).
+- **Regression pass:** clean.
+- **New bugs:** 3 minor, no blocker or major:
+  - R2-01: on the admin's own report, the action buttons do nothing.
+  - R2-02: wrong screen-reader label on the nav report count.
+  - R2-03: the password step alone ends the admin's live session.
+
+The PR can merge once the PM accepts these 3 minors, or after a short follow-up. The PM should also review the developer choices listed below.
+
+### Round 2 automated checks
+
+| Check | Command (in `api/`) | Result |
+|---|---|---|
+| RuboCop | `bundle exec rubocop` | 140 files, **no offenses** (my round 2 QA spec: no offenses either) |
+| RSpec | `bundle exec rspec` | Developer + round 1 QA suite: **226 examples, 0 failures, 0 pending** (the 6 round-1 `pending` examples now pass). With my round 2 QA spec: **236 examples, 0 failures** |
+| Brakeman | `bin/brakeman --no-pager` | **0 security warnings**, 0 errors |
+| bundler-audit | `bundle exec bundler-audit check --update` | **No vulnerabilities found** (new gems `image_processing`, `rqrcode` included) |
+| Migrations | test DB: full `db:rollback STEP=13` (empty schema, `audit_events_protect()` dropped), `db:migrate`, `db:rollback STEP=4` (the 4 new migrations), `db:migrate` | All clean and reversible. Running the migrations re-dumps `structure.sql` with a different text form of the CHECK constraints (pg_dump formatting of equivalent `ARRAY[...]` expressions). I restored the committed file; this has no functional impact. |
+| Mobile (lint, `tsc`, Jest) | n/a | **Not testable: no mobile app yet** |
+
+Environment: Ruby 4.0.7, libvips 8.18.7 (HEIC/HEIF loader present), PostgreSQL 18 on port 5433.
+- Suites ran on the test database.
+- I checked the back office in a browser on a temporary server on the test database, with my own seed data. I reset that database afterwards.
+- I used the dev server on port 3000 only for a read-only header and title check, and didn't stop it.
+
+### Round 1 bugs: re-test
+
+| Bug | Sev. | Status | Evidence |
+|---|---|---|---|
+| BUG-01 admin code attempts in the cookie | major | **Fixed** | The round 1 QA example (12 wrong codes with the replayed cookie, then the right code) now ends at `/admin/login`, and the right code no longer logs in. Wrong codes are counted on the account (`otp_failed_attempts`, `otp_locked_until`). The cookie nonce is checked against a digest on the account. `rate_limit` 10 per 15 min on the code steps. Round 2 QA example: after 5 wrong codes, a fresh password login plus the right code is still refused for 15 min. |
+| BUG-02 restore keeps the attacker's password | major | **Fixed** | Round 1 QA example passes: login with the old password after restore is refused. `secure_and_unlock!` sets a random password, revokes every device token and the back office session, and queues the reset email. |
+| BUG-03 raw tokens in logs and job arguments | major | **Fixed** | See the note on the adapted example below. My round 2 QA examples extend it to the sign-up confirmation token and the "This wasn't me" token: neither appears in stored job arguments nor in ActiveJob/ActionMailer logs at `info`. `MailDeliveryJob.log_arguments = false` adds a second guard. |
+| BUG-04 admin session survives logout | minor | **Fixed** | Round 1 QA example passes: a cookie copied before "Log out" gets a redirect to login. |
+| BUG-05 click targets under 44 px | major | **Fixed** | Browser, 800 px: no visible link, button, input or summary under 44 px tall on W1, W4, W5 (`getBoundingClientRect`). The W5 dialog buttons are 55 px. |
+| BUG-06 statistic id reveals erasure time | minor | **Fixed** | Round 1 QA example passes. The column default is now `gen_random_uuid()`. |
+| BUG-07 login timing | minor | **Fixed (code)** | `User.spend_password_check_time` runs a bcrypt compare for unknown emails in the API and the back office, plus a developer spec. I didn't measure timing. |
+| BUG-08 W1 hero card hidden | minor | **Fixed** | Browser: with the admin's own verification oldest (40 h), the hero card shows Thomas R. (31 h) with "Over 24 h" and Primary "Review". |
+| BUG-09 invisible W3 error | minor | **Fixed** | Developer spec, and the same pattern checked in the browser on the AC-13.10 dialog: a server refusal reopens the dialog with the field error and shows a page notification. |
+| BUG-10 field errors | minor | **Fixed** | `_field_error` partial under the field with `aria-describedby`; email kept after a wrong password (developer spec + template). |
+| BUG-11 badges | minor | **Fixed** | v1.4 variants (yellow Not accepted / Expired / Pending, neutral Not verified; 4px 10px, 11px/500), developer spec. |
+| BUG-12 revocation message null | minor | **Fixed** | `verification.revocation_messages.*` (FR + EN) rendered in `rejection.message`; contract updated. |
+| BUG-13 1-year hard token expiry | minor | **Fixed** | Round 2 QA example: 60-day token. Used at day 20, no renewal. At day 35, a renewed token in the `Authorization` response header, only once per device. The renewed token works, and "Log out of all devices" kills both. A device unused for 30 days still gets 401 and no renewal. |
+| BUG-14 dialogs | minor | **Fixed** | Browser: native `<dialog>` via `showModal()`, focus moves to the H2, Escape closes, focus returns to the opener, `aria-labelledby` set. Confirmation dialogs exist for restore, close, revoke and role changes. `aria-current="page"` on the active nav link. |
+| BUG-15 cosmetic | cosmetic | **Fixed** | `shield-x` icon on "Remove verification", toasts ("You're logged out" seen), W5 caption keeps its case ("\"This wasn't me\" report"), W2 validity date computed in the browser. |
+
+**About the adapted BUG-03 example:** I agree with the change, and the example still proves the fix.
+- The token now only exists when the job runs, so the example captures the stored job arguments right after enqueueing. It then runs the jobs with the logger still captured, so the "Performing ..." log lines are included.
+- It reads the real token from the delivered email and checks that the token is absent from both.
+- It would fail again if a token were passed to a job, or logged by ActiveJob at `info`.
+- Limit: it captures only the ActiveJob logger and covers only the reset token. My round 2 examples add the ActionMailer logger and the two other tokens.
+
+### New and changed requirements
+
+| Item | Result | Evidence / note |
+|---|---|---|
+| **AC-7.15** early renewal | **Pass** | Round 2 QA example: a verified parent's renewal returns 201 with `status: verified`, `verified: true` and `renewal.status: pending`. Other members still see `verified: true` on `GET /users/:id`. The round 1 example (badge kept) passes. Developer specs cover approve (new expiry), reject (old expiry kept, can resubmit), old expiry first (status `pending`) and a second renewal (409). |
+| **AC-13.10** + design section 8 | **Pass**, with minor R2-01 | Browser checks:<br>• W4: reports above search, "2 open" yellow badge, caption, date + time columns, Waiting with "Over 24 h", "Review" links, count in the nav.<br>• W5: report card first with yellow "Locked" and "Open" badges, rows with masked emails, Primary "Restore previous email" and Ghost "Close without restoring", each with its own confirmation dialog. The close dialog requires a reason: a whitespace-only note is refused server-side and the dialog reopens with the error.<br>Developer specs: restore and close effects (unlock, random password, tokens revoked, reset email, reason encrypted in the audit log) and the 403 for one's own report. |
+| **EXIF/GPS stripping** | **Pass** | Developer spec with a GPS-tagged JPEG, plus a round 2 QA example: an iPhone HEIC is accepted, stored encrypted and re-encoded as JPEG, with no `Exif` marker and `front_content_type` `image/jpeg`. Unreadable files are refused as `invalid_type`. There is a pixel cap against decompression bombs. |
+| **Breached-password list** | **Pass** | I downloaded `10-million-password-list-top-100000.txt` from SecLists commit `2d5dc75…` myself. It has 100,000 entries, of which 2,344 have 10+ characters. Compared case-insensitively, every one is in `config/common_passwords.txt`, and the file adds French entries. `PasswordPolicyValidator` reads the file. Round 2 QA example: `Basketball`, `1q2w3e4r5t6y` and `azerty1234` are refused at sign-up with `too_common`. |
+| **QR code** (2FA setup) | **Pass** | Browser: the QR renders (finder patterns visible), with the typed key and an "Add to authenticator" link as fallback. The container has `role="img"` and an aria-label naming SparkCircles admin; the SVG is `aria-hidden`. Round 2 QA example: `Cache-Control: no-store`, issuer `SparkCircles admin` in the provisioning URI, sanitized SVG (no script, event handler or foreignObject). Pure black/white QR colours are hard-coded in the controller, which is justified for scannability. |
+| **"SparkCircles" branding** | **Pass** | No "SPARKCIRCLES" left in `app/`, `config/`, `lib/` or seeds. Ripple logo SVG in the top bar and login cards. `<title>` is "SparkCircles admin" (also on the running dev server). Sender name and TOTP issuer use the brand. Developer spec. |
+| **French "tu"** | **Pass** | No `vous`, `votre` or `vos` in `config/locales/fr.yml`; developer spec guards it. |
+| **Device-token renewal** | **Pass** | See BUG-13 above. Contract section 1 documents the header and the 60-day lifetime. |
+
+### Round 2 regression pass (security areas)
+
+| Area | Result |
+|---|---|
+| Admin TOTP | Account-level lock (5 codes, 15 min), nonce digest rotated at each step, IP rate limit on code steps, backup codes still single use (developer spec). |
+| Admin sessions | Logout and role removal end the session server-side. A second full login ends the first (developer choice). **R2-03:** the password step alone also ends it. |
+| Device tokens | Per-device logout, all-devices logout, password change, reset, closure and email change all revoke by device, renewed tokens included (developer and QA specs). 30-day inactivity still enforced. |
+| Round 1 QA examples (22) | All pass, with no `pending` left. They cover encryption at rest, lockout, closure gate, error shape, mass assignment, the mobile-token refusal on admin routes, self-review refusal, image-grant scope, erasure sweep and file retention. |
+| Rate limits | Unchanged from round 1. New `rate_limit` on the admin code steps (code check). |
+| Brakeman / audit | Clean. |
+
+### Round 2 new bugs
+
+**R2-01 (minor): On the admin's own report, the W5 buttons do nothing (AC-13.10, design section 8)**
+- Steps:
+  1. Have an open "This wasn't me" report on the logged-in admin's own account.
+  2. Open W5 for that account.
+  3. Click "Restore previous email" or "Close without restoring".
+- Expected: no actions on one's own report, with a caption like W1's ("Your own verification. Another admin reviews it."). The server already refuses with 403.
+- Actual: both buttons are shown, but their dialogs aren't rendered, because `restore_email?` is false for one's own account. Clicking does nothing: `document.getElementById(...)` returns `null` and the script throws a TypeError. There is no explanation.
+- Code: `api/app/views/admin/members/_report_card.html.erb` renders the buttons without the policy check that `show.html.erb` uses for the dialogs.
+
+**R2-02 (minor): The nav report count reads "2 open report" (design section 8)**
+- Steps: with 2 open reports, inspect the "Members" nav badge.
+- Expected: `aria-label="2 open reports"`.
+- Actual: `aria-label="2 open report"`. `pluralize` runs under the default `fr` locale, which has no English plural rules.
+- Also, an `aria-label` on a plain `<span>` isn't reliably announced. Visually hidden text, for example `<span class="visually-hidden"> open reports</span>`, would be more robust.
+
+**R2-03 (minor): Passing only the password step ends the admin's live back-office session**
+- Steps:
+  1. Admin A is logged in.
+  2. From another browser, someone posts A's email and password to `/admin/login` but doesn't enter a code.
+  3. A clicks anything.
+- Expected: a live session should only end after the second factor succeeds elsewhere. This matches the developer's own description: "logging in again elsewhere ends the previous session".
+- Actual: A is sent to the login page. `SessionsController#create` calls `start_admin_session!`, which overwrites `admin_session_digest`, at the password step.
+- Impact: anyone who knows the password but not the code can keep logging the admin out. It doesn't grant access.
+- Evidence: round 2 QA example "PM review: passing only the password step ends the admin's live back office session". It asserts today's behaviour and will need updating if this is fixed.
+- Fix hint: keep a separate pending-login digest, and replace the live digest only in `complete_login!`.
+
+### Developer choices for the PM to review (not bugs)
+
+1. **One back-office session per admin:** a new full login ends the previous one. This is reasonable for a small admin group and breaks no rule. See R2-03 for the password-step side effect.
+2. **Self-action rule on restore and close:** no admin can restore or close a report about their own account (403). AC-13.10 requires this for closing; extending it to restore matches AC-9.3 and is sensible. See R2-01 for the UI side.
+3. **Neutral "Closed without restoring" badge:** not in design section 8, which only designs "Restored ✓". Neutral grey fits the design system (no action needed, not a success), but the designer should confirm the badge and the closed-card caption.
+4. **Emails write the brand as text** ("SparkCircles") instead of the logo. That's acceptable, since SVG isn't reliable in email clients and v1.4 asks for the name as plain text in copy. A hosted PNG lockup can come later.
+
+Also worth knowing:
+- **Renewed tokens:** the previous token stays valid until its own expiry (up to 30 days more), as the contract documents. A leaked old token therefore lives a bit longer. Logout and "all devices" kill both.
+- **Production HEIC:** HEIC decoding in production depends on the Debian `libvips` build having libheif with an HEVC decoder. Upload an iPhone photo once on the staging image before launch. iPhones send HEIC by default, and a missing decoder would refuse every iPhone photo as `invalid_type`.
+- **Raw confirmation token:** Devise still stores the sign-up/email-change confirmation token raw in `users.confirmation_token` (it's valid 24 h). Devise's default, unchanged since round 1.
+- **Unchanged from round 1:** production Active Storage service (open point D-21 in the PR), audit entries after erasure (GDPR advisor), backups.
+
+### Round 2 coverage notes
+
+- These are the same as round 1: mobile UI, push notifications, Events/Community-dependent ACs (7.1, 8.4 real use, 11.7, 11.9) and backups are not testable.
+- I didn't measure login timing (BUG-07). I checked the code instead.
+- I checked the QR code visually and its provisioning URI, but didn't scan it with a phone.
+
+### Round 2 regression risks
+
+- Auth now has more server-side state: `admin_session_digest`, OTP counters, and `device_id` on tokens. Future auth features (passkeys, parent 2FA, support role) must go through `start_admin_session!` / `complete_login!` and `revoke_device!` / `revoke_all_tokens!`, or they'll reopen BUG-01, BUG-04 or BUG-13.
+- Any new email with a one-time link must go through `AccountTokenEmailJob` (or create the token in the mailer), not pass it as an argument.
+- Any new upload of personal photos must reuse `ImageSanitizer` before `attach_encrypted`.
+- The mobile client must store the renewed token from the `Authorization` response header, or users will be logged out after 60 days.
+
+### Round 2 tests added by QA (uncommitted)
+
+- `api/spec/qa/accounts_and_verification_round2_qa_spec.rb`: 10 examples, all passing. They cover:
+  - Breached list at sign-up
+  - HEIC accepted and re-encoded without metadata
+  - Confirmation and "This wasn't me" tokens absent from stored job arguments and logs
+  - Token renewal, single renewal per device, and all-devices logout killing renewed tokens
+  - No renewal after 30 days of inactivity
+  - AC-7.15 renewal keeps `verified` for others
+  - OTP lock surviving a new password login
+  - R2-03 (current behaviour)
+  - 2FA setup page (`no-store`, issuer, sanitized and labelled QR)
+- `api/spec/fixtures/files/qa_photo.heic`: a 3.5 KB HEIC fixture.
+
+### Round 2 bugs to file (blocker and major)
+
+None. The 3 new bugs are minor. Before opening any GitHub issue I'll ask the PM.
+
+---
+
+## Round 1 (2026-10-02, code at `5de0dde`)
+
+### Round 1 verdict: **FAIL**
 
 There are no blockers, and the automated checks are all green. The core rules work and the tests cover them well: neutral messages, token revocation, gates, encryption at rest, the audit log, erasure and file retention.
 
@@ -19,7 +178,7 @@ The PR still fails on **4 major bugs**. Three are security gaps in the trust fou
 
 Each one is a small, local fix.
 
-## Automated checks
+### Automated checks
 
 | Check | Command (in `api/`) | Result |
 |---|---|---|
@@ -32,7 +191,7 @@ Each one is a small, local fix.
 
 Environment: Ruby 4.0.7, Rails 8.1.4, PostgreSQL 18 on port 5433, test database. I also used a temporary server on the test database to check the back office in a browser, and a dev server only for rate-limit probes that write nothing. I reset the test database afterwards.
 
-## Acceptance criteria
+### Acceptance criteria
 
 Evidence: "dev spec" means the developer's RSpec example of the same AC. "QA spec" means `api/spec/qa/accounts_and_verification_qa_spec.rb`.
 
@@ -96,9 +255,9 @@ Evidence: "dev spec" means the developer's RSpec example of the same AC. "QA spe
 | **13.8** | **Fail** | **BUG-02** |
 | 13.9 | Pass | |
 
-## Bugs
+### Bugs
 
-### Major
+#### Major
 
 **BUG-01: The admin second-factor attempt limit can be bypassed (AC-9.5)**
 - Steps:
@@ -140,7 +299,7 @@ Evidence: "dev spec" means the developer's RSpec example of the same AC. "QA spe
   - Measured at or above 44 px: buttons, nav links, "Log out", radio rows
 - Expected: at least 44 px.
 
-### Minor
+#### Minor
 
 **BUG-04: The admin session still works after "Log out"**
 - Steps: save the cookie after a full login, log out, send the saved cookie to `GET /admin/verifications`.
@@ -187,7 +346,7 @@ Evidence: "dev spec" means the developer's RSpec example of the same AC. "QA spe
 - "Restore previous email" acts at once, with no confirmation dialog (W5: "each action confirms in a dialog").
 - The active nav link has no `aria-current="page"` (the mockups have it).
 
-### Cosmetic
+#### Cosmetic
 
 **BUG-15: Small visual and copy deviations**
 - "Remove verification" uses the `log-out` icon.
@@ -196,7 +355,7 @@ Evidence: "dev spec" means the developer's RSpec example of the same AC. "QA spe
 - The W2 validity caption is static instead of the computed date in the design ("valid until 2 Oct 2028").
 - Admin feedback uses flash banners instead of toasts.
 
-## Not bugs, but worth the PM's attention
+### Not bugs, but worth the PM's attention
 
 - **AC-7.15** (early renewal) is a new requirement. It is not implemented yet: see the table.
 - **Brand v1.4** landed after the PR. The back office still types "SPARKCIRCLES" as text (login card, top bar, `<title>`), where v1.4 asks for the SVG wordmark and "SparkCircles" in copy. It should be updated in a follow-up and is not counted as a bug of this PR.
@@ -217,7 +376,7 @@ Evidence: "dev spec" means the developer's RSpec example of the same AC. "QA spe
   Email change (5/hour) is checked in code only. The admin code step has no limit (BUG-01). In the test environment the cache is a null store, so specs can't cover rate limits.
 - **Design-system compliance (back office):** colours exist only as CSS custom properties in `admin/shared/_styles.html.erb`, with the v1.3 values, and there are no other hex values in the views. Weights are 400/500. The type scale matches. Contrast pairs match the design's table: Ink 3 captions 5.1:1, yellow badge 5.12:1, error notification 5.76:1, links 4.99–5.35:1. A visible focus ring is set (`:focus-visible`, 2 px green-dark), and inputs use the green-dark border per the design. Reduced motion is respected.
 
-## Coverage notes (not testable and why)
+### Coverage notes (not testable and why)
 
 - Mobile app: not testable, there is no app yet. That covers TypeScript types against the contract, UI states, skeletons, the 320 px layout, large text, tap counts and copy for screens S, A, V and B1.
 - AC-7.1, 8.4 (real use), 11.7, 11.9: these depend on Events and Community. The `require_verified!` building block and the `verified?` rule are verified.
@@ -226,7 +385,7 @@ Evidence: "dev spec" means the developer's RSpec example of the same AC. "QA spe
 - Back-office loading and network-error states: server-rendered pages have neither, so they don't apply.
 - I didn't change the dev server or the dev database. I used the dev server only for rate-limit probes that write nothing.
 
-## Regression risks for other modules
+### Regression risks for other modules
 
 - **Events, Community, Travel, Market** will rely on `require_verified!` and `User#verified?`. Implementing AC-7.15 will change what "verified" means during a renewal, so every restricted action must keep using the single `verified?` rule. Don't read `verification_status` directly.
 - Any new mailer sent with `deliver_later` and a token in its arguments has BUG-03 until it is fixed globally.
@@ -234,7 +393,7 @@ Evidence: "dev spec" means the developer's RSpec example of the same AC. "QA spe
 - Children's data (family profile) must use `personal_data` (encryption) and be added to `Accounts::Eraser` and `DataExportBuilder`.
 - The cookie session is shared by all back-office pages, so BUG-01 and BUG-04 affect any future admin feature.
 
-## Tests added by QA (uncommitted)
+### Tests added by QA (uncommitted)
 
 - `api/spec/qa/accounts_and_verification_qa_spec.rb`: 22 examples, 16 passing and 6 pending.
 - The passing examples cover:
@@ -255,7 +414,7 @@ Evidence: "dev spec" means the developer's RSpec example of the same AC. "QA spe
   - ID file retention boundaries
 - The pending examples reproduce BUG-01, 02, 03, 04, 06 and AC-7.15. RSpec flags each one when it starts passing, so its `pending` line can then be removed.
 
-## Bugs to file (blocker and major)
+### Bugs to file (blocker and major)
 
 Before opening GitHub issues I'll ask the PM. With approval I'd file:
 
