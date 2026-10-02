@@ -68,17 +68,17 @@ fr:
       name_mismatch: "Le nom sur le document ne correspond pas à ton compte. Mets ton nom à jour ou utilise un autre document."
   account_mailer:
     greeting: "Bonjour %{first_name},"
-    signature: "L'équipe SPARKCIRCLES"
+    signature: "L'équipe SparkCircles"
     confirmation_instructions:
       subject: "Confirme ton e-mail"
       lines:
-        - "Bienvenue sur SPARKCIRCLES ! Touche le bouton ci-dessous dans les 24 heures pour confirmer ton e-mail."
+        - "Bienvenue sur SparkCircles ! Touche le bouton ci-dessous dans les 24 heures pour confirmer ton e-mail."
         - "Tu n'as pas créé de compte ? Tu peux ignorer cet e-mail."
       action: "Confirmer mon e-mail"
     email_change_confirmation:
       subject: "Confirme ta nouvelle adresse e-mail"
       lines:
-        - "Touche le bouton ci-dessous dans les 24 heures pour utiliser cette adresse pour ton compte SPARKCIRCLES."
+        - "Touche le bouton ci-dessous dans les 24 heures pour utiliser cette adresse pour ton compte SparkCircles."
         - "Ton adresse actuelle reste active jusqu'à ta confirmation."
       action: "Confirmer ma nouvelle adresse"
     reset_password_instructions:
@@ -90,7 +90,7 @@ fr:
     registration_attempt:
       subject: "Quelqu'un a essayé de s'inscrire avec ton e-mail"
       lines:
-        - "Quelqu'un vient d'essayer de créer un compte SPARKCIRCLES avec cet e-mail. Tu as déjà un compte, rien n'a changé."
+        - "Quelqu'un vient d'essayer de créer un compte SparkCircles avec cet e-mail. Tu as déjà un compte, rien n'a changé."
         - "Mot de passe oublié ? Tu peux le réinitialiser."
       action: "Réinitialiser mon mot de passe"
     account_locked:
@@ -102,27 +102,27 @@ fr:
     password_changed:
       subject: "Ton mot de passe a été modifié"
       lines:
-        - "Ton mot de passe SPARKCIRCLES vient d'être modifié et tes autres appareils ont été déconnectés."
+        - "Ton mot de passe SparkCircles vient d'être modifié et tes autres appareils ont été déconnectés."
         - "Si ce n'était pas toi, réinitialise ton mot de passe tout de suite."
       action: "Réinitialiser mon mot de passe"
     email_change_attempt:
       subject: "Quelqu'un a essayé d'utiliser ton e-mail"
       lines:
-        - "Quelqu'un a essayé d'utiliser cet e-mail pour un autre compte SPARKCIRCLES. Rien n'a changé sur ton compte."
+        - "Quelqu'un a essayé d'utiliser cet e-mail pour un autre compte SparkCircles. Rien n'a changé sur ton compte."
     email_changed:
       subject: "Ton e-mail a été modifié"
       lines:
-        - "C'est désormais l'e-mail de ton compte SPARKCIRCLES."
+        - "C'est désormais l'e-mail de ton compte SparkCircles."
     email_changed_notice:
-      subject: "L'e-mail de ton compte SPARKCIRCLES a été modifié"
+      subject: "L'e-mail de ton compte SparkCircles a été modifié"
       lines:
-        - "Le %{date}, l'e-mail de ton compte SPARKCIRCLES a été remplacé par une autre adresse."
+        - "Le %{date}, l'e-mail de ton compte SparkCircles a été remplacé par une autre adresse."
         - "Si ce n'était pas toi, touche le bouton ci-dessous dans les 30 jours. Nous sécuriserons ton compte immédiatement."
       action: "Ce n'était pas moi"
     closure_confirmation:
       subject: "Ton compte est fermé"
       lines:
-        - "Ton compte SPARKCIRCLES est fermé et ton profil est masqué."
+        - "Ton compte SparkCircles est fermé et ton profil est masqué."
         - "Tes données personnelles seront effacées le %{date}. Tu as changé d'avis ? Connecte-toi avant cette date pour garder ton compte."
     verification_approved:
       subject: "Tu es vérifié·e"
@@ -132,7 +132,7 @@ fr:
       subject: "Ta vérification doit être refaite"
       lines:
         - "%{reason}"
-        - "Ouvre SPARKCIRCLES pour l'envoyer à nouveau."
+        - "Ouvre SparkCircles pour l'envoyer à nouveau."
     verification_revoked:
       subject: "Ta vérification a été retirée"
       lines:
@@ -154,5 +154,5 @@ fr:
     data_export_ready:
       subject: "Tes données sont prêtes"
       lines:
-        - "La copie de tes données SPARKCIRCLES est prête. Télécharge-la depuis l'application jusqu'au %{date}."
+        - "La copie de tes données SparkCircles est prête. Télécharge-la depuis l'application jusqu'au %{date}."
       action: "Télécharger mes données"

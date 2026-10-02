@@ -1,4 +1,4 @@
-# SPARKCIRCLES API
+# SparkCircles API
 
 Rails 8.1 API-only backend. Setup decisions: [`docs/api/backend-setup-proposal.md`](../docs/api/backend-setup-proposal.md).
 

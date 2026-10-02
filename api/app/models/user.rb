@@ -1,4 +1,4 @@
-# A SPARKCIRCLES account: an adult (18+) with one or several roles (US-1, AC-1.7).
+# A SparkCircles account: an adult (18+) with one or several roles (US-1, AC-1.7).
 class User < ApplicationRecord
   include EncryptedPersonalData
   include Devise::JWT::RevocationStrategies::Allowlist

@@ -59,3 +59,18 @@ RSpec.describe AccountMailerPreview do
     end
   end
 end
+
+RSpec.describe "French and brand copy" do
+  it "uses \"tu\" in every French text (design system v1.4, voice and tone)" do
+    french = Rails.root.join("config/locales/fr.yml").read
+
+    expect(french).not_to match(/\b(vous|votre|vos|veuillez)\b/i)
+  end
+
+  it "writes the brand as SparkCircles" do
+    copy = %w[config/locales/fr.yml config/locales/en.yml app/views/layouts/mailer.html.erb].map { |path| Rails.root.join(path).read }.join
+
+    expect(copy).not_to include("SPARKCIRCLES")
+    expect(copy).to include("SparkCircles")
+  end
+end

@@ -24,7 +24,7 @@ Devise.setup do |config|
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
-  config.mailer_sender = ENV.fetch("MAIL_FROM", "SPARKCIRCLES <hello@sparkcircles.localhost>")
+  config.mailer_sender = ENV.fetch("MAIL_FROM", "SparkCircles <hello@sparkcircles.localhost>")
 
   # Configure the class responsible to send e-mails.
   # Our own mailer (French + English templates, delivered through Active Job).

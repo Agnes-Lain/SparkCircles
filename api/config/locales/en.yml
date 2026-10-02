@@ -58,17 +58,17 @@ en:
       other: "Our team removed your verification. Verify again to host events."
   account_mailer:
     greeting: "Hi %{first_name},"
-    signature: "The SPARKCIRCLES team"
+    signature: "The SparkCircles team"
     confirmation_instructions:
       subject: "Confirm your email"
       lines:
-        - "Welcome to SPARKCIRCLES! Tap the button below within 24 hours to confirm your email."
+        - "Welcome to SparkCircles! Tap the button below within 24 hours to confirm your email."
         - "Didn't create an account? You can ignore this email."
       action: "Confirm my email"
     email_change_confirmation:
       subject: "Confirm your new email"
       lines:
-        - "Tap the button below within 24 hours to use this address for your SPARKCIRCLES account."
+        - "Tap the button below within 24 hours to use this address for your SparkCircles account."
         - "Your current email keeps working until you confirm."
       action: "Confirm my new email"
     reset_password_instructions:
@@ -80,7 +80,7 @@ en:
     registration_attempt:
       subject: "Someone tried to sign up with your email"
       lines:
-        - "Someone just tried to create a SPARKCIRCLES account with this email. You already have one, so nothing changed."
+        - "Someone just tried to create a SparkCircles account with this email. You already have one, so nothing changed."
         - "Forgot your password? You can reset it."
       action: "Reset my password"
     account_locked:
@@ -92,27 +92,27 @@ en:
     password_changed:
       subject: "Your password was changed"
       lines:
-        - "Your SPARKCIRCLES password was just changed and your other devices were logged out."
+        - "Your SparkCircles password was just changed and your other devices were logged out."
         - "If it wasn't you, reset your password right away."
       action: "Reset my password"
     email_change_attempt:
       subject: "Someone tried to use your email"
       lines:
-        - "Someone tried to use this email for another SPARKCIRCLES account. Nothing changed on your account."
+        - "Someone tried to use this email for another SparkCircles account. Nothing changed on your account."
     email_changed:
       subject: "Your email was changed"
       lines:
-        - "This is now the email of your SPARKCIRCLES account."
+        - "This is now the email of your SparkCircles account."
     email_changed_notice:
-      subject: "Your SPARKCIRCLES email was changed"
+      subject: "Your SparkCircles email was changed"
       lines:
-        - "On %{date}, the email of your SPARKCIRCLES account was changed to another address."
+        - "On %{date}, the email of your SparkCircles account was changed to another address."
         - "If it wasn't you, tap the button below within 30 days. We'll secure your account at once."
       action: "This wasn't me"
     closure_confirmation:
       subject: "Your account is closed"
       lines:
-        - "Your SPARKCIRCLES account is closed and your profile is hidden."
+        - "Your SparkCircles account is closed and your profile is hidden."
         - "Your personal data will be erased on %{date}. Changed your mind? Log in before then to keep your account."
     verification_approved:
       subject: "You're verified"
@@ -122,7 +122,7 @@ en:
       subject: "Your verification needs another try"
       lines:
         - "%{reason}"
-        - "Open SPARKCIRCLES to send it again."
+        - "Open SparkCircles to send it again."
     verification_revoked:
       subject: "Your verification was removed"
       lines:
@@ -144,5 +144,5 @@ en:
     data_export_ready:
       subject: "Your data is ready"
       lines:
-        - "Your copy of your SPARKCIRCLES data is ready. Download it from the app until %{date}."
+        - "Your copy of your SparkCircles data is ready. Download it from the app until %{date}."
       action: "Download my data"

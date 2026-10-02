@@ -1,5 +1,5 @@
 module Accounts
-  # AC-12.1: everything SPARKCIRCLES holds about the user, in JSON. Never the ID images.
+  # AC-12.1: everything SparkCircles holds about the user, in JSON. Never the ID images.
   class DataExportBuilder
     def initialize(user)
       @user = user

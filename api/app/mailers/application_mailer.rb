@@ -1,5 +1,5 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: -> { ENV.fetch("MAIL_FROM", "SPARKCIRCLES <hello@sparkcircles.localhost>") }
+  default from: -> { ENV.fetch("MAIL_FROM", "SparkCircles <hello@sparkcircles.localhost>") }
   layout "mailer"
 
   private
