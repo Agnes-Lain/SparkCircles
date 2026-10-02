@@ -4,10 +4,63 @@
 >
 > PR: [#2](https://github.com/Agnes-Lain/SparkCircles/pull/2), branch `feat/accounts-and-verification`.
 > - **Round 1** (2026-10-02): code at `5de0dde`. Verdict FAIL.
-> - **Round 2** (2026-10-03, re-test after the developer's fix round): code at `f973051`.
+> - **Round 2** (2026-10-03, re-test after the developer's fix round): code at `f973051`. Verdict PASS WITH ISSUES.
+> - **Round 3** (2026-10-03, check of the R2 fixes and the closing-reason row): code at `2765e0c`.
 >
 > Sources: [spec](../specs/accounts-and-verification.md) (approved, with AC-7.15 and AC-13.10 added on 2026-10-02), [design](../design/accounts-and-verification.md) (approved, with section 8 for reports), [API contract](../api/accounts-and-verification.md) (updated 2026-10-03), [design system](../SPARKCIRCLES_Design_System_EN.md) v1.4.
 > Scope: backend only. That means the Rails API in `api/` and the ERB admin web back office. There is no mobile app yet.
+
+## Round 3 (check, 2026-10-03)
+
+### Round 3 verdict: **PASS**
+
+- **Fixes:** R2-01, R2-02 and R2-03 are fixed.
+- **New closing-reason row:** behaves as the PM-approved design section 8 says. Admins see it, the read is audited, it's stored encrypted, and members never get it.
+- **Side changes:** all check out.
+- **Checks:** all green. The new migration is reversible.
+- **Bugs:** no new bug, and no open bug left from rounds 1 and 2.
+
+### Round 3 checks
+
+| Check | Result |
+|---|---|
+| RuboCop | 142 files, no offenses (my QA specs included) |
+| RSpec | 240 examples, 0 failures in 6.4 s (developer + QA rounds 1–2). With my round 3 spec: **245 examples, 0 failures**. |
+| Brakeman | 0 security warnings |
+| bundler-audit | No vulnerabilities found |
+| Migration `20261003150000_add_admin_pending_digest_to_users` | Test DB: up, then `db:rollback` (column gone), then `db:migrate` (column back). I restored the committed `structure.sql` after the pg_dump re-dump, as in round 2. |
+
+### Round 3 results
+
+| Item | Result | Evidence |
+|---|---|---|
+| **R2-01** own-account report actions | **Fixed** | `_report_card` checks `MemberPolicy#restore_email?`. On one's own report it shows "This report is about your own account. Another admin handles it." and no buttons. The dialog script now ignores openers with no dialog. Developer spec, plus a round 3 QA example (no `data-dialog-open` for restore or close, and the report stays open). |
+| **R2-02** nav count label | **Fixed** | The count is `aria-hidden`, followed by visually hidden text from `admin.nav.open_reports` (one/other in EN and FR). The back office runs in English, so the text reads "2 open reports". Developer spec. |
+| **R2-03** password step ends the live session | **Fixed** | The password step now writes a separate `admin_pending_digest`. The live `admin_session_digest` only rotates in `complete_login!`, and the code-step lock clears only the pending login. **The developer's change to my R2-03 example (expecting `200`) is the correct expectation**: the round 2 example asserted the buggy behaviour on purpose, as noted then. |
+| **Closing reason row** (design section 8) | **Pass** | Round 3 QA examples:<br>• The reason is stored only in the audit entry's encrypted `note`; the raw `audit_events` rows don't contain it.<br>• W5 shows "Closed without restoring" with the reason.<br>• Opening W5 writes a `viewed_member` audit entry whose fields include `report_close_reasons`.<br>• The reason is absent from the member's report-closed and reset emails, from `PUT /password_resets`, `GET /me`, `GET /verification` and `GET /me/public_profile`, and from the downloaded data copy. |
+| Back office always in English | **Pass** | `around_action` `I18n.with_locale(:en)` in `Admin::BaseController` only. Round 3 QA example: right after an admin request, the member's report-closed email still uses the French subject (the mailer composes in `user.locale`). A token-less API request still answers in French, and `I18n.locale` is back to the default. Read-only check on the running dev server: `/admin/login` has `lang="en"` even with `Accept-Language: fr`, and `/api/v1/me` still answers "Connecte-toi pour continuer." |
+| Caption double-period fix | **Pass** | `sentence_end` helper. Round 3 QA example: "…by Agnes A. The email stayed…" with no "A..". |
+| CI HEIC decoding | **Pass (config)** | `.github/workflows/api.yml` installs `libheif-plugin-libde265` with `libvips-dev`. CI is green according to the coordinator, and my HEIC example runs in the suite. The production image still needs the staging upload check from round 2. |
+| **Test quality: BUG-04 "sleep"** | **No issue** | No `sleep` anywhere in `api/spec` (`git log -S sleep` finds none). The BUG-04 example in `spec/requests/admin/authentication_spec.rb` uses `travel 31.seconds`, which is time travel: ROTP reads the stubbed clock, so a fresh code exists without waiting. Time is reset after the example. The whole suite runs in about 6.5 s, and the slowest example takes 0.14 s. The PR description's word "sleeps" is inaccurate, but the test is correct. |
+
+### Round 3 notes for the PM
+
+- **A competing password step can still cancel a pending login.** If someone with the password runs the password step while the real admin is on the code step, the admin's pending login is replaced and they must enter their password again. A logged-in session is never affected. This follows from the one-session-per-admin choice and is not a bug.
+- **Still open from earlier rounds** (not bugs, outside this PR's code):
+  - A staging check that production `libvips` decodes iPhone HEIC
+  - The production file storage decision (D-21)
+  - GDPR advisor points on backups and audit entries after erasure
+
+### Round 3 tests added by QA (uncommitted)
+
+`api/spec/qa/accounts_and_verification_round3_qa_spec.rb`: 5 examples, all passing.
+- Closing reason: admin-only, audited and encrypted
+- Closing reason absent from the member's emails, API responses and data copy
+- Caption with a single period
+- R2-01 own-report explanation
+- English back office not leaking into member emails and API
+
+---
 
 ## Round 2 (re-test, 2026-10-03)
 
