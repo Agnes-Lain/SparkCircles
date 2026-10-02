@@ -25,7 +25,7 @@ RSpec.describe "Account closure", type: :request do
       end
 
       expect(user.reload).to be_closed
-      expect(user.marketing_opt_in).to be(false)
+      expect(user.receives_marketing?).to be(false)
       [ headers, other_device ].each do |device|
         get "/api/v1/me", headers: device
         expect(response).to have_http_status(:unauthorized)
@@ -49,6 +49,7 @@ RSpec.describe "Account closure", type: :request do
       expect(response).to have_http_status(:ok)
       expect(json["closure"]).to be_nil
       expect(user.reload).not_to be_closed
+      expect(user.receives_marketing?).to be(true)
     end
 
     it "returns 404 when no closure is pending" do

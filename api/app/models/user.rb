@@ -130,6 +130,9 @@ class User < ApplicationRecord
     self.privacy_accepted_at = at
   end
 
+  # AC-11.2: closed accounts never receive marketing, whatever their saved choice.
+  def receives_marketing? = marketing_opt_in && confirmed? && !closed?
+
   def marketing_opt_in=(value)
     value = ActiveModel::Type::Boolean.new.cast(value) || false
     self.marketing_opt_in_changed_at = Time.current if value != marketing_opt_in

@@ -1,6 +1,6 @@
 # Backend setup proposal (`api/`)
 
-> Author: developer · Date: 2026-10-02 · **Status: reviewed by the PM on 2026-10-02.** All decisions are approved or changed by the PM, except **D-37 (web back office), awaiting PM**. The skeleton in `api/` is set up per section 11.
+> Author: developer · Date: 2026-10-02 · **Status: reviewed by the PM on 2026-10-02.** All decisions are approved or changed by the PM (D-37 approved and D-23 changed on 2026-10-02). The skeleton in `api/` is set up per section 11.
 >
 > Serves: [`specs/accounts-and-verification.md`](../specs/accounts-and-verification.md) (approved 2026-10-02, amended with US-13 email change and AC-9.7 web back office), designed so it doesn't block the [backlog](../backlog.md): provider role (#5), paid plans (#6), several roles per account, extra admin roles (#10), children data (#3), per-user encryption keys (#16).
 >
