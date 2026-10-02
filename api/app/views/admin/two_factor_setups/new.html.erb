@@ -2,7 +2,7 @@
   <span class="logo"><%= render "admin/shared/logo" %></span>
   <h2>Connect your authenticator app</h2>
   <p>Admins confirm every login with a 6-digit code. Scan this QR code with your authenticator app.</p>
-  <div class="qr" role="img" aria-label="QR code to add SparkCircles admin to your authenticator app"><%= @qr_svg.html_safe %></div>
+  <div class="qr" role="img" aria-label="QR code to add SparkCircles admin to your authenticator app"><%= sanitize @qr_svg, tags: %w[svg rect path], attributes: %w[xmlns version viewBox width height fill d transform shape-rendering x y aria-hidden focusable] %></div>
   <p class="caption">Can't scan? Type this key in the app:</p>
   <p class="codes" style="columns: 1"><%= @secret.scan(/.{1,4}/).join(" ") %></p>
   <p class="caption">On this phone? <%= target_link "Add to authenticator", @provisioning_uri %></p>
