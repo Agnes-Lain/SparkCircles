@@ -1,0 +1,45 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies & builds
+node_modules/
+dist/
+build/
+.expo/
+coverage/
+
+# iOS / Android
+ios/Pods/
+*.xcuserstate
+DerivedData/
+android/.gradle/
+android/app/build/
+*.keystore
+!debug.keystore
+
+# Logs
+*.log
+npm-debug.log*
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Rails (api/)
+api/config/master.key
+api/config/credentials/*.key
+api/log/*
+api/tmp/*
+api/storage/*
+!api/log/.keep
+!api/tmp/.keep
+!api/storage/.keep
+api/.bundle/
+api/vendor/bundle/

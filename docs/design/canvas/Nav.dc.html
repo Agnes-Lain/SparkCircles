@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SPARKCIRCLES – Nav bar states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1A1A1A}
+.nav{background:#fff;border:.5px solid rgba(0,0,0,.08);border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.04);padding:6px;display:flex;gap:2px}
+.label{font-size:11px;line-height:1.4;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#4A4A4A;margin:0 0 8px}
+.tab{flex:1;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:transparent;border-radius:12px;font:500 11px/1.4 inherit;font-family:inherit}
+.tab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.h{color:#2F7A1F}.e{color:#6B5BC4}.c{color:#1F6FA8}.m{color:#B03A78}.t{color:#8F5E00}
+.h.on{background:#A5E07F;color:#1A1A1A}.e.on{background:#C5B8F5;color:#1A1A1A}.c.on{background:#8FD3F7;color:#1A1A1A}.m.on{background:#FFB6D3;color:#1A1A1A}.t.on{background:#FFD93D;color:#1A1A1A}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-h" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
+<symbol id="i-e" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></symbol>
+<symbol id="i-c" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.8 0 4.5 1.9 4.5 4.5"/></symbol>
+<symbol id="i-m" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 016 0v2"/></symbol>
+<symbol id="i-t" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9"/><path d="M16 7l3 3"/></symbol>
+</defs></svg>
+<div class="root" style="width:390px;height:520px;box-sizing:border-box;background:#F8F7F4;padding:24px 16px;display:flex;flex-direction:column;gap:16px">
+
+<div>
+<p class="label">Home active · green</p>
+<div class="nav">
+<button class="tab h on" aria-label="Home"><svg><use href="#i-h"/></svg>Home</button>
+<button class="tab e" aria-label="Events"><svg><use href="#i-e"/></svg>Events</button>
+<button class="tab c" aria-label="Community"><svg><use href="#i-c"/></svg>Community</button>
+<button class="tab m" aria-label="Market"><svg><use href="#i-m"/></svg>Market</button>
+<button class="tab t" aria-label="Travel"><svg><use href="#i-t"/></svg>Travel</button>
+</div>
+</div>
+
+<div>
+<p class="label">Events active · violet</p>
+<div class="nav">
+<button class="tab h" aria-label="Home"><svg><use href="#i-h"/></svg>Home</button>
+<button class="tab e on" aria-label="Events"><svg><use href="#i-e"/></svg>Events</button>
+<button class="tab c" aria-label="Community"><svg><use href="#i-c"/></svg>Community</button>
+<button class="tab m" aria-label="Market"><svg><use href="#i-m"/></svg>Market</button>
+<button class="tab t" aria-label="Travel"><svg><use href="#i-t"/></svg>Travel</button>
+</div>
+</div>
+
+<div>
+<p class="label">Community active · sky</p>
+<div class="nav">
+<button class="tab h" aria-label="Home"><svg><use href="#i-h"/></svg>Home</button>
+<button class="tab e" aria-label="Events"><svg><use href="#i-e"/></svg>Events</button>
+<button class="tab c on" aria-label="Community"><svg><use href="#i-c"/></svg>Community</button>
+<button class="tab m" aria-label="Market"><svg><use href="#i-m"/></svg>Market</button>
+<button class="tab t" aria-label="Travel"><svg><use href="#i-t"/></svg>Travel</button>
+</div>
+</div>
+
+<div>
+<p class="label">Market active · cotton pink</p>
+<div class="nav">
+<button class="tab h" aria-label="Home"><svg><use href="#i-h"/></svg>Home</button>
+<button class="tab e" aria-label="Events"><svg><use href="#i-e"/></svg>Events</button>
+<button class="tab c" aria-label="Community"><svg><use href="#i-c"/></svg>Community</button>
+<button class="tab m on" aria-label="Market"><svg><use href="#i-m"/></svg>Market</button>
+<button class="tab t" aria-label="Travel"><svg><use href="#i-t"/></svg>Travel</button>
+</div>
+</div>
+
+<div>
+<p class="label">Travel active · sunny yellow</p>
+<div class="nav">
+<button class="tab h" aria-label="Home"><svg><use href="#i-h"/></svg>Home</button>
+<button class="tab e" aria-label="Events"><svg><use href="#i-e"/></svg>Events</button>
+<button class="tab c" aria-label="Community"><svg><use href="#i-c"/></svg>Community</button>
+<button class="tab m" aria-label="Market"><svg><use href="#i-m"/></svg>Market</button>
+<button class="tab t on" aria-label="Travel"><svg><use href="#i-t"/></svg>Travel</button>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":520}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
