@@ -21,7 +21,7 @@
 
 ## 1. Objective
 
-Parents need to trust the people they meet through SPARKCIRCLES before they bring their children to an event, share a school pick-up or hand over their home. This feature gives everyone a secure account, protects their personal data under GDPR, and makes identity verification visible, so that a stranger cannot use the app to lure families and their children.
+Parents need to trust the people they meet through SparkCircles before they bring their children to an event, share a school pick-up or hand over their home. This feature gives everyone a secure account, protects their personal data under GDPR, and makes identity verification visible, so that a stranger cannot use the app to lure families and their children.
 
 All three survey pain points (events #1, travel #2, routine and childcare #3) depend on it: none of these modules can safely exist without trusted accounts. It directly unlocks pain point #1, since hosting an event is the first capability that requires verification.
 
@@ -32,7 +32,7 @@ All three survey pain points (events #1, travel #2, routine and childcare #3) de
 | User | Who | When and where |
 |---|---|---|
 | **Parent** | Mother, father or guardian of young children, 25 to 45, already tired (84% feel tired "sometimes" or "often"). | Signs up in 2 minutes on their phone, in a spare moment (commute, evening on the sofa). Verifies identity later, the day they want to host their first picnic or snack gathering. |
-| **Admin** | SPARKCIRCLES team member (initially the PM). | Works in a separate web back office, not in the mobile app: reviewing identity documents needs a large screen, and keeping admin powers out of the app parents carry everywhere limits the damage if a phone is lost or stolen. Reviews pending verifications from a desk, a few times a day; handles user requests (data copy, closure issues). Has access to the most sensitive data in the system, so every access is traced. |
+| **Admin** | SparkCircles team member (initially the PM). | Works in a separate web back office, not in the mobile app: reviewing identity documents needs a large screen, and keeping admin powers out of the app parents carry everywhere limits the damage if a phone is lost or stolen. Reviews pending verifications from a desk, a few times a day; handles user requests (data copy, closure issues). Has access to the most sensitive data in the system, so every access is traced. |
 
 ## 3. Success metrics
 
@@ -42,7 +42,7 @@ All three survey pain points (events #1, travel #2, routine and childcare #3) de
 
 ## 4. User stories
 
-- **US-1** As a parent, I want to create an account with my email and a password, so that I can start using SPARKCIRCLES in a couple of minutes.
+- **US-1** As a parent, I want to create an account with my email and a password, so that I can start using SparkCircles in a couple of minutes.
 - **US-2** As a parent, I want to confirm my email address, so that the app can reach me and nobody can register with my address.
 - **US-3** As a parent, I want to log in and stay logged in on my phone, and log out when I choose, so that I don't have to type my password every morning.
 - **US-4** As a parent, I want to reset my password when I forget it, so that I never lose access to my family's organization.
@@ -51,10 +51,10 @@ All three survey pain points (events #1, travel #2, routine and childcare #3) de
 - **US-7** As a parent, I want to verify my identity when I decide to host an event, so that other families can trust me and my events.
 - **US-8** As a parent meeting other families, I want to see whether a person is verified before I act, and hosts want to be able to limit some activities to verified people, so that I can protect my children from strangers with bad intentions.
 - **US-9** As an admin, I want to review pending identity verifications and approve or reject them with a reason, so that only real, identified people get the verified badge.
-- **US-10** As a SPARKCIRCLES user, I want my sensitive personal data to be encrypted by the app and accessed only when strictly needed, so that a leak or hack exposes as little as possible about me and my family.
-- **US-11** As a parent, I want to close my account and have my personal data erased, so that I can leave SPARKCIRCLES without leaving my identity behind.
+- **US-10** As a SparkCircles user, I want my sensitive personal data to be encrypted by the app and accessed only when strictly needed, so that a leak or hack exposes as little as possible about me and my family.
+- **US-11** As a parent, I want to close my account and have my personal data erased, so that I can leave SparkCircles without leaving my identity behind.
 - **US-12** As a parent, I want to get a copy of my personal data, so that I can see what the app holds about me (GDPR right of access and portability).
-- **US-13** As a parent, I want to change the email address of my account safely, so that I keep receiving SPARKCIRCLES messages when my address changes, and nobody can take over my account by changing it without my knowledge.
+- **US-13** As a parent, I want to change the email address of my account safely, so that I keep receiving SparkCircles messages when my address changes, and nobody can take over my account by changing it without my knowledge.
 
 ## 5. Acceptance criteria
 
@@ -129,7 +129,7 @@ Verification statuses: **not verified**, **pending**, **verified**, **rejected**
 
 - **AC-8.1** Given any place where a parent is shown to other members in relation to an event, a home or children (profile, event host, event participant list, community member list), then their verification badge is visible before any call to action (join, contact, propose).
 - **AC-8.2** Given a parent who is not verified (including pending, rejected or expired), then other members see a neutral "Not verified" status, not a blank, and never the reason (pending, rejected, expired stay private).
-- **AC-8.3** Given the "Verified" badge, when a member taps it, then they see what it means and what it does not mean: "Identity checked by SPARKCIRCLES. This is not a criminal record check."
+- **AC-8.3** Given the "Verified" badge, when a member taps it, then they see what it means and what it does not mean: "Identity checked by SparkCircles. This is not a criminal record check."
 - **AC-8.4** Given any feature that restricts an action to verified users (first user: an event the host set as "verified users only", Events feature), when a user without a valid verification attempts that action, then the backend refuses it, even through a direct API call, and the user is told they need to verify their identity to take part.
 - **AC-8.5** Given a user whose verification expires or is revoked, then from that moment they are treated as not verified by every restricted action (AC-8.4), without waiting for them to log out or reopen the app.
 
@@ -164,7 +164,7 @@ All admin functions in this spec (verification queue, revocation, admin role man
 - **AC-11.3** Given a closure less than 30 days old, when the person logs in with their email and password, then they are offered to cancel the closure; if they cancel, the account is restored as it was. (30-day grace period confirmed by the PM.)
 - **AC-11.4** Given a closure that reaches 30 days, then all personal data of the account is permanently erased or made unrecoverable (destroying the account's encryption key is acceptable), including in backups, so that no one, admins included, can read it again.
 - **AC-11.5** Given an erased account, then the only data kept are: (a) data a specific legal obligation requires, listed in a retention register with its legal basis and duration, encrypted, accessible only to admins with audited access, and erased at the end of that duration; and (b) non-identifying statistical records of past activity.
-- **AC-11.6** Given the statistical records kept after erasure, then none of them, alone or combined with any other data SPARKCIRCLES holds, allows identifying the person: they contain no name, email, photo, phone, date of birth, IP address, device identifier, exact address or free text written by the person, and any internal identifier they carry is no longer linked to any retained personal data.
+- **AC-11.6** Given the statistical records kept after erasure, then none of them, alone or combined with any other data SparkCircles holds, allows identifying the person: they contain no name, email, photo, phone, date of birth, IP address, device identifier, exact address or free text written by the person, and any internal identifier they carry is no longer linked to any retained personal data.
 - **AC-11.7** Given shared history the person took part in (past events, community activity), then after closure they appear as "Former member", with no name or photo.
 - **AC-11.8** Given an erased account's email address, when someone signs up with it, then a brand-new account is created, with "not verified" status and none of the old data, which cannot be recovered.
 - **AC-11.9** Given a parent hosting upcoming events, when they close their account, then they are told before confirming that those events will be cancelled and participants notified (rule applied by the Events feature).
@@ -241,7 +241,7 @@ All items below are tracked in [`docs/backlog.md`](../backlog.md).
 ### GDPR and privacy risks (not legal advice; to confirm with the GDPR advisor)
 
 - **Erasure on closure (replaces "encrypt, don't delete").** The PM and the GDPR advisor agree that encrypting data while the platform keeps the key is not erasure. v1 therefore erases personal data at the end of a 30-day grace period (crypto-shredding acceptable), including from backups (AC-11.4).
-- **Anonymous vs pseudonymous statistics.** A retained internal ID that is still linked to activity records is **pseudonymous**, which is still personal data under GDPR, unless nothing SPARKCIRCLES holds can link it back to the person. AC-11.6 sets that requirement. Re-identification can also happen indirectly (e.g. the only host of events in a small village, rare combinations of dates and places), so statistics should be coarse enough (aggregated, rounded dates, wide areas) to stay anonymous. The advisor should validate the approach.
+- **Anonymous vs pseudonymous statistics.** A retained internal ID that is still linked to activity records is **pseudonymous**, which is still personal data under GDPR, unless nothing SparkCircles holds can link it back to the person. AC-11.6 sets that requirement. Re-identification can also happen indirectly (e.g. the only host of events in a small village, rare combinations of dates and places), so statistics should be coarse enough (aggregated, rounded dates, wide areas) to stay anonymous. The advisor should validate the approach.
 - **Data kept for legal reasons.** Only what a specific legal obligation requires, listed in a retention register (AC-11.5). Example to check with the advisor: French rules may require online services to keep some identification or connection data of people who publish content (such as event hosts) for a limited period. The app must not keep anything "just in case".
 - **Audit log vs erasure.** Audit entries (kept at least 1 year) refer to users. After erasure they must not allow re-identifying the person beyond what a legal obligation justifies; the advisor should confirm how they are handled.
 - **Identity documents are high-risk data.** Images are erased within 30 days of the decision (AC-7.10), kept until then only for double-checking a decision. Large-scale processing of ID documents in a service involving children likely requires a **Data Protection Impact Assessment (DPIA, Art. 35)** before launch.

@@ -1,4 +1,4 @@
-# SPARKCIRCLES
+# SparkCircles
 
 Mobile app that reduces the mental load of parents and gives their children a joyful universe. It combines four modules:
 

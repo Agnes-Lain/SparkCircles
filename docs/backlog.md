@@ -1,4 +1,4 @@
-# SPARKCIRCLES backlog
+# SparkCircles backlog
 
 > Owner: po · Last updated: 2026-10-02 · Items move out of here when they get their own spec in `docs/specs/<slug>.md`.
 >
