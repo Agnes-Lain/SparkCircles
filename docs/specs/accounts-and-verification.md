@@ -2,7 +2,7 @@
 
 > Feature slug: `accounts-and-verification` · Author: po · **Status: Approved by the PM on 2026-10-02** · Date: 2026-10-02
 >
-> Amended 2026-10-02 at the PM's request: email change, web admin, early renewal (AC-7.15)
+> Amended 2026-10-02 at the PM's request: email change, web admin, early renewal (AC-7.15), close a report without restoring (AC-13.10)
 >
 > **Scope: v1 only, for parents and admins.** It is the foundation every module builds on. Everything deferred (service providers, paid plans, automated verification, extra admin roles…) is in [`docs/backlog.md`](../backlog.md).
 >
@@ -187,6 +187,7 @@ All admin functions in this spec (verification queue, revocation, admin role man
 - **AC-13.7** Given an email change that takes effect, then the old address receives a notice with the date of the change and a "This wasn't me" link, valid for 30 days, that works without logging in.
 - **AC-13.8** Given a "This wasn't me" report, then the account is secured at once: every device is logged out, the account is locked, the report appears to admins in the back office, and an audit entry is recorded; after checking, an admin can restore the previous email address, and the owner then sets a new password through a reset link sent to that address.
 - **AC-13.9** Given an email change that takes effect, then every other device of the user is logged out, and the verification status does not change (only a name change resets it, AC-7.8).
+- **AC-13.10** Given an open "This wasn't me" report, when an admin has checked that the member really made the email change themselves, then the admin can close the report without restoring the previous email: they must confirm and write a reason, which is recorded in the audit log; the account is unlocked, the email stays the new address, the current password stops working, and a password reset link is sent to the current address with a message saying the report was closed; the member logs in again after setting a new password. An admin cannot close a report on their own account (same rule as AC-9.3). (PM decision 2026-10-02.)
 
 ## 6. Out of scope
 

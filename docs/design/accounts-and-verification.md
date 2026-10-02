@@ -433,6 +433,42 @@ Resolved in v1.3 (PM decisions of 2026-10-02): G1 cross-module screens, G2 neutr
 - **W-G6 Hover states** for rows and links (buttons already have one).
 
 **Other notes for the PM**
-- `CLAUDE.md` and `.claude/agents/designer.md` still reference design system "v1.2"; I was not allowed to edit them. They should point to v1.3.
-- The validated "Today" canvas (`docs/design/canvas/Variant.dc.html`) uses the v1.2 mapping (green Home, violet CTA) and has no account avatar; it needs a refresh for v1.3.
+- The "Today" dashboard mockup needs a refresh for the v1.3/v1.4 palette, the account avatar and the Ripple logo.
 - Q2 (admin second factor type) remains with the developer: the design assumes a 6-digit authenticator app code.
+
+
+## 8. Addendum — W4/W5: "This wasn't me" reports (AC-13.7, AC-13.8, AC-13.10) · **approved by the PM on 2026-10-02**, including "Close without restoring"
+
+Review of the screens the developer added (`api/app/views/admin/members/index.html.erb`, `show.html.erb`). The structure is right: a reports list on W4, a report card with "Restore previous email" on W5, existing components and tokens. The changes below make the action safe and let the admin see at a glance what happened and what to do.
+
+### W4 Find a member: reports first
+- Move the reports block **above** the search form: it is the only part of the page that asks the admin to act.
+- Heading: H2 "This wasn't me" reports + `badge-yellow` with the count ("2 open"). Caption under it: "These accounts are locked until you act. Oldest first."
+- Table columns: **Member** (H3 weight, display name) · **Email changed** (date + time, e.g. "2 Oct 2026, 09:14") · **Reported** (date + time) · **Waiting** (H3, e.g. "6 h", `badge-yellow` "Over 24 h" after 24 hours) · action link **"Review"** (same word as the verification queue; replaces "Open"). Keep oldest first.
+- Empty state: Caption "No report is waiting. Reports appear here as soon as a member tells us an email change wasn't them." (no button).
+- Top navigation: when reports are open, show the count next to "Members" (`badge-yellow` "2", `aria-label="2 open reports"`) so admins see it from any page.
+
+### W5 Member detail: report card on top
+- When the member has an open report, show it **first**, directly under the H1 and the audit caption, before the member card.
+- Next to the H1: `badge-yellow` "Locked" (with `lock` icon) while `security_locked`; nothing when not locked. Remove the plain-text "Security" row from the member card (the badge replaces it).
+- **Open report card** (Surface card, `radius-lg`; title row H3 "This wasn't me" report + `badge-yellow` "Open"):
+  - Rows (dt Ink 2 / dd Ink 500): "Email changed" 2 Oct 2026, 09:14 · "Previous email" claire.m@… · "New email" x@… · "Reported" 3 Oct 2026, 18:02 (6 h ago).
+  - Body: "The member says they didn't change their email. Their account is locked and logged out everywhere."
+  - Caption "Before restoring: check that the new address isn't one the member uses, for example by replying to the report from the previous address."
+  - Primary "Restore previous email" (it is the protective, expected action, so Primary and not Destructive).
+- **Restore confirmation** (required): modal dialog, same pattern as "Remove this verification?" (Surface, `radius-xl`, Level 2, Scrim, 480px):
+  - H2 "Restore the previous email?"
+  - Body: "**claire.m@…** becomes the login email again. We'll send a password reset link to it, the account unlocks, and **x@…** no longer works for this account."
+  - Primary "Restore and send the link" · Ghost "Cancel". Focus moves to the dialog title on open and back to the button on cancel; Escape cancels.
+- **Success**: toast/notification Confirmed "Email restored. A password reset link was sent to claire.m@…". The card stays, in its resolved state.
+- **Resolved card** (after restore; also shown for past reports, newest first, collapsed under "Past reports" if more than one): `badge-green` "Restored ✓", Caption "Restored on 3 Oct 2026, 18:20 by Claire M. Reset link sent to claire.m@…". No action.
+- **Error** (previous email now used by another account): Error notification (error-light, `alert-circle`) title "This email can't be restored" / caption "Another account uses it now. Contact the member through the report and decide the next step with the team." The card stays open.
+- **No report**: no card; nothing else changes on W5.
+
+### Copy and tokens notes
+- Sentence case everywhere; no "please" / "successfully" (current copy already follows this).
+- Badges must use the badge spec: `padding: 4px 10px`, `11px/500` (current CSS uses 2px 10px, 12px).
+- Brand in the admin top bar and `<title>`: "SparkCircles" (design system v1.4), ideally the Ripple horizontal lockup at 28 px.
+
+### Resolved: close without restoring (spec AC-13.10, approved by the PM on 2026-10-02)
+- **False report**: if the member did make the change (or reported by mistake), there is no way to close the report without restoring the old email, so the account stays locked. Proposal: a Ghost "Close without restoring" on the open card, with its own confirmation ("The account keeps x@…, unlocks, and the member sets a new password through a link sent to x@…") and a required note for the audit log. Spec line added as AC-13.10.
