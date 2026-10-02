@@ -1,0 +1,33 @@
+# PostgreSQL 18. Locally it runs on port 5433 (Homebrew postgresql@18),
+# so it doesn't clash with older PostgreSQL versions on 5432.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("DB_HOST") { "localhost" } %>
+  port: <%= ENV.fetch("DB_PORT") { 5433 } %>
+  username: <%= ENV["DB_USERNAME"] %>
+  password: <%= ENV["DB_PASSWORD"] %>
+
+development:
+  <<: *default
+  database: sparkcircles_development
+
+test:
+  <<: *default
+  database: sparkcircles_test
+
+# Production uses DATABASE_URL (merged into "primary" by Rails) or the DB_* variables.
+# Solid Cache and Solid Queue live in their own databases on the same server.
+production:
+  primary: &primary_production
+    <<: *default
+    database: sparkcircles_production
+  cache:
+    <<: *primary_production
+    database: sparkcircles_production_cache
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    database: sparkcircles_production_queue
+    migrations_paths: db/queue_migrate
