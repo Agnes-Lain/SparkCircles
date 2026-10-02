@@ -21,6 +21,37 @@ RSpec.describe "Back office authentication", type: :request do
     expect(response).to have_http_status(:ok)
   end
 
+  it "AC-9.5 BUG-01 locks the code step for 15 minutes after 5 wrong codes, counted on the server" do
+    post "/admin/login", params: { email: admin.email, password: "correct-horse-battery" }
+    4.times { post "/admin/login/code", params: { code: "000000" } }
+    expect(response).to have_http_status(:unprocessable_content)
+
+    post "/admin/login/code", params: { code: "000000" }
+    expect(response).to redirect_to("/admin/login")
+    expect(admin.reload).to be_otp_locked
+
+    post "/admin/login", params: { email: admin.email, password: "correct-horse-battery" }
+    post "/admin/login/code", params: { code: admin.reload.current_otp }
+    expect(response).to redirect_to("/admin/login")
+
+    travel 16.minutes do
+      admin_log_in(admin)
+      expect(response).to redirect_to("/admin")
+      expect(admin.reload.otp_failed_attempts).to eq(0)
+    end
+  end
+
+  it "BUG-04 logging in again elsewhere ends the previous back office session" do
+    admin_log_in(admin)
+    first_cookie = cookies["_sparkcircles_admin"]
+    reset!
+    admin_log_in(admin)
+
+    cookies["_sparkcircles_admin"] = first_cookie
+    get "/admin/verifications"
+    expect(response).to redirect_to("/admin/login")
+  end
+
   it "AC-9.5 accepts a backup code once" do
     codes = admin.generate_otp_backup_codes!
     admin.save!

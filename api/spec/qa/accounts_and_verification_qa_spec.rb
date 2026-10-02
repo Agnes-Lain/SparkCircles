@@ -238,7 +238,6 @@ RSpec.describe "QA: accounts and verification", type: :request do
 
   describe "bugs found by QA" do
     it "BUG-01 AC-9.5: the wrong-code limit can't be bypassed by replaying the session cookie" do
-      pending "BUG-01: the attempt counter lives in the client-side cookie session"
       admin = create(:user, :admin)
       post "/admin/login", params: { email: admin.email, password: password }
       fresh_cookie = cookies["_sparkcircles_admin"]
@@ -303,7 +302,6 @@ RSpec.describe "QA: accounts and verification", type: :request do
     end
 
     it "BUG-04: an admin session cookie stops working after Log out" do
-      pending "BUG-04: cookie-store sessions can't be revoked server-side"
       admin = create(:user, :admin)
       admin_log_in(admin)
       logged_in_cookie = cookies["_sparkcircles_admin"]

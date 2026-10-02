@@ -24,7 +24,7 @@ module Admin
 
       User.transaction do
         user.roles.where(name: "admin").delete_all
-        user.update!(otp_secret: nil, otp_required_for_login: false, otp_backup_codes: nil)
+        user.update!(otp_secret: nil, otp_required_for_login: false, otp_backup_codes: nil, admin_session_digest: nil)
         AuditEvent.record!(action: "removed_admin_role", actor: @admin, subject: user, ip_address: @ip_address)
       end
     end

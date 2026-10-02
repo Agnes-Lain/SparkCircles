@@ -102,6 +102,47 @@ class User < ApplicationRecord
   # Admin web sessions only (parents use tokens, see AllowlistedJwt).
   def timeout_in = 12.hours
 
+  # ---- Back office session (AC-9.5, QA BUG-01 and BUG-04) ----
+  # The cookie holds a random nonce; the database holds its digest. Only the latest
+  # nonce works, so a copied or replayed cookie stops working at each step, at logout
+  # and when the code step is locked.
+
+  MAX_OTP_ATTEMPTS = 5
+  OTP_LOCK_DURATION = 15.minutes
+
+  def start_admin_session!
+    nonce = SecureRandom.urlsafe_base64(32)
+    update_columns(admin_session_digest: self.class.admin_nonce_digest(nonce))
+    nonce
+  end
+
+  def admin_session_valid?(nonce)
+    nonce.present? && admin_session_digest.present? &&
+      ActiveSupport::SecurityUtils.secure_compare(self.class.admin_nonce_digest(nonce), admin_session_digest)
+  end
+
+  def end_admin_session!
+    update_columns(admin_session_digest: nil)
+  end
+
+  def self.admin_nonce_digest(nonce) = OpenSSL::Digest::SHA256.hexdigest(nonce.to_s)
+
+  def otp_locked? = otp_locked_until.present? && otp_locked_until.future?
+
+  # Wrong authenticator codes are counted here, never in the cookie.
+  def register_otp_failure!
+    attempts = otp_failed_attempts + 1
+    if attempts >= MAX_OTP_ATTEMPTS
+      update_columns(otp_failed_attempts: 0, otp_locked_until: OTP_LOCK_DURATION.from_now, admin_session_digest: nil)
+    else
+      update_columns(otp_failed_attempts: attempts)
+    end
+  end
+
+  def reset_otp_failures!
+    update_columns(otp_failed_attempts: 0, otp_locked_until: nil)
+  end
+
   # Devise emails go through Active Job, without the token in the job arguments
   # (see DeviseNotificationJob, AC-10.6).
   def send_devise_notification(notification, *_args)

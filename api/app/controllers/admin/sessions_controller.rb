@@ -18,6 +18,7 @@ module Admin
         reset_session
         session[:admin_pending_user_id] = user.id
         session[:admin_pending_at] = Time.current.to_i
+        session[:admin_nonce] = user.start_admin_session!
         redirect_to user.otp_secret.present? ? admin_two_factor_path : admin_two_factor_setup_path
       else
         flash.now[:alert] = user&.access_locked? ? "Too many attempts. Try again in 15 minutes." : "Email or password doesn't match"
@@ -25,7 +26,9 @@ module Admin
       end
     end
 
+    # BUG-04: logging out invalidates the session on the server, so a copied cookie stops working.
     def destroy
+      warden.user(:user)&.end_admin_session!
       warden.logout(:user)
       reset_session
       redirect_to admin_login_path, notice: "You're logged out"

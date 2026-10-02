@@ -1,38 +1,49 @@
 module Admin
-  # Shared by the second-factor steps of W0: the admin passed the password step
-  # less than 10 minutes ago.
+  # Shared by the second-factor steps of W0. The admin passed the password step less
+  # than 10 minutes ago, and the cookie's nonce is still the one stored on the account
+  # (QA BUG-01): replaying an older cookie never brings back a pending login.
   module SecondFactor
     extend ActiveSupport::Concern
 
     PENDING_LIFETIME = 10.minutes
-    MAX_CODE_ATTEMPTS = 5
+    LOCKED_MESSAGE = "Too many wrong codes. Try again in 15 minutes.".freeze
 
     included do
       skip_before_action :authenticate_admin!
       skip_after_action :verify_authorized
       before_action :load_pending_admin
+      rate_limit to: 10, within: 15.minutes, only: :create,
+                 with: -> { redirect_to admin_login_path, alert: LOCKED_MESSAGE }
     end
 
     private
 
     def load_pending_admin
       started = session[:admin_pending_at].to_i
-      @pending_admin = User.find_by(id: session[:admin_pending_user_id]) if started > PENDING_LIFETIME.ago.to_i
-      return if @pending_admin&.admin?
-
-      reset_session
-      redirect_to admin_login_path, alert: "Log in again to continue."
+      user = User.find_by(id: session[:admin_pending_user_id]) if started > PENDING_LIFETIME.ago.to_i
+      if user&.admin? && user.otp_locked?
+        reset_session
+        redirect_to admin_login_path, alert: LOCKED_MESSAGE
+      elsif user&.admin? && user.admin_session_valid?(session[:admin_nonce])
+        @pending_admin = user
+      else
+        reset_session
+        redirect_to admin_login_path, alert: "Log in again to continue."
+      end
     end
 
     def complete_login!(user)
       reset_session
+      user.reset_otp_failures!
       warden.set_user(user, scope: :user)
+      session[:admin_nonce] = user.start_admin_session!
       session[:admin_second_factor_at] = Time.current.to_i
     end
 
-    def too_many_attempts?
-      session[:admin_code_attempts] = session[:admin_code_attempts].to_i + 1
-      return false if session[:admin_code_attempts] <= MAX_CODE_ATTEMPTS
+    # Counts the wrong code on the account. Returns true when the code step is now locked.
+    def register_wrong_code!
+      @pending_admin.register_otp_failure!
+      return false unless @pending_admin.otp_locked?
 
       reset_session
       true

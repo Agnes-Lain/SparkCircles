@@ -21,8 +21,8 @@ module Admin
         @pending_admin.save!
         complete_login!(@pending_admin)
         render :backup_codes
-      elsif too_many_attempts?
-        redirect_to admin_login_path, alert: "Too many wrong codes. Log in again."
+      elsif register_wrong_code!
+        redirect_to admin_login_path, alert: LOCKED_MESSAGE
       else
         flash.now[:alert] = "This code doesn't work. Codes change every 30 seconds, try the new one."
         new

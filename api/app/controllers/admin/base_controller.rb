@@ -24,7 +24,8 @@ module Admin
       return @current_admin if defined?(@current_admin)
 
       user = warden.user(:user)
-      @current_admin = user if user&.admin? && !user.security_locked? && session[:admin_second_factor_at].present?
+      @current_admin = user if user&.admin? && !user.security_locked? && session[:admin_second_factor_at].present? &&
+        user.admin_session_valid?(session[:admin_nonce])
     end
 
     def pundit_user = current_admin
