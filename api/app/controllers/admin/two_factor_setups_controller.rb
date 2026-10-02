@@ -24,7 +24,7 @@ module Admin
       elsif register_wrong_code!
         redirect_to admin_login_path, alert: LOCKED_MESSAGE
       else
-        flash.now[:alert] = "This code doesn't work. Codes change every 30 seconds, try the new one."
+        @code_error = "This code doesn't work. Codes change every 30 seconds, try the new one."
         new
         render :new, status: :unprocessable_content
       end

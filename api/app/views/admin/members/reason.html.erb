@@ -1,4 +1,4 @@
-<p><%= link_to "← Members", admin_members_path %></p>
+<p><%= target_link "← Members", admin_members_path %></p>
 <div class="card centered">
   <h2>Before you open this member</h2>
   <%= form_with url: admin_member_path(@member), method: :get do |f| %>

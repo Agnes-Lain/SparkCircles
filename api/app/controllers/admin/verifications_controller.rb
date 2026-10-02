@@ -9,6 +9,8 @@ module Admin
       authorize Verification, policy_class: VerificationPolicy
       @pagy, @verifications = pagy(:offset, Verification.queue.includes(:user), limit: 25)
       @waiting_count = Verification.pending.count
+      # BUG-08: the hero card shows the oldest verification this admin can review.
+      @oldest_reviewable = Verification.queue.includes(:user).where.not(user_id: current_admin.id).first
     end
 
     # AC-9.2, AC-10.4: opening a review is an audited access to ID images and personal data.

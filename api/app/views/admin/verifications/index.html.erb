@@ -3,26 +3,25 @@
 
 <% if @verifications.empty? %>
   <div class="card" style="text-align: center">
-    <p style="font-size: 32px; margin: 0">🦄</p>
+    <p style="font-size: 32px; margin: 0" aria-hidden="true">🦄</p>
     <h3>All caught up</h3>
     <p>No verification is waiting. New ones appear here, oldest first.</p>
     <%= link_to "Find a member", admin_members_path, class: "btn btn-ghost" %>
   </div>
 <% else %>
-  <% oldest = @verifications.first %>
-  <% if @pagy.page == 1 && oldest.user_id != current_admin.id %>
+  <% if @oldest_reviewable %>
     <div class="card oldest">
       <div class="grow">
         <p class="label">Oldest waiting</p>
-        <h3><%= oldest.user.display_name %></h3>
-        <p class="caption"><%= document_type_label(oldest.document_type) %> · sent <%= l(oldest.submitted_at, format: :short, locale: :en) %></p>
+        <h3><%= @oldest_reviewable.user.display_name %></h3>
+        <p class="caption"><%= document_type_label(@oldest_reviewable.document_type) %> · sent <%= admin_datetime(@oldest_reviewable.submitted_at) %><% if @oldest_reviewable.renewal? %> · renewal<% end %></p>
       </div>
       <div>
-        <p class="data"><%= waiting_hours(oldest) %> h</p>
+        <p class="data"><%= waiting_hours(@oldest_reviewable) %> h</p>
         <p class="caption">waiting</p>
       </div>
-      <% if oldest.waiting_time > 24.hours %><span class="badge badge-yellow">Over 24 h</span><% end %>
-      <%= link_to "Review", admin_verification_path(oldest), class: "btn btn-primary" %>
+      <% if @oldest_reviewable.waiting_time > 24.hours %><span class="badge badge-yellow">Over 24 h</span><% end %>
+      <%= link_to "Review", admin_verification_path(@oldest_reviewable), class: "btn btn-primary" %>
     </div>
   <% end %>
 
@@ -32,15 +31,15 @@
       <tbody>
         <% @verifications.each do |verification| %>
           <tr>
-            <td><%= verification.user.display_name %></td>
+            <td><%= verification.user.display_name %><% if verification.renewal? %> <span class="badge badge-yellow">Renewal</span><% end %></td>
             <td><%= document_type_label(verification.document_type) %></td>
-            <td><%= l(verification.submitted_at, format: :short, locale: :en) %></td>
+            <td><%= admin_datetime(verification.submitted_at) %></td>
             <td><%= waiting_hours(verification) %> h</td>
             <td>
               <% if verification.user_id == current_admin.id %>
                 <span class="caption">Your own verification. Another admin reviews it.</span>
               <% else %>
-                <%= link_to "Review", admin_verification_path(verification) %>
+                <%= target_link "Review", admin_verification_path(verification), "aria-label": "Review #{verification.user.display_name}" %>
               <% end %>
             </td>
           </tr>
@@ -49,6 +48,6 @@
     </table>
   </div>
   <% if @pagy.next %>
-    <%= link_to "Next page", admin_verifications_path(page: @pagy.next) %>
+    <%= target_link "Next page", admin_verifications_path(page: @pagy.next) %>
   <% end %>
 <% end %>

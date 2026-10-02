@@ -1,13 +1,15 @@
 <div class="card centered">
-  <p class="wordmark">SPARKCIRCLES</p>
+  <span class="logo"><%= render "admin/shared/logo" %></span>
   <h2>Connect your authenticator app</h2>
   <p>Admins confirm every login with a 6-digit code. In your authenticator app, add an account with this key:</p>
   <p class="codes" style="columns: 1"><%= @secret.scan(/.{1,4}/).join(" ") %></p>
-  <p class="caption">Or open this setup link on your phone: <a href="<%= @provisioning_uri %>">add to authenticator</a></p>
+  <p class="caption">Or open this setup link on your phone: <%= target_link "add to authenticator", @provisioning_uri %></p>
   <%= form_with url: admin_two_factor_setup_path, method: :post do |f| %>
-    <div class="field">
+    <div class="field <%= 'field-error' if @code_error %>">
       <%= f.label :code, "Code shown in the app" %>
-      <%= f.text_field :code, inputmode: "numeric", autocomplete: "one-time-code", required: true %>
+      <%= f.text_field :code, inputmode: "numeric", autocomplete: "one-time-code", required: true,
+                       "aria-describedby": ("code-error" if @code_error) %>
+      <% if @code_error %><%= render "admin/shared/field_error", id: "code-error", message: @code_error %><% end %>
     </div>
     <%= f.submit "Confirm", class: "btn btn-primary" %>
   <% end %>

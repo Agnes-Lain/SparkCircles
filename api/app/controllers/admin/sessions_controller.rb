@@ -21,7 +21,7 @@ module Admin
         session[:admin_nonce] = user.start_admin_session!
         redirect_to user.otp_secret.present? ? admin_two_factor_path : admin_two_factor_setup_path
       else
-        flash.now[:alert] = user&.access_locked? ? "Too many attempts. Try again in 15 minutes." : "Email or password doesn't match"
+        @login_error = user&.access_locked? ? "Too many attempts. Try again in 15 minutes." : "Email or password doesn't match"
         render :new, status: :unprocessable_content
       end
     end

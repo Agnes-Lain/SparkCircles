@@ -1,0 +1,33 @@
+<%# Design section 8: open or resolved "This wasn't me" report (AC-13.7, AC-13.8, AC-13.10). %>
+<div class="card">
+  <div class="title-row">
+    <h3>"This wasn't me" report</h3>
+    <% if report.open_report? %>
+      <span class="badge badge-yellow">Open</span>
+    <% elsif report.restored_at %>
+      <span class="badge badge-green">Restored ✓</span>
+    <% else %>
+      <span class="badge badge-neutral">Closed without restoring</span>
+    <% end %>
+  </div>
+  <dl style="margin-top: 12px">
+    <dt>Email changed</dt><dd><%= admin_datetime(report.changed_at) %></dd>
+    <dt>Previous email</dt><dd><%= masked_email(report.previous_email) %></dd>
+    <dt>New email</dt><dd><%= masked_email(report.new_email) %></dd>
+    <dt>Reported</dt><dd><%= admin_datetime(report.reported_at) %><% if report.open_report? %> (<%= waiting_hours(report.reported_at) %> h ago)<% end %></dd>
+  </dl>
+  <% if report.open_report? %>
+    <p>The member says they didn't change their email. Their account is locked and logged out everywhere.</p>
+    <p class="caption">Before restoring: check that the new address isn't one the member uses, for example by replying to the report from the previous address.</p>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" data-dialog-open="restore-dialog">Restore previous email</button>
+      <button type="button" class="btn btn-ghost" data-dialog-open="close-report-dialog">Close without restoring</button>
+    </div>
+  <% elsif report.restored_at %>
+    <% by = User.find_by(id: report.restored_by_id) %>
+    <p class="caption">Restored on <%= admin_datetime(report.restored_at) %><%= " by #{by.display_name}" if by %>. Reset link sent to <%= masked_email(report.previous_email) %>.</p>
+  <% else %>
+    <% by = User.find_by(id: report.closed_by_id) %>
+    <p class="caption">Closed on <%= admin_datetime(report.closed_at) %><%= " by #{by.display_name}" if by %>. The email stayed <%= masked_email(report.new_email) %>; a reset link was sent to it.</p>
+  <% end %>
+</div>

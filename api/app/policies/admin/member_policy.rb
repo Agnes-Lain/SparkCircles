@@ -11,7 +11,8 @@ module Admin
     def index? = admin&.admin? || false
     def search? = index?
     def show? = index?
-    def restore_email? = index?
+    def restore_email? = index? && member != admin # same rule as AC-9.3
+    def close_report? = restore_email? # AC-13.10
     def revoke_verification? = index? && member != admin
     def grant_admin? = index? && member != admin && !member.admin?
     def remove_admin? = index? && member != admin && member.admin?

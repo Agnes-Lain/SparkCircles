@@ -69,6 +69,7 @@ Rails.application.routes.draw do
         post :grant_admin
         post :remove_admin
         post :restore_email
+        post :close_report
       end
     end
   end

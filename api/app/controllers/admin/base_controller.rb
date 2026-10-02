@@ -13,12 +13,16 @@ module Admin
     before_action :forbid_caching
     after_action :verify_authorized
 
-    rescue_from Pundit::NotAuthorizedError, with: :forbidden
+    rescue_from Pundit::NotAuthorizedError, Admin::MemberActions::OwnAccount, with: :forbidden
     rescue_from ActiveRecord::RecordNotFound, with: -> { render "admin/shared/not_found", status: :not_found }
 
-    helper_method :current_admin
+    helper_method :current_admin, :open_reports_count
 
     private
+
+    def open_reports_count
+      @open_reports_count ||= EmailChange.open_reports.count
+    end
 
     def current_admin
       return @current_admin if defined?(@current_admin)

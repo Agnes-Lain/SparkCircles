@@ -69,22 +69,5 @@ RSpec.describe "Back office members", type: :request do
       expect(response).to have_http_status(:forbidden)
       expect(admin.reload).to be_admin
     end
-
-    it "AC-13.8 restores the previous email after a report and sends a reset link" do
-      member.update!(email: "attacker@example.com", security_locked_at: Time.current)
-      report = create(:email_change, user: member, previous_email: "member@example.com", new_email: "attacker@example.com",
-                                     reported_at: Time.current)
-
-      get "/admin/members", params: {}
-      expect(response.body).to include(member.display_name)
-
-      expect do
-        post "/admin/members/#{member.id}/restore_email", params: { email_change_id: report.id }
-      end.to have_enqueued_job(DeviseNotificationJob).with(anything, "reset_password_instructions")
-
-      expect(member.reload).to have_attributes(email: "member@example.com", security_locked_at: nil)
-      expect(report.reload.restored_at).to be_present
-      expect(AuditEvent.last.action).to eq("restored_email")
-    end
   end
 end

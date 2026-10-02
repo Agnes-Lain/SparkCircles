@@ -1,9 +1,37 @@
+<div class="title-row">
+  <h2>"This wasn't me" reports</h2>
+  <% if @open_reports.any? %><span class="badge badge-yellow"><%= @open_reports.size %> open</span><% end %>
+</div>
+<% if @open_reports.empty? %>
+  <p class="caption">No report is waiting. Reports appear here as soon as a member tells us an email change wasn't them.</p>
+<% else %>
+  <p class="caption">These accounts are locked until you act. Oldest first.</p>
+  <div class="card">
+    <table>
+      <thead><tr><th>Member</th><th>Email changed</th><th>Reported</th><th>Waiting</th><th><span class="visually-hidden">Action</span></th></tr></thead>
+      <tbody>
+        <% @open_reports.each do |report| %>
+          <tr>
+            <td class="h3"><%= report.user.display_name %></td>
+            <td><%= admin_datetime(report.changed_at) %></td>
+            <td><%= admin_datetime(report.reported_at) %></td>
+            <td><span class="h3"><%= waiting_hours(report.reported_at) %> h</span>
+              <% if report.reported_at < 24.hours.ago %><span class="badge badge-yellow">Over 24 h</span><% end %></td>
+            <td><%= target_link "Review", admin_member_path(report.user, reason: "email_change_report"),
+                                "aria-label": "Review the report of #{report.user.display_name}" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
 <h1>Find a member</h1>
 <div class="card">
+  <% if @search_error %>
+    <div class="notification notification-error" role="alert"><%= admin_icon(:alert_circle) %> <span><%= @search_error %></span></div>
+  <% end %>
   <%= form_with url: search_admin_members_path, method: :post do |f| %>
-    <% if @search_error %>
-      <p class="error-text" role="alert"><%= admin_icon(:alert_circle, size: 14) %> <%= @search_error %></p>
-    <% end %>
     <div class="field">
       <%= f.label :email, "Email" %>
       <%= f.email_field :email, required: true, autocomplete: "off" %>
@@ -12,24 +40,3 @@
     <%= f.submit "Search", class: "btn btn-primary" %>
   <% end %>
 </div>
-
-<h2>"This wasn't me" reports</h2>
-<% if @open_reports.empty? %>
-  <p class="caption">No report is waiting.</p>
-<% else %>
-  <div class="card">
-    <table>
-      <thead><tr><th>Member</th><th>Email changed</th><th>Reported</th><th><span class="visually-hidden">Action</span></th></tr></thead>
-      <tbody>
-        <% @open_reports.each do |report| %>
-          <tr>
-            <td><%= report.user.display_name %></td>
-            <td><%= admin_date(report.changed_at) %></td>
-            <td><%= admin_date(report.reported_at) %></td>
-            <td><%= link_to "Open", admin_member_path(report.user, reason: "email_change_report") %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-<% end %>

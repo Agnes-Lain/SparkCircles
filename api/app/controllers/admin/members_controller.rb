@@ -36,7 +36,10 @@ module Admin
       return render :reason unless ACCESS_REASONS.include?(@reason)
 
       audit!("viewed_member", subject: @member, reason: @reason, fields: %w[full_name email roles verification])
-      @reports = @member.email_changes.open_reports
+      @open_report = @member.email_changes.open_reports.order(:reported_at).first
+      @past_reports = @member.email_changes.resolved_reports.order(reported_at: :desc)
+      @restore_error = params[:restore_error].present?
+      @close_error = params[:close_error].present?
     end
 
     def revoke_verification
@@ -63,14 +66,26 @@ module Admin
       redirect_to admin_member_path(member, reason: "user_request"), notice: "Admin role removed."
     end
 
+    # AC-13.8, BUG-02
     def restore_email
       member = authorize User.find(params[:id]), policy_class: MemberPolicy
       email_change = member.email_changes.open_reports.find(params[:email_change_id])
       member_actions.restore_email!(email_change)
       redirect_to admin_member_path(member, reason: "email_change_report"),
-                  notice: "Email restored. A password reset link was sent to it."
-    rescue Admin::MemberActions::Error
-      redirect_to admin_member_path(member, reason: "email_change_report"), alert: "This email can't be restored: another account uses it."
+                  notice: "Email restored. A password reset link was sent to #{helpers.masked_email(email_change.previous_email)}"
+    rescue Admin::MemberActions::EmailTaken
+      redirect_to admin_member_path(member, reason: "email_change_report", restore_error: 1)
+    end
+
+    # AC-13.10
+    def close_report
+      member = authorize User.find(params[:id]), policy_class: MemberPolicy
+      email_change = member.email_changes.open_reports.find(params[:email_change_id])
+      member_actions.close_report!(email_change, note: params[:note])
+      redirect_to admin_member_path(member, reason: "email_change_report"),
+                  notice: "Report closed. A password reset link was sent to #{helpers.masked_email(member.email)}"
+    rescue Admin::MemberActions::NoteRequired
+      redirect_to admin_member_path(member, reason: "email_change_report", close_error: 1)
     end
 
     private

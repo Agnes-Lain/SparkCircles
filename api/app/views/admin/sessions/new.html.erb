@@ -1,14 +1,17 @@
 <div class="card centered">
-  <p class="wordmark">SPARKCIRCLES</p>
+  <span class="logo"><%= render "admin/shared/logo" %></span>
   <h2>Admin</h2>
   <%= form_with url: admin_login_path, method: :post do |f| %>
-    <div class="field">
+    <div class="field <%= 'field-error' if @login_error %>">
       <%= f.label :email, "Email" %>
-      <%= f.email_field :email, autocomplete: "username", required: true %>
+      <%= f.email_field :email, value: params[:email], autocomplete: "username", required: true,
+                        "aria-describedby": ("login-error" if @login_error) %>
     </div>
-    <div class="field">
+    <div class="field <%= 'field-error' if @login_error %>">
       <%= f.label :password, "Password" %>
-      <%= f.password_field :password, autocomplete: "current-password", required: true %>
+      <%= f.password_field :password, autocomplete: "current-password", required: true, autofocus: @login_error.present?,
+                           "aria-describedby": ("login-error" if @login_error) %>
+      <% if @login_error %><%= render "admin/shared/field_error", id: "login-error", message: @login_error %><% end %>
     </div>
     <%= f.submit "Log in", class: "btn btn-primary" %>
   <% end %>
