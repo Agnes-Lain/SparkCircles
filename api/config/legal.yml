@@ -1,0 +1,12 @@
+# Current versions of the terms of use and privacy policy (spec AC-5.2, AC-5.5).
+# When a new version requires acceptance, bump the version, set requires_acceptance
+# and list the changes (written by the PM) in French and English.
+shared:
+  terms_version: "1.0"
+  privacy_version: "1.0"
+  terms_url: "https://sparkcircles.fr/terms"
+  privacy_url: "https://sparkcircles.fr/privacy"
+  requires_acceptance: true
+  changes:
+    fr: []
+    en: []

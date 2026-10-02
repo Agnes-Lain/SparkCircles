@@ -13,3 +13,25 @@ production:
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
+  # Accounts and verification (spec accounts-and-verification)
+  purge_unconfirmed_accounts:
+    class: PurgeUnconfirmedAccountsJob
+    schedule: every day at 3am
+  erase_closed_accounts:
+    class: EraseClosedAccountsJob
+    schedule: every day at 3:15am
+  verification_expiry:
+    class: VerificationExpiryJob
+    schedule: every day at 8am
+  purge_verification_files:
+    class: PurgeVerificationFilesJob
+    schedule: every day at 3:30am
+  purge_stale_tokens:
+    class: PurgeStaleTokensJob
+    schedule: every hour at minute 20
+  expire_data_exports:
+    class: ExpireDataExportsJob
+    schedule: every day at 3:45am
+  purge_old_audit_events:
+    class: PurgeOldAuditEventsJob
+    schedule: "0 4 1 * *"

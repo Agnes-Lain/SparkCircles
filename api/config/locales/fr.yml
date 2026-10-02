@@ -1,0 +1,149 @@
+fr:
+  date:
+    formats:
+      default: "%d/%m/%Y"
+      long: "%-d %B %Y"
+      short: "%-d %b"
+    day_names: [dimanche, lundi, mardi, mercredi, jeudi, vendredi, samedi]
+    abbr_day_names: [dim, lun, mar, mer, jeu, ven, sam]
+    month_names: [~, janvier, février, mars, avril, mai, juin, juillet, août, septembre, octobre, novembre, décembre]
+    abbr_month_names: [~, janv., févr., mars, avr., mai, juin, juil., août, sept., oct., nov., déc.]
+    order: [day, month, year]
+  time:
+    formats:
+      default: "%d/%m/%Y %H:%M"
+      long: "%-d %B %Y %H:%M"
+      short: "%-d %b %H:%M"
+    am: am
+    pm: pm
+  api:
+    errors:
+      bad_request: "Il manque quelque chose dans la demande."
+      unauthorized: "Connecte-toi pour continuer."
+      invalid_credentials: "L'e-mail ou le mot de passe ne correspond pas"
+      email_not_confirmed: "Confirme ton e-mail pour continuer."
+      closure_pending: "Ton compte est en cours de fermeture. Garde-le pour continuer."
+      terms_acceptance_required: "Nos conditions ont changé. Accepte-les pour continuer."
+      forbidden: "Tu ne peux pas faire ça."
+      verification_required: "Vérifie ton identité pour participer."
+      not_found: "Nous n'avons pas trouvé cet élément."
+      verification_pending: "Ta vérification est déjà en cours."
+      email_taken: "Cet e-mail ne peut pas être utilisé. Ton e-mail n'a pas changé."
+      validation_failed: "Vérifie les champs indiqués."
+      invalid_or_expired_token: "Ce lien a expiré"
+      invalid_password: "Ce mot de passe ne correspond pas."
+      account_locked: "Trop de tentatives. Réessaie dans 15 minutes ou réinitialise ton mot de passe."
+      rate_limited: "Trop de demandes. Réessaie dans un instant."
+  activerecord:
+    errors:
+      messages:
+        blank: "doit être rempli"
+        invalid: "n'est pas valide"
+        taken: "est déjà utilisé"
+        too_short: "est trop court (%{count} caractères minimum)"
+        too_long: "est trop long (%{count} caractères maximum)"
+        inclusion: "n'est pas inclus dans la liste"
+        too_common: "est trop courant"
+        must_be_accepted: "doit être accepté"
+        same_as_current: "est déjà ton e-mail"
+        invalid_type: "doit être une photo JPEG, PNG ou HEIC"
+        too_large: "dépasse 10 Mo"
+        expired: "a expiré"
+  verification:
+    document_types:
+      passport: "Passeport"
+      national_id_card: "Carte nationale d'identité"
+      driving_licence: "Permis de conduire"
+      residence_permit: "Titre de séjour"
+      other_residence_card: "Autre carte de séjour officielle"
+    rejection_messages:
+      photo_blurry: "La photo est floue. Prends-en une nouvelle avec une bonne lumière."
+      document_cut_off: "Une partie du document manque. Montre les 4 coins."
+      document_expired: "Ce document a expiré. Utilise un document valide."
+      document_not_accepted: "Nous acceptons les passeports, cartes d'identité, permis de conduire et titres de séjour."
+      selfie_mismatch: "Nous n'avons pas pu associer ton selfie à ton document. Prends un nouveau selfie face à la lumière."
+      name_mismatch: "Le nom sur le document ne correspond pas à ton compte. Mets ton nom à jour ou utilise un autre document."
+  account_mailer:
+    greeting: "Bonjour %{first_name},"
+    signature: "L'équipe SPARKCIRCLES"
+    confirmation_instructions:
+      subject: "Confirme ton e-mail"
+      lines:
+        - "Bienvenue sur SPARKCIRCLES ! Touche le bouton ci-dessous dans les 24 heures pour confirmer ton e-mail."
+        - "Tu n'as pas créé de compte ? Tu peux ignorer cet e-mail."
+      action: "Confirmer mon e-mail"
+    email_change_confirmation:
+      subject: "Confirme ta nouvelle adresse e-mail"
+      lines:
+        - "Touche le bouton ci-dessous dans les 24 heures pour utiliser cette adresse pour ton compte SPARKCIRCLES."
+        - "Ton adresse actuelle reste active jusqu'à ta confirmation."
+      action: "Confirmer ma nouvelle adresse"
+    reset_password_instructions:
+      subject: "Réinitialise ton mot de passe"
+      lines:
+        - "Touche le bouton ci-dessous pour choisir un nouveau mot de passe. Le lien fonctionne pendant 1 heure."
+        - "Tu n'as rien demandé ? Tu peux ignorer cet e-mail, ton mot de passe ne change pas."
+      action: "Choisir un nouveau mot de passe"
+    registration_attempt:
+      subject: "Quelqu'un a essayé de s'inscrire avec ton e-mail"
+      lines:
+        - "Quelqu'un vient d'essayer de créer un compte SPARKCIRCLES avec cet e-mail. Tu as déjà un compte, rien n'a changé."
+        - "Mot de passe oublié ? Tu peux le réinitialiser."
+      action: "Réinitialiser mon mot de passe"
+    account_locked:
+      subject: "Nous avons mis en pause les connexions à ton compte"
+      lines:
+        - "Il y a eu 5 mots de passe erronés de suite sur ton compte, nous avons donc mis en pause les connexions pendant 15 minutes."
+        - "Si ce n'était pas toi, réinitialise ton mot de passe pour protéger ton compte."
+      action: "Réinitialiser mon mot de passe"
+    password_changed:
+      subject: "Ton mot de passe a été modifié"
+      lines:
+        - "Ton mot de passe SPARKCIRCLES vient d'être modifié et tes autres appareils ont été déconnectés."
+        - "Si ce n'était pas toi, réinitialise ton mot de passe tout de suite."
+      action: "Réinitialiser mon mot de passe"
+    email_change_attempt:
+      subject: "Quelqu'un a essayé d'utiliser ton e-mail"
+      lines:
+        - "Quelqu'un a essayé d'utiliser cet e-mail pour un autre compte SPARKCIRCLES. Rien n'a changé sur ton compte."
+    email_changed:
+      subject: "Ton e-mail a été modifié"
+      lines:
+        - "C'est désormais l'e-mail de ton compte SPARKCIRCLES."
+    email_changed_notice:
+      subject: "L'e-mail de ton compte SPARKCIRCLES a été modifié"
+      lines:
+        - "Le %{date}, l'e-mail de ton compte SPARKCIRCLES a été remplacé par une autre adresse."
+        - "Si ce n'était pas toi, touche le bouton ci-dessous dans les 30 jours. Nous sécuriserons ton compte immédiatement."
+      action: "Ce n'était pas moi"
+    closure_confirmation:
+      subject: "Ton compte est fermé"
+      lines:
+        - "Ton compte SPARKCIRCLES est fermé et ton profil est masqué."
+        - "Tes données personnelles seront effacées le %{date}. Tu as changé d'avis ? Connecte-toi avant cette date pour garder ton compte."
+    verification_approved:
+      subject: "Tu es vérifié·e"
+      lines:
+        - "Tu peux organiser des événements dès maintenant. Ta vérification est valable jusqu'au %{date}."
+    verification_rejected:
+      subject: "Ta vérification doit être refaite"
+      lines:
+        - "%{reason}"
+        - "Ouvre SPARKCIRCLES pour l'envoyer à nouveau."
+    verification_revoked:
+      subject: "Ta vérification a été retirée"
+      lines:
+        - "Notre équipe a retiré ta vérification. Ouvre ton compte pour en savoir plus."
+    verification_expiring:
+      subject: "Ta vérification se termine dans %{days} jours"
+      lines:
+        - "Ta vérification se termine dans %{days} jours. Vérifie-toi à nouveau avec un document valide pour continuer à organiser des événements."
+    verification_expired:
+      subject: "Ta vérification est terminée"
+      lines:
+        - "Les autres membres te voient désormais comme non vérifié·e. Vérifie-toi à nouveau pour organiser des événements."
+    data_export_ready:
+      subject: "Tes données sont prêtes"
+      lines:
+        - "La copie de tes données SPARKCIRCLES est prête. Télécharge-la depuis l'application jusqu'au %{date}."
+      action: "Télécharger mes données"

@@ -1,31 +1,139 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
 en:
-  hello: "Hello world"
+  date:
+    formats:
+      long: "%-d %b %Y"
+  api:
+    errors:
+      bad_request: "Something is missing in the request."
+      unauthorized: "Log in to continue."
+      invalid_credentials: "Email or password doesn't match"
+      email_not_confirmed: "Confirm your email to continue."
+      closure_pending: "Your account is closing. Keep it to continue."
+      terms_acceptance_required: "Our terms have changed. Accept them to continue."
+      forbidden: "You can't do this."
+      verification_required: "Verify your identity to take part."
+      not_found: "We couldn't find this."
+      verification_pending: "Your verification is already being checked."
+      email_taken: "This email can't be used. Your email hasn't changed."
+      validation_failed: "Check the highlighted fields."
+      invalid_or_expired_token: "This link has expired"
+      invalid_password: "This password doesn't match."
+      account_locked: "Too many attempts. Try again in 15 minutes, or reset your password."
+      rate_limited: "Too many requests. Try again in a moment."
+  activerecord:
+    errors:
+      messages:
+        too_common: "is too common"
+        must_be_accepted: "must be accepted"
+        same_as_current: "is already your email"
+        invalid_type: "must be a JPEG, PNG or HEIC photo"
+        too_large: "is larger than 10 MB"
+        expired: "has expired"
+  verification:
+    document_types:
+      passport: "Passport"
+      national_id_card: "National ID card"
+      driving_licence: "Driving licence"
+      residence_permit: "Residence permit"
+      other_residence_card: "Other government residence card"
+    rejection_reasons:
+      photo_blurry: "Photo blurry or too dark"
+      document_cut_off: "Document cut off"
+      document_expired: "Document expired"
+      document_not_accepted: "Document not accepted"
+      selfie_mismatch: "Selfie doesn't match"
+      name_mismatch: "Name doesn't match the account"
+    rejection_messages:
+      photo_blurry: "The photo is blurry. Take a new one in good light."
+      document_cut_off: "Part of the document is missing. Show all 4 corners."
+      document_expired: "This document has expired. Use a valid one."
+      document_not_accepted: "We accept passports, ID cards, driving licences and residence permits."
+      selfie_mismatch: "We couldn't match your selfie with your document. Take a new selfie facing the light."
+      name_mismatch: "The name on the document doesn't match your account. Update your name or use another document."
+    revocation_reasons:
+      safety_report: "Safety report"
+      other: "Other"
+  account_mailer:
+    greeting: "Hi %{first_name},"
+    signature: "The SPARKCIRCLES team"
+    confirmation_instructions:
+      subject: "Confirm your email"
+      lines:
+        - "Welcome to SPARKCIRCLES! Tap the button below within 24 hours to confirm your email."
+        - "Didn't create an account? You can ignore this email."
+      action: "Confirm my email"
+    email_change_confirmation:
+      subject: "Confirm your new email"
+      lines:
+        - "Tap the button below within 24 hours to use this address for your SPARKCIRCLES account."
+        - "Your current email keeps working until you confirm."
+      action: "Confirm my new email"
+    reset_password_instructions:
+      subject: "Reset your password"
+      lines:
+        - "Tap the button below to choose a new password. The link works for 1 hour."
+        - "Didn't ask for this? You can ignore this email, your password stays the same."
+      action: "Choose a new password"
+    registration_attempt:
+      subject: "Someone tried to sign up with your email"
+      lines:
+        - "Someone just tried to create a SPARKCIRCLES account with this email. You already have one, so nothing changed."
+        - "Forgot your password? You can reset it."
+      action: "Reset my password"
+    account_locked:
+      subject: "We paused logins to your account"
+      lines:
+        - "There were 5 wrong passwords in a row on your account, so we paused logins for 15 minutes."
+        - "If it wasn't you, reset your password to keep your account safe."
+      action: "Reset my password"
+    password_changed:
+      subject: "Your password was changed"
+      lines:
+        - "Your SPARKCIRCLES password was just changed and your other devices were logged out."
+        - "If it wasn't you, reset your password right away."
+      action: "Reset my password"
+    email_change_attempt:
+      subject: "Someone tried to use your email"
+      lines:
+        - "Someone tried to use this email for another SPARKCIRCLES account. Nothing changed on your account."
+    email_changed:
+      subject: "Your email was changed"
+      lines:
+        - "This is now the email of your SPARKCIRCLES account."
+    email_changed_notice:
+      subject: "Your SPARKCIRCLES email was changed"
+      lines:
+        - "On %{date}, the email of your SPARKCIRCLES account was changed to another address."
+        - "If it wasn't you, tap the button below within 30 days. We'll secure your account at once."
+      action: "This wasn't me"
+    closure_confirmation:
+      subject: "Your account is closed"
+      lines:
+        - "Your SPARKCIRCLES account is closed and your profile is hidden."
+        - "Your personal data will be erased on %{date}. Changed your mind? Log in before then to keep your account."
+    verification_approved:
+      subject: "You're verified"
+      lines:
+        - "You can host events now. Your verification is valid until %{date}."
+    verification_rejected:
+      subject: "Your verification needs another try"
+      lines:
+        - "%{reason}"
+        - "Open SPARKCIRCLES to send it again."
+    verification_revoked:
+      subject: "Your verification was removed"
+      lines:
+        - "Our team removed your verification. Open your account to see why."
+    verification_expiring:
+      subject: "Your verification ends in %{days} days"
+      lines:
+        - "Your verification ends in %{days} days. Verify again with a valid document to keep hosting."
+    verification_expired:
+      subject: "Your verification has ended"
+      lines:
+        - "Others now see you as not verified. Verify again to host events."
+    data_export_ready:
+      subject: "Your data is ready"
+      lines:
+        - "Your copy of your SPARKCIRCLES data is ready. Download it from the app until %{date}."
+      action: "Download my data"

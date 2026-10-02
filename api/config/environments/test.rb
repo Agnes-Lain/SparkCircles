@@ -38,6 +38,7 @@ Rails.application.configure do
 
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "example.com" }
+  config.active_job.queue_adapter = :test
 
   # Throwaway Active Record Encryption keys, used only by the test suite (never in production).
   config.active_record.encryption.primary_key = "test-primary-key-not-a-secret-0000000000"

@@ -61,5 +61,25 @@ module SparkCircles
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # The web back office (AC-9.7) is server-rendered and needs a cookie session,
+    # flash messages and HTML form method override. API controllers never use them.
+    config.session_store :cookie_store, key: "_sparkcircles_admin", same_site: :strict, expire_after: 12.hours
+    config.middleware.use ActionDispatch::Cookies
+    config.middleware.use config.session_store, config.session_options
+    config.middleware.use ActionDispatch::Flash
+    config.middleware.use Rack::MethodOverride
+
+    # The audit log is protected by a PostgreSQL trigger, which schema.rb can't express.
+    config.active_record.schema_format = :sql
+
+    # ID documents and selfies are stored encrypted: never analyze or preview them.
+    config.active_storage.analyzers = []
+    config.active_storage.previewers = []
+
+    # Links in emails open the mobile app (universal links on our domain later).
+    config.x.app_link_base = ENV.fetch("APP_LINK_BASE", "http://localhost:8081")
+    # Terms and privacy policy versions (AC-5.2, AC-5.5).
+    config.x.legal = config_for(:legal)
   end
 end
