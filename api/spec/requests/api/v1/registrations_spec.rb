@@ -12,7 +12,7 @@ RSpec.describe "POST /api/v1/registrations", type: :request do
 
   it "AC-1.1 creates an unconfirmed account and sends a confirmation email" do
     expect { sign_up }.to change(User, :count).by(1)
-      .and have_enqueued_job(DeviseNotificationJob).with(anything, "confirmation_instructions")
+      .and have_enqueued_job(AccountTokenEmailJob).with(anything, "confirmation_instructions")
 
     expect(response).to have_http_status(:accepted)
     expect(json).to eq("status" => "check_inbox")

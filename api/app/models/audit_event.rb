@@ -12,7 +12,7 @@ class AuditEvent < ApplicationRecord
     "email_change_report" => "\"This wasn't me\" report"
   }.freeze
 
-  personal_data :ip_address
+  personal_data :ip_address, :note
 
   validates :action, presence: true
   validates :reason, inclusion: { in: REASONS.keys }, allow_nil: true
@@ -23,9 +23,9 @@ class AuditEvent < ApplicationRecord
     persisted?
   end
 
-  def self.record!(action:, actor: nil, subject: nil, fields: [], reason: nil, ip_address: nil, metadata: {})
+  def self.record!(action:, actor: nil, subject: nil, fields: [], reason: nil, ip_address: nil, metadata: {}, note: nil)
     create!(action: action, actor_id: actor&.id, subject_user_id: subject&.id, fields: fields,
-            reason: reason, ip_address: ip_address, metadata: metadata)
+            reason: reason, ip_address: ip_address, metadata: metadata, note: note)
   end
 
   def reason_label = REASONS[reason]

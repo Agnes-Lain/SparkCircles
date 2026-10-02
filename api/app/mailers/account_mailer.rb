@@ -13,6 +13,11 @@ class AccountMailer < ApplicationMailer
     compose(user, :reset_password_instructions, action: app_link("reset-password", token))
   end
 
+  # AC-13.10: the report was closed without restoring; set a new password to log in again.
+  def report_closed(user, token)
+    compose(user, :report_closed, action: app_link("reset-password", token))
+  end
+
   # AC-1.3
   def registration_attempt(user)
     compose(user, :registration_attempt, action: app_link("forgot-password"))

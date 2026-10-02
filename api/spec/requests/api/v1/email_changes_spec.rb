@@ -11,7 +11,7 @@ RSpec.describe "Email change", type: :request do
       original.call(record, raw, *rest)
     end
     post "/api/v1/me/email_change", params: { email: email, current_password: password }, headers: with, as: :json
-    perform_enqueued_jobs(only: DeviseNotificationJob)
+    perform_enqueued_jobs(only: AccountTokenEmailJob)
     token
   end
 

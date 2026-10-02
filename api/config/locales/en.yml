@@ -53,6 +53,9 @@ en:
     revocation_reasons:
       safety_report: "Safety report"
       other: "Other"
+    revocation_messages:
+      safety_report: "Our team removed your verification after a safety report. Verify again to host events."
+      other: "Our team removed your verification. Verify again to host events."
   account_mailer:
     greeting: "Hi %{first_name},"
     signature: "The SPARKCIRCLES team"
@@ -132,6 +135,12 @@ en:
       subject: "Your verification has ended"
       lines:
         - "Others now see you as not verified. Verify again to host events."
+    report_closed:
+      subject: "Set a new password to log in"
+      lines:
+        - "Our team checked your \"This wasn't me\" report and confirmed the email change was made from your account, so your email stays the same. Your account is unlocked."
+        - "To keep it safe, your old password no longer works. Choose a new one with the button below. The link works for 1 hour."
+      action: "Choose a new password"
     data_export_ready:
       subject: "Your data is ready"
       lines:

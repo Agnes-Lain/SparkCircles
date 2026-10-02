@@ -10,7 +10,7 @@ RSpec.describe "Password reset", type: :request do
       original.call(record, raw, *rest)
     end
     post "/api/v1/password_resets", params: { email: "claire@example.com" }, as: :json
-    perform_enqueued_jobs(only: DeviseNotificationJob)
+    perform_enqueued_jobs(only: AccountTokenEmailJob)
     token
   end
 
@@ -18,12 +18,12 @@ RSpec.describe "Password reset", type: :request do
     it "AC-4.1 always shows the same message and emails only existing accounts" do
       expect do
         post "/api/v1/password_resets", params: { email: "claire@example.com" }, as: :json
-      end.to have_enqueued_job(DeviseNotificationJob).with(anything, "reset_password_instructions")
+      end.to have_enqueued_job(AccountTokenEmailJob).with(anything, "reset_password_instructions")
       known = [ response.status, json ]
 
       expect do
         post "/api/v1/password_resets", params: { email: "nobody@example.com" }, as: :json
-      end.not_to have_enqueued_job(DeviseNotificationJob).with(anything, "reset_password_instructions")
+      end.not_to have_enqueued_job(AccountTokenEmailJob).with(anything, "reset_password_instructions")
       expect([ response.status, json ]).to eq(known)
       expect(response).to have_http_status(:accepted)
     end

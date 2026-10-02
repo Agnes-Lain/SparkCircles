@@ -1,5 +1,6 @@
 module Verifications
   # AC-7.3, AC-7.5: a parent sends a document, a selfie and their date of birth.
+  # AC-7.15: a verified parent renewing early stays verified while the renewal is reviewed.
   # Images are encrypted before they reach storage (AC-10.2).
   class Submission
     Result = Struct.new(:status, :errors, :verification)
@@ -21,14 +22,15 @@ module Verifications
       return Result.new(:invalid, errors) if errors.any?
 
       verification = nil
+      renewal = @user.verified? # AC-7.15
       User.transaction do
-        verification = @user.verifications.build(document_type: document_type, submitted_at: Time.current)
+        verification = @user.verifications.build(document_type: document_type, submitted_at: Time.current, renewal: renewal)
         files.each do |name, upload|
           verification.public_send("#{CONTENT_TYPE_COLUMNS[name]}=", upload.content_type)
           verification.attach_encrypted(name, upload, filename: FILES[name])
         end
         verification.save!
-        @user.update!(date_of_birth: date_of_birth, verification_status: "pending")
+        @user.update!(date_of_birth: date_of_birth, verification_status: renewal ? "verified" : "pending")
       end
       Result.new(:created, nil, verification)
     rescue ActiveRecord::RecordNotUnique

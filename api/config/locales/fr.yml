@@ -56,6 +56,9 @@ fr:
       driving_licence: "Permis de conduire"
       residence_permit: "Titre de séjour"
       other_residence_card: "Autre carte de séjour officielle"
+    revocation_messages:
+      safety_report: "Notre équipe a retiré ta vérification après un signalement de sécurité. Vérifie-toi à nouveau pour organiser des événements."
+      other: "Notre équipe a retiré ta vérification. Vérifie-toi à nouveau pour organiser des événements."
     rejection_messages:
       photo_blurry: "La photo est floue. Prends-en une nouvelle avec une bonne lumière."
       document_cut_off: "Une partie du document manque. Montre les 4 coins."
@@ -142,6 +145,12 @@ fr:
       subject: "Ta vérification est terminée"
       lines:
         - "Les autres membres te voient désormais comme non vérifié·e. Vérifie-toi à nouveau pour organiser des événements."
+    report_closed:
+      subject: "Choisis un nouveau mot de passe pour te connecter"
+      lines:
+        - "Notre équipe a vérifié ton signalement « Ce n'était pas moi » et a confirmé que le changement d'e-mail a été fait depuis ton compte : ton e-mail reste le même. Ton compte est débloqué."
+        - "Pour le protéger, ton ancien mot de passe ne fonctionne plus. Choisis-en un nouveau avec le bouton ci-dessous. Le lien fonctionne pendant 1 heure."
+      action: "Choisir un nouveau mot de passe"
     data_export_ready:
       subject: "Tes données sont prêtes"
       lines:

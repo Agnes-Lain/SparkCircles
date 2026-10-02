@@ -9,7 +9,8 @@ class VerificationExpiryJob < ApplicationJob
       next if expires_on.nil?
 
       if expires_on <= today
-        user.update!(verification_status: "expired")
+        # AC-7.15: a renewal still under review becomes the pending verification.
+        user.update!(verification_status: user.renewal_pending? ? "pending" : "expired")
         AccountMailer.verification_expired(user).deliver_later
       else
         send_reminder(user, (expires_on - today).to_i)

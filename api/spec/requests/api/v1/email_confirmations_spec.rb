@@ -8,7 +8,7 @@ RSpec.describe "Email confirmation", type: :request do
       original.call(record, raw_token, *rest)
     end
     yield
-    perform_enqueued_jobs(only: DeviseNotificationJob)
+    perform_enqueued_jobs(only: AccountTokenEmailJob)
     token
   end
 
@@ -50,7 +50,7 @@ RSpec.describe "Email confirmation", type: :request do
     it "AC-2.2 sends a new link and answers the same for unknown emails" do
       expect do
         post "/api/v1/email_confirmations/resend", params: { email: user.email }, as: :json
-      end.to have_enqueued_job(DeviseNotificationJob).with(anything, "confirmation_instructions")
+      end.to have_enqueued_job(AccountTokenEmailJob).with(anything, "confirmation_instructions")
       expect(response).to have_http_status(:accepted)
       known = json
 
@@ -61,7 +61,7 @@ RSpec.describe "Email confirmation", type: :request do
     it "AC-2.3 works for a logged-in unconfirmed account" do
       expect do
         post "/api/v1/email_confirmations/resend", headers: auth_headers(user), as: :json
-      end.to have_enqueued_job(DeviseNotificationJob).with(anything, "confirmation_instructions")
+      end.to have_enqueued_job(AccountTokenEmailJob).with(anything, "confirmation_instructions")
     end
   end
 

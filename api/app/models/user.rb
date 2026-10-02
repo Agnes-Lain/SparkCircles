@@ -144,9 +144,9 @@ class User < ApplicationRecord
   end
 
   # Devise emails go through Active Job, without the token in the job arguments
-  # (see DeviseNotificationJob, AC-10.6).
+  # (see AccountTokenEmailJob, AC-10.6).
   def send_devise_notification(notification, *_args)
-    DeviseNotificationJob.perform_later(self, notification.to_s)
+    AccountTokenEmailJob.perform_later(self, notification.to_s)
   end
 
   # ---- Profile and visibility (US-6) ----
@@ -194,6 +194,10 @@ class User < ApplicationRecord
 
   def latest_verification = verifications.last
   def pending_verification = verifications.find(&:pending?)
+
+  # AC-7.15: a verification sent while still verified is a renewal; the parent keeps
+  # every verified right until the old one expires or the renewal is decided.
+  def renewal_pending? = verifications.any? { |verification| verification.pending? && verification.renewal? }
 
   # AC-7.8: a verified parent who changes their name must verify again.
   def reset_verification_if_name_changed

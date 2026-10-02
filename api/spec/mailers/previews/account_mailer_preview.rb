@@ -4,6 +4,7 @@ class AccountMailerPreview < ActionMailer::Preview
   def confirmation_instructions = AccountMailer.confirmation_instructions(user, "preview-token")
   def email_change_confirmation = AccountMailer.confirmation_instructions(user, "preview-token", to: "new@example.com")
   def reset_password_instructions = AccountMailer.reset_password_instructions(user, "preview-token")
+  def report_closed = AccountMailer.report_closed(user, "preview-token")
   def registration_attempt = AccountMailer.registration_attempt(user)
   def account_locked = AccountMailer.account_locked(user)
   def password_changed = AccountMailer.password_changed(user)

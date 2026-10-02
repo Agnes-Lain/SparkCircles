@@ -256,7 +256,6 @@ RSpec.describe "QA: accounts and verification", type: :request do
     end
 
     it "BUG-02 AC-13.8: after an email restore, the password the attacker knows no longer works" do
-      pending "BUG-02: restore_email! keeps the current password, which the attacker used for the change (AC-13.1)"
       admin = create(:user, :admin)
       member = create(:user, email: "attacker@example.com", security_locked_at: Time.current)
       report = create(:email_change, user: member, previous_email: "victim@example.com", new_email: "attacker@example.com",
@@ -268,7 +267,7 @@ RSpec.describe "QA: accounts and verification", type: :request do
     end
 
     it "BUG-03 AC-10.6: one-time link tokens never appear in application logs" do
-      # Developer fix round: tokens are no longer passed to jobs (DeviseNotificationJob creates or
+      # Developer fix round: tokens are no longer passed to jobs (AccountTokenEmailJob creates or
       # reads them when it runs), so this example now takes the token from the email that was sent
       # and checks the logs and the stored job arguments.
       user = create(:user, email: "reset@example.com")
@@ -290,7 +289,6 @@ RSpec.describe "QA: accounts and verification", type: :request do
     end
 
     it "AC-7.15 (new requirement, not implemented yet): a verified parent who renews early keeps their badge" do
-      pending "AC-7.15 not implemented yet: a renewal sets the status to pending; a rejection wipes the valid expiry"
       parent = create(:user, :verified, verification_expires_on: 20.days.from_now.to_date)
       create(:verification, :approved, user: parent, decided_at: 700.days.ago)
       post "/api/v1/verification", params: {

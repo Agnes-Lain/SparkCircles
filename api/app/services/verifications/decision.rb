@@ -30,7 +30,7 @@ module Verifications
       AccountMailer.verification_approved(user).deliver_later
     end
 
-    # AC-7.7, AC-7.4 (expired documents are rejected with the "document_expired" reason).
+    # AC-7.7, AC-7.4 (expired documents are rejected with the "document_expired" reason), AC-7.15.
     def reject!(verification, reason:, note: nil)
       check_reviewable!(verification)
 
@@ -38,7 +38,8 @@ module Verifications
       Verification.transaction do
         verification.update!(status: "rejected", decided_at: Time.current, reviewer_id: @admin.id,
                              rejection_reason: reason, note: note.presence)
-        user.update!(verification_status: "rejected", verification_expires_on: nil)
+        # AC-7.15: a rejected renewal keeps the old verification until it expires.
+        user.update!(verification_status: "rejected", verification_expires_on: nil) unless verification.renewal? && user.verified?
         audit("rejected_verification", user, verification, reason: reason)
       end
       AccountMailer.verification_rejected(user, verification).deliver_later

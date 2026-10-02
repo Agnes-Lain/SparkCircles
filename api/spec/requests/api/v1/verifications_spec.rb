@@ -106,6 +106,7 @@ RSpec.describe "Identity verification", type: :request do
 
       expect(json["verification"]).to include("status" => "not_verified", "revoked" => true)
       expect(json.dig("verification", "rejection", "note")).to eq("Reported by a family")
+      expect(json.dig("verification", "rejection", "message")).to be_present # BUG-12
     end
   end
 
