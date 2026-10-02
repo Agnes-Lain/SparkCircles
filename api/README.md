@@ -12,6 +12,7 @@ On this Mac, native gems (`pg`, `bcrypt`, …) only compile with:
 ```bash
 export DEVELOPER_DIR=/Library/Developer/CommandLineTools
 export SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk   # MacOSX27.0 SDK breaks the linker
+export PATH="/opt/homebrew/opt/postgresql@18/bin:$PATH"             # pg_dump 18 writes db/structure.sql
 ```
 
 ## Setup
@@ -22,6 +23,14 @@ bin/rails server
 ```
 
 Health check: `GET /up` returns 200.
+
+Development data: `bin/rails db:seed` creates an admin, a verified parent and a parent with a pending
+verification (emails and password in `db/seeds.rb`). The back office is at http://localhost:3000/admin;
+the first login asks to connect an authenticator app. Emails are not sent in development: preview them at
+http://localhost:3000/rails/mailers (`?locale=en` or `?locale=fr`).
+
+First admin in production: `bin/rails admin:grant EMAIL=...` on a confirmed account; later admins are
+given the role in the back office.
 
 ## Secrets (never committed)
 
