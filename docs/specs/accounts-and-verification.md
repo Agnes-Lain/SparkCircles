@@ -2,6 +2,8 @@
 
 > Feature slug: `accounts-and-verification` · Author: po · **Status: Approved by the PM on 2026-10-02** · Date: 2026-10-02
 >
+> Amended 2026-10-02 at the PM's request: email change, web admin
+>
 > **Scope: v1 only, for parents and admins.** It is the foundation every module builds on. Everything deferred (service providers, paid plans, automated verification, extra admin roles…) is in [`docs/backlog.md`](../backlog.md).
 >
 > **Confirmed by the PM** (answers to draft v1):
@@ -30,7 +32,7 @@ All three survey pain points (events #1, travel #2, routine and childcare #3) de
 | User | Who | When and where |
 |---|---|---|
 | **Parent** | Mother, father or guardian of young children, 25 to 45, already tired (84% feel tired "sometimes" or "often"). | Signs up in 2 minutes on their phone, in a spare moment (commute, evening on the sofa). Verifies identity later, the day they want to host their first picnic or snack gathering. |
-| **Admin** | SPARKCIRCLES team member (initially the PM). | Reviews pending verifications from a desk, a few times a day; handles user requests (data copy, closure issues). Has access to the most sensitive data in the system, so every access is traced. |
+| **Admin** | SPARKCIRCLES team member (initially the PM). | Works in a separate web back office, not in the mobile app: reviewing identity documents needs a large screen, and keeping admin powers out of the app parents carry everywhere limits the damage if a phone is lost or stolen. Reviews pending verifications from a desk, a few times a day; handles user requests (data copy, closure issues). Has access to the most sensitive data in the system, so every access is traced. |
 
 ## 3. Success metrics
 
@@ -52,6 +54,7 @@ All three survey pain points (events #1, travel #2, routine and childcare #3) de
 - **US-10** As a SPARKCIRCLES user, I want my sensitive personal data to be encrypted by the app and accessed only when strictly needed, so that a leak or hack exposes as little as possible about me and my family.
 - **US-11** As a parent, I want to close my account and have my personal data erased, so that I can leave SPARKCIRCLES without leaving my identity behind.
 - **US-12** As a parent, I want to get a copy of my personal data, so that I can see what the app holds about me (GDPR right of access and portability).
+- **US-13** As a parent, I want to change the email address of my account safely, so that I keep receiving SPARKCIRCLES messages when my address changes, and nobody can take over my account by changing it without my knowledge.
 
 ## 5. Acceptance criteria
 
@@ -132,12 +135,15 @@ Verification statuses: **not verified**, **pending**, **verified**, **rejected**
 
 ### US-9: Admin review of verifications
 
+All admin functions in this spec (verification queue, revocation, admin role management, sensitive data access, user requests) live in a separate web back office (AC-9.7).
+
 - **AC-9.1** Given an admin, when they open the verification queue, then they see pending verifications, oldest first, with the time each has been waiting.
 - **AC-9.2** Given a pending verification, when an admin opens it, then they see the submitted document, the selfie, the date of birth and the name on the account, record the document's expiry date, and can approve, or reject with a reason chosen from a list (plus an optional free-text note).
 - **AC-9.3** Given an admin, then they cannot review, approve or reject their own verification.
-- **AC-9.4** Given a non-admin user, when they try to reach any admin function or admin data (in the app or through the API), then access is refused.
-- **AC-9.5** Given an admin account, then logging in requires a second factor in addition to the password.
+- **AC-9.4** Given a non-admin user, when they try to reach any admin function or admin data (in the app or through the API), then access is refused (mobile app, back office or API).
+- **AC-9.5** Given an admin account, then logging in to the back office requires a second factor in addition to the password.
 - **AC-9.6** Given admin accounts, then there is a single admin role; the role can only be given or removed by an existing admin, and each change is recorded in the audit log.
+- **AC-9.7** Given an admin, then every admin function is available only in the separate web back office; the mobile app contains no admin function or admin data, even when an admin logs in to it (an admin who is also a parent uses the mobile app as a parent only).
 
 ### US-10: Encryption and protected access to sensitive data
 
@@ -149,7 +155,7 @@ Verification statuses: **not verified**, **pending**, **verified**, **rejected**
 - **AC-10.4** Given an admin views an identity document, a selfie, or any user's sensitive data, then an audit entry records who, which user's data, what was viewed, when, and the reason (e.g. "Verification review", "User request").
 - **AC-10.5** Given the audit log, then no admin can edit or delete entries, and entries are kept for at least 1 year.
 - **AC-10.6** Given any user, then sensitive data never appears in application logs, error reports, analytics events or URLs.
-- **AC-10.7** Given any connection between the mobile app and the backend, then it is encrypted in transit.
+- **AC-10.7** Given any connection between the mobile app or the web back office and the backend, then it is encrypted in transit.
 
 ### US-11: Close my account and erase my personal data
 
@@ -169,6 +175,18 @@ Verification statuses: **not verified**, **pending**, **verified**, **rejected**
 - **AC-12.2** Given the download link, then it works only for the account owner after logging in, and expires after 7 days.
 - **AC-12.3** Given a data copy request, then it is recorded (date requested, date delivered).
 
+### US-13: Change my email address
+
+- **AC-13.1** Given a logged-in user, when they ask to change their email address, then they must enter their current password; with a wrong password, nothing changes and no email is sent.
+- **AC-13.2** Given a correct password and a new address, then a confirmation link is sent to the new address, the account's email stays the old one (login still uses the old address), and the user is told to open the link sent to the new address.
+- **AC-13.3** Given a confirmation link for an email change, when it is opened within 24 hours, then the account's email becomes the new address and the user receives a confirmation at the new address; given an expired or already-used link, then nothing changes and the user can request a new link (same rules as AC-2.1 and AC-2.2).
+- **AC-13.4** Given a user who requests another email change while one is pending, then only the latest link works; earlier links no longer change anything.
+- **AC-13.5** Given a new address already used by another account, when the change is requested, then the screen shows the same neutral message as for a free address (the app never reveals whether an email is registered), no change can happen, and the owner of that address receives an email saying someone tried to use it (same rule as AC-1.3).
+- **AC-13.6** Given a confirmation link whose new address has been taken by another account in the meantime, when it is opened, then the change is refused and the account keeps its current email.
+- **AC-13.7** Given an email change that takes effect, then the old address receives a notice with the date of the change and a "This wasn't me" link, valid for 30 days, that works without logging in.
+- **AC-13.8** Given a "This wasn't me" report, then the account is secured at once: every device is logged out, the account is locked, the report appears to admins in the back office, and an audit entry is recorded; after checking, an admin can restore the previous email address, and the owner then sets a new password through a reset link sent to that address.
+- **AC-13.9** Given an email change that takes effect, then every other device of the user is logged out, and the verification status does not change (only a name change resets it, AC-7.8).
+
 ## 6. Out of scope
 
 All items below are tracked in [`docs/backlog.md`](../backlog.md).
@@ -184,6 +202,7 @@ All items below are tracked in [`docs/backlog.md`](../backlog.md).
 - Social login (Apple, Google), passkeys, two-factor authentication for parents.
 - Reporting and blocking members (trust and safety), strongly recommended right after v1.
 - Family profile and children data.
+- Profile photo upload: in v1 the avatar shows the person's initials (AC-6.1 applies once photos exist).
 - Screen layouts and the admin interface design (designer). Encryption, token and storage choices (developer).
 
 ## 7. Dependencies and risks
@@ -193,7 +212,7 @@ All items below are tracked in [`docs/backlog.md`](../backlog.md).
 | Data | Owner sees / edits | Other members see | Admin sees | Encrypted at app level |
 |---|---|---|---|---|
 | First name, last-name initial, photo | Yes / yes | Yes | Yes | No (public profile data) |
-| Full last name, email, date of birth | Yes / yes (name change resets verification) | Never | Yes, audited | Yes |
+| Full last name, email, date of birth | Yes / yes (name change resets verification; email change confirmed through the new address, US-13) | Never | Yes, audited | Yes |
 | City or neighborhood shown | Yes / yes | Yes (only what the user chose) | Yes | Yes |
 | Roles (parent, admin) | Yes / no | No | Yes / admin role only by an admin | No |
 | Verification status, expiry date | Yes / no | Only "Verified" or "Not verified" | Yes / approve, reject, revoke | Status no; expiry date yes |
@@ -208,7 +227,8 @@ All items below are tracked in [`docs/backlog.md`](../backlog.md).
 - **Events**: must refuse event creation by parents without a valid verification (AC-7.1, AC-7.14), offer the host the "verified users only" option and enforce it through AC-8.4, show host and participant badges (AC-8.1), and handle hosted events when an account closes (AC-11.9). Open point for the Events spec: what happens to a host's upcoming events when their verification expires (AC-7.13).
 - **Community, Travel, future Market**: will reuse the verification status, the visibility rules (US-6, US-8) and the restriction rule (AC-8.4).
 - **Family profile** (future spec): children data is sensitive and must follow US-10 and US-11.
-- **Notifications and email**: sign-up, confirmation, reset, verification decision, expiry reminders and closure emails need an email provider (a GDPR data processor).
+- **Web back office**: admins need a separate web back office (AC-9.7), distinct from the mobile app, for verification review, revocation, admin roles, "This wasn't me" reports (AC-13.8) and user requests. Its layout belongs to the designer; its technology to the developer.
+- **Notifications and email**: sign-up, confirmation, reset, email change (new and old address), verification decision, expiry reminders and closure emails need an email provider (a GDPR data processor).
 
 ### Trust and safety (children, homes, strangers)
 
@@ -226,8 +246,8 @@ All items below are tracked in [`docs/backlog.md`](../backlog.md).
 - **Audit log vs erasure.** Audit entries (kept at least 1 year) refer to users. After erasure they must not allow re-identifying the person beyond what a legal obligation justifies; the advisor should confirm how they are handled.
 - **Identity documents are high-risk data.** Images are erased within 30 days of the decision (AC-7.10). Large-scale processing of ID documents in a service involving children likely requires a **Data Protection Impact Assessment (DPIA, Art. 35)** before launch.
 - **Launch prerequisites outside the app** (PM with legal help): terms of use, privacy policy, record of processing activities, retention register, data processing agreements with every processor (EU hosting, email), and a breach procedure (notification to the CNIL within 72 hours when required).
-- **Admin access**: least privilege, second factor, full audit log (US-9, US-10). With a single admin role, every admin can see ID documents, so the group should stay very small.
-- **Rights of users**: access and portability (US-12), rectification (profile edit, AC-7.8), erasure (US-11), objection to marketing (AC-5.4). The legal deadline to answer is one month.
+- **Admin access**: least privilege, second factor, full audit log, admin functions only in the web back office (US-9, US-10). With a single admin role, every admin can see ID documents, so the group should stay very small.
+- **Rights of users**: access and portability (US-12), rectification (profile edit, AC-7.8; email change, US-13), erasure (US-11), objection to marketing (AC-5.4). The legal deadline to answer is one month.
 
 ## 8. Open questions
 
@@ -238,4 +258,5 @@ None. All questions answered by the PM on 2026-10-02.
 | Stories | Priority | Rationale |
 |---|---|---|
 | US-1 to US-11 | **Must** | No module can launch without secure accounts, visible verification, legal erasure and GDPR-grade protection; hosting events (pain point #1) depends on it. |
+| US-13 (email change) | **Must** | Basic account management and the GDPR right to rectification; without it, a parent who changes address loses access to reset and safety emails. |
 | US-12 (data copy) | **Should** | A legal right with a one-month deadline; it can be handled manually by an admin at first if the automated export slips. |
