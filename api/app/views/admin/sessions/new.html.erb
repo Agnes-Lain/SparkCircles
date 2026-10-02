@@ -1,0 +1,15 @@
+<div class="card centered">
+  <p class="wordmark">SPARKCIRCLES</p>
+  <h2>Admin</h2>
+  <%= form_with url: admin_login_path, method: :post do |f| %>
+    <div class="field">
+      <%= f.label :email, "Email" %>
+      <%= f.email_field :email, autocomplete: "username", required: true %>
+    </div>
+    <div class="field">
+      <%= f.label :password, "Password" %>
+      <%= f.password_field :password, autocomplete: "current-password", required: true %>
+    </div>
+    <%= f.submit "Log in", class: "btn btn-primary" %>
+  <% end %>
+</div>

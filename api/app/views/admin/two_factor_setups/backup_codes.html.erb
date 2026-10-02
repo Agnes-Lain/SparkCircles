@@ -1,0 +1,10 @@
+<div class="card centered">
+  <h2>Keep your backup codes</h2>
+  <p>Each code works once if you lose your phone. Store them somewhere safe: they won't be shown again.</p>
+  <ul class="codes">
+    <% @backup_codes.each do |code| %>
+      <li><%= code %></li>
+    <% end %>
+  </ul>
+  <%= link_to "Continue", admin_root_path, class: "btn btn-primary" %>
+</div>

@@ -1,0 +1,35 @@
+<h1>Find a member</h1>
+<div class="card">
+  <%= form_with url: search_admin_members_path, method: :post do |f| %>
+    <% if @search_error %>
+      <p class="error-text" role="alert"><%= admin_icon(:alert_circle, size: 14) %> <%= @search_error %></p>
+    <% end %>
+    <div class="field">
+      <%= f.label :email, "Email" %>
+      <%= f.email_field :email, required: true, autocomplete: "off" %>
+    </div>
+    <%= render "admin/members/reason_fields" %>
+    <%= f.submit "Search", class: "btn btn-primary" %>
+  <% end %>
+</div>
+
+<h2>"This wasn't me" reports</h2>
+<% if @open_reports.empty? %>
+  <p class="caption">No report is waiting.</p>
+<% else %>
+  <div class="card">
+    <table>
+      <thead><tr><th>Member</th><th>Email changed</th><th>Reported</th><th><span class="visually-hidden">Action</span></th></tr></thead>
+      <tbody>
+        <% @open_reports.each do |report| %>
+          <tr>
+            <td><%= report.user.display_name %></td>
+            <td><%= admin_date(report.changed_at) %></td>
+            <td><%= admin_date(report.reported_at) %></td>
+            <td><%= link_to "Open", admin_member_path(report.user, reason: "email_change_report") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

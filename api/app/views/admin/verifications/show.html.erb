@@ -1,0 +1,80 @@
+<% user = @verification.user %>
+<p><%= link_to "← Verifications", admin_verifications_path %></p>
+<h1><%= user.display_name %></h1>
+<p class="caption"><%= admin_icon(:lock, size: 14) %> Your access is recorded: verification review.</p>
+
+<div class="review">
+  <div class="tiles">
+    <% if @verification.files_available? %>
+      <% files = { document_front: "Front", document_back: "Back", selfie: "Selfie" } %>
+      <% files.each do |name, label| %>
+        <% next if name == :document_back && !@verification.double_sided? %>
+        <div class="card tile">
+          <p class="label"><%= label %></p>
+          <a href="<%= file_admin_verification_path(@verification, file: name) %>" target="_blank" rel="noopener">
+            <img src="<%= file_admin_verification_path(@verification, file: name) %>" alt="<%= label %> of the document submitted by <%= user.display_name %>">
+          </a>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="card"><p>The images were erased 30 days after the decision.</p></div>
+    <% end %>
+  </div>
+
+  <div class="card">
+    <dl>
+      <dt>Name on the account</dt><dd><%= user.first_name %> <%= user.last_name %></dd>
+      <dt>Date of birth</dt><dd><%= admin_date(user.date_of_birth) %></dd>
+      <dt>Document</dt><dd><%= document_type_label(@verification.document_type) %></dd>
+    </dl>
+    <% if @verification.pending? %>
+      <%= form_with url: approve_admin_verification_path(@verification), method: :post do |f| %>
+        <div class="field <%= 'field-error' if @expiry_error %>">
+          <%= f.label :document_expires_on, "Document expiry date" %>
+          <%= f.date_field :document_expires_on, required: true, value: params[:document_expires_on], "aria-describedby": "expiry-help" %>
+          <% if @expiry_error %>
+            <span class="error-text" role="alert"><%= admin_icon(:alert_circle, size: 14) %> <%= @expiry_error %></span>
+          <% end %>
+          <span class="caption" id="expiry-help">Verification will be valid until the document's expiry date, or 2 years from today if that comes first.</span>
+        </div>
+        <div class="actions">
+          <%= f.submit "Approve", class: "btn btn-primary" %>
+          <a href="#reject" class="btn btn-ghost">Not accepted</a>
+        </div>
+      <% end %>
+    <% else %>
+      <p><span class="badge badge-neutral"><%= @verification.status.humanize %></span> on <%= admin_date(@verification.decided_at) %></p>
+    <% end %>
+  </div>
+</div>
+
+<% if @verification.pending? %>
+  <div class="modal" id="reject" role="dialog" aria-modal="true" aria-labelledby="reject-title">
+    <div class="card">
+      <h2 id="reject-title">Why isn't it accepted?</h2>
+      <%= form_with url: reject_admin_verification_path(@verification), method: :post do |f| %>
+        <% if @reject_error %>
+          <p class="error-text" role="alert"><%= admin_icon(:alert_circle, size: 14) %> <%= @reject_error %></p>
+        <% end %>
+        <fieldset style="border: 0; padding: 0; margin: 0 0 16px">
+          <legend class="visually-hidden">Reason</legend>
+          <% Verification::REJECTION_REASONS.each do |reason| %>
+            <label class="radio">
+              <%= f.radio_button :rejection_reason, reason, required: true %>
+              <span><%= t("verification.rejection_reasons.#{reason}", locale: :en) %><br>
+                <span class="caption"><%= t("verification.rejection_messages.#{reason}", locale: :en) %></span></span>
+            </label>
+          <% end %>
+        </fieldset>
+        <div class="field">
+          <%= f.label :note, "Note for the parent (optional)" %>
+          <%= f.text_area :note, rows: 3, maxlength: 500 %>
+        </div>
+        <div class="actions">
+          <%= f.submit "Send", class: "btn btn-primary" %>
+          <a href="#" class="btn btn-ghost">Cancel</a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

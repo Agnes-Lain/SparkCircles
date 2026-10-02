@@ -1,0 +1,58 @@
+<p><%= link_to "← Members", admin_members_path %></p>
+<h1><%= @member.first_name %> <%= @member.last_name %></h1>
+<p class="caption"><%= admin_icon(:lock, size: 14) %> Your access is recorded: <%= AuditEvent::REASONS[@reason].downcase %>.</p>
+
+<div class="card">
+  <dl>
+    <dt>Email</dt><dd><%= @member.email %></dd>
+    <dt>Roles</dt><dd><%= @member.role_names.map(&:humanize).join(", ") %></dd>
+    <dt>Verification</dt>
+    <dd><%= verification_badge(@member) %>
+      <% if @member.verified? %> until <%= admin_date(@member.verification_expires_on) %><% end %></dd>
+    <% if @member.closed? %><dt>Account</dt><dd>Closed, erased on <%= admin_date(@member.erasure_on) %></dd><% end %>
+    <% if @member.security_locked? %><dt>Security</dt><dd>Locked after a "This wasn't me" report</dd><% end %>
+  </dl>
+
+  <div class="actions">
+    <% if @member.verified? && @member != current_admin %>
+      <a href="#revoke" class="btn btn-destructive"><%= admin_icon(:log_out) %> Remove verification</a>
+    <% end %>
+    <% if Admin::MemberPolicy.new(current_admin, @member).grant_admin? %>
+      <%= button_to "Give admin role", grant_admin_admin_member_path(@member), class: "btn btn-ghost",
+                    form: { onsubmit: "return confirm('Give the admin role to this member? They will see identity documents.')" } %>
+    <% elsif Admin::MemberPolicy.new(current_admin, @member).remove_admin? %>
+      <%= button_to "Remove admin role", remove_admin_admin_member_path(@member), class: "btn btn-ghost",
+                    form: { onsubmit: "return confirm('Remove the admin role from this member?')" } %>
+    <% end %>
+  </div>
+</div>
+
+<% @reports.each do |report| %>
+  <div class="card">
+    <h3>"This wasn't me" report</h3>
+    <p>The email was changed on <%= admin_date(report.changed_at) %> from <strong><%= report.previous_email %></strong>
+      to <strong><%= report.new_email %></strong>, then reported on <%= admin_date(report.reported_at) %>.</p>
+    <p class="caption">After checking, restore the previous email: a password reset link is sent to it.</p>
+    <%= button_to "Restore previous email", restore_email_admin_member_path(@member, email_change_id: report.id), class: "btn btn-primary" %>
+  </div>
+<% end %>
+
+<div class="modal" id="revoke" role="dialog" aria-modal="true" aria-labelledby="revoke-title">
+  <div class="card">
+    <h2 id="revoke-title">Remove this verification?</h2>
+    <p>The member will see "Your verification was removed" with your note, and can't host new events.</p>
+    <%= form_with url: revoke_verification_admin_member_path(@member), method: :post do |f| %>
+      <% { "safety_report" => "Safety report", "other" => "Other" }.each do |value, label| %>
+        <label class="radio"><%= f.radio_button :revocation_reason, value, required: true %> <span><%= label %></span></label>
+      <% end %>
+      <div class="field">
+        <%= f.label :note, "Note for the member" %>
+        <%= f.text_area :note, rows: 3, maxlength: 500 %>
+      </div>
+      <div class="actions">
+        <%= f.submit "Remove verification", class: "btn btn-destructive" %>
+        <a href="#" class="btn btn-ghost">Cancel</a>
+      </div>
+    <% end %>
+  </div>
+</div>

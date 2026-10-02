@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>SPARKCIRCLES admin</title>
+    <%= csrf_meta_tags %>
+    <%= render "admin/shared/styles" %>
+  </head>
+  <body>
+    <% if current_admin %>
+      <header class="topbar">
+        <span class="wordmark">SPARKCIRCLES</span>
+        <nav aria-label="Admin">
+          <%= link_to "Verifications", admin_verifications_path, class: ("active" if controller_name == "verifications") %>
+          <%= link_to "Members", admin_members_path, class: ("active" if controller_name == "members") %>
+        </nav>
+        <span><%= current_admin.display_name %></span>
+        <%= button_to "Log out", admin_logout_path, method: :delete, class: "btn-link" %>
+      </header>
+    <% end %>
+    <main class="content">
+      <%= render "admin/shared/flash" %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

@@ -26,7 +26,7 @@ module Accounts
     private
 
     def confirm_email_change(user)
-      return Result.new(:invalid) if user.confirmation_period_expired?
+      return Result.new(:invalid) if user.confirmation_sent_at.nil? || user.confirmation_sent_at < Devise.confirm_within.ago
 
       previous_email = user.email
       new_email = user.unconfirmed_email

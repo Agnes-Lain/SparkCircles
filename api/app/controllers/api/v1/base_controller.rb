@@ -79,7 +79,7 @@ module Api
       end
 
       def render_validation_errors(record_or_errors)
-        errors = record_or_errors.respond_to?(:errors) ? record_or_errors.errors : record_or_errors
+        errors = record_or_errors.is_a?(ActiveModel::Errors) ? record_or_errors : record_or_errors.errors
         details = errors.details.transform_values { |list| list.map { |detail| detail[:error].to_s }.uniq }
         render_error(:unprocessable_content, :validation_failed, details: details)
       end

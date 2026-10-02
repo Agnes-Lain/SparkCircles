@@ -1,0 +1,14 @@
+<div class="card centered">
+  <p class="wordmark">SPARKCIRCLES</p>
+  <h2>Connect your authenticator app</h2>
+  <p>Admins confirm every login with a 6-digit code. In your authenticator app, add an account with this key:</p>
+  <p class="codes" style="columns: 1"><%= @secret.scan(/.{1,4}/).join(" ") %></p>
+  <p class="caption">Or open this setup link on your phone: <a href="<%= @provisioning_uri %>">add to authenticator</a></p>
+  <%= form_with url: admin_two_factor_setup_path, method: :post do |f| %>
+    <div class="field">
+      <%= f.label :code, "Code shown in the app" %>
+      <%= f.text_field :code, inputmode: "numeric", autocomplete: "one-time-code", required: true %>
+    </div>
+    <%= f.submit "Confirm", class: "btn btn-primary" %>
+  <% end %>
+</div>

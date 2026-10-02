@@ -1,0 +1,13 @@
+<div class="card centered">
+  <p class="wordmark">SPARKCIRCLES</p>
+  <h2>Confirm it's you</h2>
+  <p>Enter the 6-digit code from your authenticator app.</p>
+  <%= form_with url: admin_two_factor_path, method: :post do |f| %>
+    <div class="field <%= 'field-error' if flash.now[:alert] %>">
+      <%= f.label :code, "Code" %>
+      <%= f.text_field :code, inputmode: "numeric", autocomplete: "one-time-code", required: true, autofocus: true %>
+      <span class="caption">Lost your phone? Use one of your backup codes.</span>
+    </div>
+    <%= f.submit "Confirm", class: "btn btn-primary" %>
+  <% end %>
+</div>

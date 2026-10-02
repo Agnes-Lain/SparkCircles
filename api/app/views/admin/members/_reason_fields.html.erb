@@ -1,0 +1,6 @@
+<fieldset style="border: 0; padding: 0; margin: 0 0 16px">
+  <legend>Why do you need this member's data? It's recorded in the audit log.</legend>
+  <% { "user_request" => "User request", "safety_report" => "Safety report", "verification_follow_up" => "Verification follow-up" }.each do |value, label| %>
+    <label class="radio"><%= radio_button_tag :reason, value, false, required: true %> <span><%= label %></span></label>
+  <% end %>
+</fieldset>

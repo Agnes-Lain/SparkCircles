@@ -1,0 +1,6 @@
+<% if flash[:alert] %>
+  <div class="notification notification-error" role="alert"><%= admin_icon(:alert_circle) %> <span><%= flash[:alert] %></span></div>
+<% end %>
+<% if flash[:notice] %>
+  <div class="notification notification-confirmed" role="status"><%= admin_icon(:check) %> <span><%= flash[:notice] %></span></div>
+<% end %>

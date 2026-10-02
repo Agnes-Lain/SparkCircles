@@ -20,6 +20,7 @@ end
 RSpec.configure do |config|
   config.include ApiHelpers, type: :request
   config.include ActiveSupport::Testing::TimeHelpers
+  config.include ActiveJob::TestHelper
 end
 
 RSpec::Matchers.define_negated_matcher :not_change, :change
