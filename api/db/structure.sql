@@ -89,7 +89,8 @@ CREATE TABLE public.allowlisted_jwts (
     last_used_at timestamp(6) without time zone NOT NULL,
     device_name character varying,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    device_id uuid DEFAULT gen_random_uuid() NOT NULL
 );
 
 
@@ -118,7 +119,8 @@ CREATE TABLE public.audit_events (
     reason character varying,
     ip_address text,
     metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL
+    created_at timestamp(6) without time zone NOT NULL,
+    note text
 );
 
 
@@ -127,7 +129,7 @@ CREATE TABLE public.audit_events (
 --
 
 CREATE TABLE public.closed_account_statistics (
-    id uuid DEFAULT uuidv7() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     signup_month date NOT NULL,
     closure_month date NOT NULL,
     was_verified boolean NOT NULL
@@ -147,7 +149,7 @@ CREATE TABLE public.data_exports (
     expires_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT data_exports_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'ready'::character varying, 'expired'::character varying])::text[])))
+    CONSTRAINT data_exports_status_check CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('ready'::character varying)::text, ('expired'::character varying)::text])))
 );
 
 
@@ -165,7 +167,9 @@ CREATE TABLE public.email_changes (
     restored_at timestamp(6) without time zone,
     restored_by_id uuid,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    closed_at timestamp(6) without time zone,
+    closed_by_id uuid
 );
 
 
@@ -180,7 +184,7 @@ CREATE TABLE public.roles (
     granted_by_id uuid,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT roles_name_check CHECK (((name)::text = ANY ((ARRAY['parent'::character varying, 'admin'::character varying])::text[])))
+    CONSTRAINT roles_name_check CHECK (((name)::text = ANY (ARRAY[('parent'::character varying)::text, ('admin'::character varying)::text])))
 );
 
 
@@ -235,8 +239,11 @@ CREATE TABLE public.users (
     closed_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT users_locale_check CHECK (((locale)::text = ANY ((ARRAY['fr'::character varying, 'en'::character varying])::text[]))),
-    CONSTRAINT users_verification_status_check CHECK (((verification_status)::text = ANY ((ARRAY['not_verified'::character varying, 'pending'::character varying, 'verified'::character varying, 'rejected'::character varying, 'expired'::character varying])::text[])))
+    admin_session_digest character varying,
+    otp_failed_attempts integer DEFAULT 0 NOT NULL,
+    otp_locked_until timestamp(6) without time zone,
+    CONSTRAINT users_locale_check CHECK (((locale)::text = ANY (ARRAY[('fr'::character varying)::text, ('en'::character varying)::text]))),
+    CONSTRAINT users_verification_status_check CHECK (((verification_status)::text = ANY (ARRAY[('not_verified'::character varying)::text, ('pending'::character varying)::text, ('verified'::character varying)::text, ('rejected'::character varying)::text, ('expired'::character varying)::text])))
 );
 
 
@@ -265,8 +272,9 @@ CREATE TABLE public.verifications (
     files_purged_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT verifications_document_type_check CHECK (((document_type)::text = ANY ((ARRAY['passport'::character varying, 'national_id_card'::character varying, 'driving_licence'::character varying, 'residence_permit'::character varying, 'other_residence_card'::character varying])::text[]))),
-    CONSTRAINT verifications_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])))
+    renewal boolean DEFAULT false NOT NULL,
+    CONSTRAINT verifications_document_type_check CHECK (((document_type)::text = ANY (ARRAY[('passport'::character varying)::text, ('national_id_card'::character varying)::text, ('driving_licence'::character varying)::text, ('residence_permit'::character varying)::text, ('other_residence_card'::character varying)::text]))),
+    CONSTRAINT verifications_status_check CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('approved'::character varying)::text, ('rejected'::character varying)::text])))
 );
 
 
@@ -421,6 +429,13 @@ CREATE INDEX index_allowlisted_jwts_on_last_used_at ON public.allowlisted_jwts U
 --
 
 CREATE INDEX index_allowlisted_jwts_on_user_id ON public.allowlisted_jwts USING btree (user_id);
+
+
+--
+-- Name: index_allowlisted_jwts_on_user_id_and_device_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_allowlisted_jwts_on_user_id_and_device_id ON public.allowlisted_jwts USING btree (user_id, device_id);
 
 
 --
@@ -619,6 +634,10 @@ ALTER TABLE ONLY public.verifications
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261003090300'),
+('20261003090200'),
+('20261003090100'),
+('20261003090000'),
 ('20261002140700'),
 ('20261002140600'),
 ('20261002140500'),
