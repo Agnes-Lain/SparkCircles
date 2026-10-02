@@ -35,9 +35,15 @@ module Admin
       @reason = params[:reason].to_s
       return render :reason unless ACCESS_REASONS.include?(@reason)
 
-      audit!("viewed_member", subject: @member, reason: @reason, fields: %w[full_name email roles verification])
       @open_report = @member.email_changes.open_reports.order(:reported_at).first
       @past_reports = @member.email_changes.resolved_reports.order(reported_at: :desc)
+      # Closing reasons (AC-13.10) are read from their encrypted audit entries; showing
+      # them is part of this audited access.
+      @close_reasons = AuditEvent.where(action: "closed_email_change_report", subject_user_id: @member.id)
+                                 .to_h { |event| [ event.metadata["email_change_id"], event.note ] }
+      fields = %w[full_name email roles verification]
+      fields << "report_close_reasons" if @close_reasons.any?
+      audit!("viewed_member", subject: @member, reason: @reason, fields: fields)
       @restore_error = params[:restore_error].present?
       @close_error = params[:close_error].present?
     end

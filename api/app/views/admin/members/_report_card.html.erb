@@ -15,6 +15,9 @@
     <dt>Previous email</dt><dd><%= masked_email(report.previous_email) %></dd>
     <dt>New email</dt><dd><%= masked_email(report.new_email) %></dd>
     <dt>Reported</dt><dd><%= admin_datetime(report.reported_at) %><% if report.open_report? %> (<%= waiting_hours(report.reported_at) %> h ago)<% end %></dd>
+    <% if report.closed_at && (reason = local_assigns.fetch(:close_reasons, {})[report.id]).present? %>
+      <dt>Reason</dt><dd class="note"><%= simple_format(reason, {}, wrapper_tag: "span") %></dd>
+    <% end %>
   </dl>
   <% if report.open_report? %>
     <p>The member says they didn't change their email. Their account is locked and logged out everywhere.</p>
@@ -29,9 +32,9 @@
     <% end %>
   <% elsif report.restored_at %>
     <% by = User.find_by(id: report.restored_by_id) %>
-    <p class="caption">Restored on <%= admin_datetime(report.restored_at) %><%= " by #{by.display_name}" if by %>. Reset link sent to <%= masked_email(report.previous_email) %>.</p>
+    <p class="caption"><%= sentence_end("Restored on #{admin_datetime(report.restored_at)}#{" by #{by.display_name}" if by}") %> Reset link sent to <%= masked_email(report.previous_email) %>.</p>
   <% else %>
     <% by = User.find_by(id: report.closed_by_id) %>
-    <p class="caption">Closed on <%= admin_datetime(report.closed_at) %><%= " by #{by.display_name}" if by %>. The email stayed <%= masked_email(report.new_email) %>; a reset link was sent to it.</p>
+    <p class="caption"><%= sentence_end("Closed on #{admin_datetime(report.closed_at)}#{" by #{by.display_name}" if by}") %> The email stayed <%= masked_email(report.new_email) %>; a reset link was sent to it.</p>
   <% end %>
 </div>

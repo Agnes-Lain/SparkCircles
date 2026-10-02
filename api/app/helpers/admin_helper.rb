@@ -36,6 +36,9 @@ module AdminHelper
   def admin_date(date) = date && l(date.to_date, format: :long, locale: :en)
   def admin_datetime(time) = time && l(time, format: "%-d %b %Y, %H:%M", locale: :en)
 
+  # Ends a sentence once, even after a name like "Claire M.".
+  def sentence_end(text) = text.end_with?(".") ? text : "#{text}."
+
   # "claire.m@example.com" -> "claire.m@…" (design section 8).
   def masked_email(email) = "#{email.to_s.split('@').first}@…"
 

@@ -108,6 +108,31 @@ RSpec.describe "Back office \"This wasn't me\" reports (design section 8)", type
       expect(mail.text_part.body.to_s).to include("reset-password?token=")
     end
 
+    it "AC-13.10 shows the closing reason to admins only, as an audited read, never to the member" do
+      post "/admin/members/#{member.id}/close_report", params: { email_change_id: report.id, note: "Checked by phone\nwith the member" }
+
+      expect do
+        get "/admin/members/#{member.id}", params: { reason: "email_change_report" }
+      end.to change(AuditEvent, :count).by(1)
+      expect(response.body).to include("Closed without restoring", "<dt>Reason</dt>", "Checked by phone\n<br />with the member", "by #{admin.display_name} The email stayed")
+      expect(AuditEvent.last.fields).to include("report_close_reasons")
+
+      member.update!(password: "a-brand-new-secret") # the member set a new password
+      headers = auth_headers(member)
+      member_responses = [ "/api/v1/me", "/api/v1/verification", "/api/v1/users/#{member.id}", "/api/v1/me/public_profile" ].map do |path|
+        get path, headers: headers
+        response.body
+      end
+      post "/api/v1/data_export", headers: headers
+      perform_enqueued_jobs(only: BuildDataExportJob)
+      get "/api/v1/data_export/download", headers: headers
+      member_responses << response.body
+      perform_enqueued_jobs
+      member_responses += ActionMailer::Base.deliveries.select { |mail| mail.to == [ member.email ] }.map { |mail| mail.body.encoded }
+
+      expect(member_responses.join).not_to include("Checked by phone")
+    end
+
     it "refuses an admin closing a report on their own account" do
       own = create(:email_change, user: admin, reported_at: 1.hour.ago)
 

@@ -45,10 +45,10 @@
   <% if @past_reports.size > 1 %>
     <details>
       <summary>Past reports (<%= @past_reports.size %>)</summary>
-      <% @past_reports.each do |report| %><%= render "admin/members/report_card", report: report %><% end %>
+      <% @past_reports.each do |report| %><%= render "admin/members/report_card", report: report, close_reasons: @close_reasons %><% end %>
     </details>
   <% else %>
-    <%= render "admin/members/report_card", report: @past_reports.first %>
+    <%= render "admin/members/report_card", report: @past_reports.first, close_reasons: @close_reasons %>
   <% end %>
 <% end %>
 

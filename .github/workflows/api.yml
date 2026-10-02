@@ -89,8 +89,8 @@ jobs:
           working-directory: api
           bundler-cache: true
 
-      - name: Install libvips (image_processing strips photo metadata)
-        run: sudo apt-get update -qq && sudo apt-get install --no-install-recommends -y libvips-dev
+      - name: Install libvips with HEIC decoding (image_processing strips photo metadata)
+        run: sudo apt-get update -qq && sudo apt-get install --no-install-recommends -y libvips-dev libheif-plugin-libde265
 
       - name: Prepare the test database
         run: bin/rails db:prepare
