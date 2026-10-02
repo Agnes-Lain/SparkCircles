@@ -74,7 +74,11 @@ RSpec.describe "Back office authentication", type: :request do
     expect(response).to redirect_to("/admin/login/setup")
 
     get "/admin/login/setup"
+    expect(response.body).to include('role="img" aria-label="QR code to add SparkCircles admin to your authenticator app"', "<svg")
+    expect(response.body).to include("Can't scan? Type this key")
+    expect(response.headers["Cache-Control"]).to include("no-store")
     secret = session[:admin_otp_setup_secret]
+    expect(response.body).to include(CGI.escapeHTML("issuer=SparkCircles%20admin"))
     post "/admin/login/setup", params: { code: ROTP::TOTP.new(secret).now }
 
     expect(response).to have_http_status(:ok)
