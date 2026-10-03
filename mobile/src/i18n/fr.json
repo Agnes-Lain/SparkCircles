@@ -1,0 +1,22 @@
+{
+  "tabs": {
+    "home": "Accueil",
+    "events": "Événements",
+    "community": "Communauté",
+    "market": "Market",
+    "travel": "Voyages",
+    "navigation": "Sections principales"
+  },
+  "errors": {
+    "unreachable": {
+      "title": "Impossible de joindre SparkCircles",
+      "caption": "Vérifie ta connexion et réessaie."
+    },
+    "tryAgain": "Réessayer"
+  },
+  "dev": {
+    "label": "Développement",
+    "apiReachable": "API joignable",
+    "apiChecking": "Vérification de l'API…"
+  }
+}
