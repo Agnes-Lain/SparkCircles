@@ -6,7 +6,7 @@
       "runtimeExecutable": "/bin/bash",
       "runtimeArgs": [
         "-c",
-        "export PATH=\"$HOME/.rbenv/shims:$PATH\" && cd api && bin/rails server -p 3000 -b 127.0.0.1"
+        "export PATH=\"$HOME/.rbenv/shims:$PATH\" && cd api && bin/rails server -p 3000 -b 0.0.0.0"
       ],
       "port": 3000
     }
