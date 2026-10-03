@@ -38,7 +38,7 @@ describe('TabBar (design system section 10)', () => {
     expect(screen.getAllByRole('tab').map((tab) => tab.props.accessibilityLabel)).toEqual([
       'Home',
       'Events',
-      'Community',
+      'Circles',
       'Market',
       'Travel',
     ]);
@@ -72,18 +72,12 @@ describe('TabBar (design system section 10)', () => {
   });
 
   // Design system v1.4.2 section 10: tab labels ≤ about 8 characters (50 pt at 11 pt).
-  // Known conflict, reported to the PM: English "Community" (9) is kept unchanged by the
-  // same decision. Remove the exception once the design system settles it.
-  const LABEL_LENGTH_EXCEPTIONS = ['en:tabs.community'];
-
   it('keeps every tab label to 8 characters at most, in French and English (v1.4.2)', () => {
     for (const lng of ['fr', 'en'] as const) {
-      TABS.filter((tab) => !LABEL_LENGTH_EXCEPTIONS.includes(`${lng}:${tab.labelKey}`)).forEach(
-        (tab) => {
-          const label = i18n.getFixedT(lng)(tab.labelKey);
-          expect(`${lng}:${label}`).toMatch(new RegExp(`^${lng}:.{1,8}$`, 'u'));
-        },
-      );
+      TABS.forEach((tab) => {
+        const label = i18n.getFixedT(lng)(tab.labelKey);
+        expect(`${lng}:${label}`).toMatch(new RegExp(`^${lng}:.{1,8}$`, 'u'));
+      });
     }
   });
 
