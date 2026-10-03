@@ -26,9 +26,27 @@ bin/rails server
 Health check: `GET /up` returns 200.
 
 Development data: `bin/rails db:seed` creates an admin, a verified parent and a parent with a pending
-verification (emails and password in `db/seeds.rb`). The back office is at http://localhost:3000/admin;
+verification (`admin@`, `verified@` and `pending@sparkcircles.localhost`). No password is stored in
+the repository: choose one with `SEED_PASSWORD='…' bin/rails db:seed`, or leave it out and the seed
+prints a generated password once at the end (keep it in your password manager). Accounts that already
+exist keep their current password. The back office is at http://localhost:3000/admin;
 the first login asks to connect an authenticator app. Emails are not sent in development: preview them at
 http://localhost:3000/rails/mailers (`?locale=en` or `?locale=fr`).
+
+### Testing on a phone (development only)
+
+The iPhone (Expo Go) reaches the API over your Wi-Fi, so start the server on every network interface:
+
+```bash
+bin/rails server -b 0.0.0.0
+```
+
+- Development only, on your home Wi-Fi: while it runs, other devices on the same network can reach
+  the development API. Don't do it on public or office Wi-Fi.
+- The first time, macOS asks whether `ruby` may accept incoming connections: allow it.
+- No other change is needed: Rails accepts IP addresses as host in development, and native apps
+  don't use CORS. The app side is in [`mobile/README.md`](../mobile/README.md).
+- The Android emulator doesn't need it: it reaches `bin/rails server` at `http://10.0.2.2:3000`.
 
 First admin in production: `bin/rails admin:grant EMAIL=...` on a confirmed account; later admins are
 given the role in the back office.
@@ -52,3 +70,7 @@ bin/brakeman --no-pager
 bundle exec bundler-audit check --update
 bin/ci                    # all of the above
 ```
+
+Specs never contain password literals: use the helpers in `spec/support/test_passwords.rb`
+(`strong_test_password`, `wrong_test_password`, `new_test_password`, `short_test_password`,
+`common_test_password`), which generate values at run time or read them from `config/common_passwords.txt`.
