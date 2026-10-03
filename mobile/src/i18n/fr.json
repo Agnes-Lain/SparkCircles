@@ -18,5 +18,118 @@
     "label": "Développement",
     "apiReachable": "API joignable",
     "apiChecking": "Vérification de l'API…"
+  },
+  "common": {
+    "back": "Retour",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "logOut": "Me déconnecter",
+    "openMailApp": "Ouvrir ma messagerie",
+    "ok": "OK",
+    "loggedOut": "Tu es déconnecté·e",
+    "oneMoment": "Un instant…"
+  },
+  "welcome": {
+    "tagline": "Organise la vie de famille avec les familles près de chez toi.",
+    "createAccount": "Créer mon compte",
+    "logIn": "Me connecter",
+    "otherLanguage": "English"
+  },
+  "signUp": {
+    "title": "Crée ton compte",
+    "intro": "Ça prend 2 minutes. Tu pourras en dire plus sur ta famille plus tard.",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "lastNamePlaceholder": "Ton nom",
+    "lastNameHelper": "Les autres ne voient que la première lettre.",
+    "email": "E-mail",
+    "emailPlaceholder": "nom@exemple.fr",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Au moins 10 caractères",
+    "passwordHelper": "Au moins 10 caractères. Évite les mots de passe courants.",
+    "adult": "J'ai 18 ans ou plus",
+    "terms": "J'accepte les <terms>conditions d'utilisation</terms> et la <privacy>politique de confidentialité</privacy>",
+    "termsPlain": "J'accepte les conditions d'utilisation et la politique de confidentialité",
+    "termsLink": "conditions d'utilisation",
+    "privacyLink": "politique de confidentialité",
+    "marketing": "Envoie-moi des nouvelles et des idées de SparkCircles",
+    "optional": "(facultatif)",
+    "submit": "Créer mon compte",
+    "haveAccount": "Tu as déjà un compte ?",
+    "logIn": "Me connecter"
+  },
+  "fieldErrors": {
+    "firstName": "Ajoute ton prénom.",
+    "lastName": "Ajoute ton nom.",
+    "email": "Vérifie ton adresse e-mail, elle semble incomplète.",
+    "password": "Utilise au moins 10 caractères et évite les mots de passe courants comme « motdepasse123 ».",
+    "adult": "Coche cette case pour confirmer que tu as 18 ans ou plus. SparkCircles est réservé aux adultes.",
+    "terms": "Coche cette case pour accepter les conditions d'utilisation et la politique de confidentialité."
+  },
+  "checkInbox": {
+    "title": "Consulte ta boîte mail",
+    "body": "Nous avons envoyé un lien à <b>{{email}}</b>. Touche-le dans les 24 heures pour confirmer ton e-mail.",
+    "bodyNoEmail": "Nous t'avons envoyé un lien. Touche-le dans les 24 heures pour confirmer ton e-mail.",
+    "resend": "Renvoyer le lien",
+    "resent": "Nouveau lien envoyé. Tu pourras en redemander un dans un instant.",
+    "helpTitle": "Tu ne le trouves pas ?",
+    "helpBody": "Regarde dans tes spams. Les comptes non confirmés sont supprimés au bout de 7 jours.",
+    "confirmed": "E-mail confirmé. Bienvenue sur SparkCircles !"
+  },
+  "linkExpired": {
+    "title": "Ce lien a expiré",
+    "body": "Les liens fonctionnent pendant une durée limitée et une seule fois. Nous t'en enverrons un nouveau.",
+    "action": "Envoie-moi un nouveau lien"
+  },
+  "logIn": {
+    "title": "Connexion",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "forgot": "Mot de passe oublié ?",
+    "submit": "Me connecter",
+    "newHere": "Première visite ?",
+    "createAccount": "Créer mon compte",
+    "wrongTitle": "L'e-mail ou le mot de passe ne correspond pas",
+    "wrongCaption": "Vérifie les deux et réessaie.",
+    "lockedTitle": "Trop de tentatives",
+    "lockedCaption": "Réessaie dans 15 minutes ou réinitialise ton mot de passe.",
+    "resetAction": "Réinitialiser mon mot de passe"
+  },
+  "forgotPassword": {
+    "title": "Réinitialise ton mot de passe",
+    "intro": "Saisis ton e-mail et nous t'enverrons un lien.",
+    "submit": "Envoie-moi un lien"
+  },
+  "linkSent": {
+    "title": "Consulte ta boîte mail",
+    "body": "Si un compte existe pour cet e-mail, nous t'avons envoyé un lien. Il fonctionne pendant 1 heure."
+  },
+  "newPassword": {
+    "title": "Choisis un nouveau mot de passe",
+    "label": "Nouveau mot de passe",
+    "submit": "Enregistrer mon nouveau mot de passe",
+    "caption": "Tu seras déconnecté·e de tes autres appareils.",
+    "changed": "Mot de passe modifié"
+  },
+  "terms": {
+    "title": "Nos conditions ont changé",
+    "intro": "Voici ce qui change :",
+    "readTerms": "Lire les conditions complètes",
+    "readPrivacy": "Lire la politique de confidentialité",
+    "accept": "Accepter et continuer"
+  },
+  "closure": {
+    "title": "Ton compte est en cours de fermeture",
+    "body": "Tes données personnelles seront supprimées le <b>{{date}}</b>. D'ici là, tu peux garder ton compte tel qu'il était.",
+    "keep": "Garder mon compte",
+    "restored": "Bon retour parmi nous. Ton compte est de nouveau actif."
+  },
+  "emailChange": {
+    "changed": "E-mail modifié"
+  },
+  "report": {
+    "securedTitle": "Ton compte est sécurisé",
+    "securedBody": "Nous t'avons déconnecté·e de tous tes appareils et avons bloqué ton compte. Notre équipe va vérifier le changement d'e-mail et t'aider à récupérer ton compte.",
+    "expiredBody": "Les liens fonctionnent pendant une durée limitée et une seule fois."
   }
 }

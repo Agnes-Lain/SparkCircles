@@ -100,11 +100,14 @@ describe('QA copy (section 19, CLAUDE.md tone)', () => {
 
   it('labels are sentence case in both languages', () => {
     [...strings(fr), ...strings(en)].forEach((s) => {
-      const words = s.split(/\s+/).slice(1);
-      // Only the brand name may be capitalised after the first word.
-      words
-        .filter((w) => /^[A-ZÀ-Ý]/.test(w))
-        .forEach((w) => expect(w).toMatch(/^(SparkCircles|API)/));
+      const words = s.split(/\s+/);
+      // After the first word of each sentence, only the brand name, "API", the English
+      // pronoun "I" and the language names may be capitalised (copy with several sentences
+      // starts each one with a capital).
+      words.forEach((w, i) => {
+        if (i === 0 || /[.!?:]$/.test(words[i - 1] ?? '') || !/^[A-ZÀ-Ý]/.test(w)) return;
+        expect(w).toMatch(/^(SparkCircles|API|I\b|I'm|OK|Français|English)/);
+      });
     });
   });
 });

@@ -18,5 +18,118 @@
     "label": "Development",
     "apiReachable": "API reachable",
     "apiChecking": "Checking the API…"
+  },
+  "common": {
+    "back": "Back",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "logOut": "Log out",
+    "openMailApp": "Open my mail app",
+    "ok": "OK",
+    "loggedOut": "You're logged out",
+    "oneMoment": "One moment…"
+  },
+  "welcome": {
+    "tagline": "Organize family life with families near you.",
+    "createAccount": "Create my account",
+    "logIn": "Log in",
+    "otherLanguage": "Français"
+  },
+  "signUp": {
+    "title": "Create your account",
+    "intro": "It takes 2 minutes. You can add more about your family later.",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "lastNamePlaceholder": "Your last name",
+    "lastNameHelper": "Others only see the first letter.",
+    "email": "Email",
+    "emailPlaceholder": "name@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "At least 10 characters",
+    "passwordHelper": "At least 10 characters. Avoid common passwords.",
+    "adult": "I'm 18 or older",
+    "terms": "I accept the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>",
+    "termsPlain": "I accept the terms of use and the privacy policy",
+    "termsLink": "terms of use",
+    "privacyLink": "privacy policy",
+    "marketing": "Send me news and ideas from SparkCircles",
+    "optional": "(optional)",
+    "submit": "Create my account",
+    "haveAccount": "Already have an account?",
+    "logIn": "Log in"
+  },
+  "fieldErrors": {
+    "firstName": "Add your first name.",
+    "lastName": "Add your last name.",
+    "email": "Check your email address, it looks incomplete.",
+    "password": "Use at least 10 characters, and avoid common passwords like 'motdepasse123'.",
+    "adult": "Tick this box to confirm you're 18 or older. SparkCircles is for adults only.",
+    "terms": "Tick this box to accept the terms and privacy policy."
+  },
+  "checkInbox": {
+    "title": "Check your inbox",
+    "body": "We've sent a link to <b>{{email}}</b>. Tap it within 24 hours to confirm your email.",
+    "bodyNoEmail": "We've sent you a link. Tap it within 24 hours to confirm your email.",
+    "resend": "Send the link again",
+    "resent": "New link sent. You can ask again in a moment.",
+    "helpTitle": "Can't find it?",
+    "helpBody": "Look in your spam folder. Unconfirmed accounts are deleted after 7 days.",
+    "confirmed": "Email confirmed. Welcome to SparkCircles!"
+  },
+  "linkExpired": {
+    "title": "This link has expired",
+    "body": "Links work for a limited time and only once. We'll send you a fresh one.",
+    "action": "Send me a new link"
+  },
+  "logIn": {
+    "title": "Log in",
+    "email": "Email",
+    "password": "Password",
+    "forgot": "Forgot your password?",
+    "submit": "Log in",
+    "newHere": "New here?",
+    "createAccount": "Create my account",
+    "wrongTitle": "Email or password doesn't match",
+    "wrongCaption": "Check both and try again.",
+    "lockedTitle": "Too many attempts",
+    "lockedCaption": "Try again in 15 minutes, or reset your password.",
+    "resetAction": "Reset my password"
+  },
+  "forgotPassword": {
+    "title": "Reset your password",
+    "intro": "Enter your email and we'll send you a link.",
+    "submit": "Send me a link"
+  },
+  "linkSent": {
+    "title": "Check your inbox",
+    "body": "If an account exists for this email, we've sent you a link. It works for 1 hour."
+  },
+  "newPassword": {
+    "title": "Choose a new password",
+    "label": "New password",
+    "submit": "Save my new password",
+    "caption": "You'll be logged out on your other devices.",
+    "changed": "Password changed"
+  },
+  "terms": {
+    "title": "Our terms have changed",
+    "intro": "Here's what's new:",
+    "readTerms": "Read the full terms",
+    "readPrivacy": "Read the privacy policy",
+    "accept": "Accept and continue"
+  },
+  "closure": {
+    "title": "Your account is closing",
+    "body": "Your personal data will be erased on <b>{{date}}</b>. Until then, you can keep your account as it was.",
+    "keep": "Keep my account",
+    "restored": "Welcome back. Your account is active again."
+  },
+  "emailChange": {
+    "changed": "Email changed"
+  },
+  "report": {
+    "securedTitle": "Your account is secured",
+    "securedBody": "We've logged you out on every device and locked your account. Our team will check the email change and help you get your account back.",
+    "expiredBody": "Links work for a limited time and only once."
   }
 }
