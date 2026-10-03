@@ -30,8 +30,15 @@ verification (`admin@`, `verified@` and `pending@sparkcircles.localhost`). No pa
 the repository: choose one with `SEED_PASSWORD='…' bin/rails db:seed`, or leave it out and the seed
 prints a generated password once at the end (keep it in your password manager). Accounts that already
 exist keep their current password. The back office is at http://localhost:3000/admin;
-the first login asks to connect an authenticator app. Emails are not sent in development: preview them at
-http://localhost:3000/rails/mailers (`?locale=en` or `?locale=fr`).
+the first login asks to connect an authenticator app.
+
+Emails are not sent in development: they are kept in `tmp/letter_opener` and listed at
+http://localhost:3000/letter_opener (gem `letter_opener_web`, development group only, never mounted in test or
+production). From the iPhone, use `http://<Mac Wi-Fi address>:3000/letter_opener` with the server started on
+`-b 0.0.0.0`: anyone on your Wi-Fi can read them while it runs, like the rest of the development API. Links in
+them open the app in Expo Go (`exp://<Mac LAN IP>:8081/--/…`); set `APP_LINK_BASE` to change that (see
+[`mobile/README.md`](../mobile/README.md), "Try the account screens on the iPhone"). Templates can also be
+previewed at http://localhost:3000/rails/mailers (`?locale=en` or `?locale=fr`).
 
 ### Testing on a phone (development only)
 

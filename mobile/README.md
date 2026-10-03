@@ -51,7 +51,7 @@ npx expo start
 
 Scan the QR code with the iPhone's **Camera** app, then tap the banner to open it in Expo Go. The first time, iOS asks whether Expo Go may find devices on your local network: tap **Allow**. Changes you save appear on the phone within a second. Press `r` in the terminal to reload, `Ctrl+C` to stop.
 
-**Check it works:** the Home tab shows a "Développement" block that says **API joignable** (or **API reachable** in English). If it shows "Impossible de joindre SparkCircles" instead:
+**Check it works:** the app opens on the Welcome screen ("Créer mon compte" / "Me connecter"). Once you're logged in, the Home tab shows a "Développement" block that says **API joignable** (or **API reachable** in English). If the app shows "Impossible de joindre SparkCircles" instead:
 
 - the API isn't running, or was started without `-b 0.0.0.0`;
 - `EXPO_PUBLIC_API_URL` has an old address (after editing `.env.local`, restart with `npx expo start --clear`);
@@ -60,6 +60,27 @@ Scan the QR code with the iPhone's **Camera** app, then tap the banner to open i
 The app follows the phone's language: English if the iPhone is set to English, French otherwise.
 
 **Limits of Expo Go:** you see Expo Go's icon and splash, not ours, and iOS permission prompts show Expo Go's text. Only libraries bundled in Expo Go can be used (everything in `package.json` is). Our own icon, splash, permission texts and universal links need a development build (proposal M-6).
+
+## Try the account screens on the iPhone (development)
+
+The auth gate is on: without a session the app opens on Welcome; with one it opens the tabs, even after you close and reopen it. Development emails aren't sent: the API keeps them, and you read them in a browser with clickable links, at **`http://<Mac Wi-Fi address>:3000/letter_opener`** (Safari on the iPhone) or `http://localhost:3000/letter_opener` (the Mac). Links in those emails open the app in Expo Go: `exp://<Mac Wi-Fi address>:8081/--/confirm-email?token=…` (and `/reset-password`, `/this-wasnt-me`, `/forgot-password`).
+
+1. **Sign up**: Welcome → "Créer mon compte", fill in the form, tick the two required boxes, "Créer mon compte". You land on "Consulte ta boîte mail".
+2. **Confirm**: on the iPhone, open Safari at `http://<Mac Wi-Fi address>:3000/letter_opener`, tap the newest email ("Confirme ton e-mail"), then its button. iOS asks to open Expo Go: accept. The app opens logged in on Home, with the checkmark and the toast "E-mail confirmé. Bienvenue sur SparkCircles !". (On the Mac, links can't open the phone's app: use the iPhone's Safari for this step.)
+3. **Log out**: "Me déconnecter" at the bottom of Home (temporary, development only, until the My account screens). You're back on Welcome with "Tu es déconnecté·e".
+4. **Log in**: Welcome → "Me connecter", email and password. A wrong password shows "L'e-mail ou le mot de passe ne correspond pas".
+5. **Forgot password**: Log in → "Mot de passe oublié ?", your email, "Envoie-moi un lien". Open the newest email in letter_opener ("Réinitialise ton mot de passe"), tap its button: the app opens on "Choisis un nouveau mot de passe". Save it: you're logged in, other devices are logged out.
+
+Close and reopen Expo Go while logged in: Welcome is skipped (AC-3.4).
+
+**Where the link address comes from.** In development the API builds email links from `exp://<first private IPv4 of the Mac>:8081/--`, the address Metro serves on (the one in the QR code). Set `APP_LINK_BASE` before starting the API to use another value, then restart it:
+
+```bash
+APP_LINK_BASE="exp://192.168.1.77:8081/--" bin/rails server -b 0.0.0.0    # another address or port
+APP_LINK_BASE="exp://10.0.2.2:8081/--" bin/rails server                    # Android emulator
+```
+
+With `npx expo start --tunnel`, use the `exp://…exp.direct` address Expo prints, followed by `/--`. Links sent before a change keep the old address. Production will use universal links on the app's domain (proposal M-19), which need our own build.
 
 ## Alternative: the Android emulator on the Mac
 
