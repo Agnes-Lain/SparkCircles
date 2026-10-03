@@ -23,11 +23,11 @@ describe('TabBar (design system section 10)', () => {
       'Accueil',
       'Événements',
       'Communauté',
-      'Market',
+      'Services',
       'Voyages',
     ]);
     // Labels are always visible text, never icon-only.
-    ['Accueil', 'Événements', 'Communauté', 'Market', 'Voyages'].forEach((label) =>
+    ['Accueil', 'Événements', 'Communauté', 'Services', 'Voyages'].forEach((label) =>
       expect(screen.getByText(label)).toBeVisible(),
     );
   });
