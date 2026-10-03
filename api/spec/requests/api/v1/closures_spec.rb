@@ -6,7 +6,7 @@ RSpec.describe "Account closure", type: :request do
 
   describe "POST /api/v1/closure" do
     it "AC-11.1 requires the password" do
-      post "/api/v1/closure", params: { current_password: "wrong-password-1" }, headers: headers, as: :json
+      post "/api/v1/closure", params: { current_password: wrong_test_password }, headers: headers, as: :json
 
       expect(error_code).to eq("invalid_password")
       expect(user.reload).not_to be_closed
@@ -17,7 +17,7 @@ RSpec.describe "Account closure", type: :request do
 
       freeze_time do
         expect do
-          post "/api/v1/closure", params: { current_password: "correct-horse-battery" }, headers: headers, as: :json
+          post "/api/v1/closure", params: { current_password: strong_test_password }, headers: headers, as: :json
         end.to have_enqueued_mail(AccountMailer, :closure_confirmation)
 
         expect(response).to have_http_status(:accepted)
@@ -38,7 +38,7 @@ RSpec.describe "Account closure", type: :request do
   describe "DELETE /api/v1/closure" do
     it "AC-11.3 lets the person cancel within 30 days after logging in, restoring the account" do
       user.update!(closed_at: 10.days.ago)
-      post "/api/v1/sessions", params: { email: user.email, password: "correct-horse-battery" }, as: :json
+      post "/api/v1/sessions", params: { email: user.email, password: strong_test_password }, as: :json
       token_headers = { "Authorization" => "Bearer #{json['token']}" }
       expect(json.dig("user", "closure", "erasure_on")).to eq((user.closed_at + 30.days).to_date.iso8601)
 

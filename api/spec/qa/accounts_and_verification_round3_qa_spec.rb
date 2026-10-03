@@ -2,7 +2,7 @@ require "rails_helper"
 
 # QA round 3 (2026-10-03) for PR #2. See docs/qa/accounts-and-verification.md, round 3.
 RSpec.describe "QA round 3: accounts and verification", type: :request do
-  let(:password) { "correct-horse-battery" }
+  let(:password) { strong_test_password }
   let(:secret_reason) { "Checked by phone QA-REASON-7731" }
   let(:admin) { create(:user, :admin) }
   let(:member) { create(:user, email: "member.new@example.com", locale: "fr", security_locked_at: Time.current) }
@@ -40,7 +40,7 @@ RSpec.describe "QA round 3: accounts and verification", type: :request do
 
     # The member logs in again after setting a new password (reset link).
     token = CGI.unescape(member_mail.last.text_part.body.to_s[/reset-password\?token=(\S+)/, 1])
-    put "/api/v1/password_resets", params: { token: token, password: "brand-new-pass-4410" }, as: :json
+    put "/api/v1/password_resets", params: { token: token, password: new_test_password }, as: :json
     expect(response).to have_http_status(:ok)
     headers = { "Authorization" => "Bearer #{json['token']}" }
 

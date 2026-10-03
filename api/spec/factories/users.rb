@@ -3,7 +3,7 @@ FactoryBot.define do
     first_name { "Claire" }
     last_name { "Martin" }
     sequence(:email) { |n| "parent#{n}@example.com" }
-    password { "correct-horse-battery" }
+    password { TestPasswords::STRONG }
     locale { "en" }
     confirmed_at { 1.day.ago }
     adult_confirmed_at { 1.day.ago }

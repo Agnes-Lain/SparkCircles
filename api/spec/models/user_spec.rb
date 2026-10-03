@@ -10,7 +10,7 @@ RSpec.describe User do
         "SELECT email, last_name, city_shown, date_of_birth, verification_expires_on, encrypted_password FROM users WHERE id = #{User.connection.quote(user.id)}"
       )
       expect(raw.values.join).not_to include("claire@example.com", "Martin", "Croix-Rousse", "1990-05-17", "2028-01-01",
-                                             "correct-horse-battery")
+                                             strong_test_password)
       expect(user.reload).to have_attributes(email: "claire@example.com", last_name: "Martin", date_of_birth: Date.new(1990, 5, 17))
     end
 
@@ -70,8 +70,8 @@ RSpec.describe User do
 
   describe "AC-1.4 password rules" do
     it "accepts a long uncommon password and refuses short, common or repetitive ones" do
-      expect(build(:user, password: "correct-horse-battery")).to be_valid
-      user = build(:user, password: "aaaaaaaaaaaa")
+      expect(build(:user, password: strong_test_password)).to be_valid
+      user = build(:user, password: "a" * 12)
       user.validate
       expect(user.errors.details[:password]).to eq([ { error: :too_common } ])
     end

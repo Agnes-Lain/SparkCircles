@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe "Sessions", type: :request do
   let!(:user) { create(:user, email: "claire@example.com") }
 
-  def log_in(email: "claire@example.com", password: "correct-horse-battery")
+  def log_in(email: "claire@example.com", password: strong_test_password)
     post "/api/v1/sessions", params: { email: email, password: password, device_name: "iPhone" }, as: :json
   end
 
@@ -18,7 +18,7 @@ RSpec.describe "Sessions", type: :request do
     end
 
     it "AC-3.2 gives the same answer for a wrong email and a wrong password" do
-      log_in(password: "wrong-password-1")
+      log_in(password: wrong_test_password)
       wrong_password = [ response.status, json ]
       log_in(email: "nobody@example.com")
 
@@ -35,7 +35,7 @@ RSpec.describe "Sessions", type: :request do
     end
 
     it "AC-3.3 blocks the account for 15 minutes after 5 failures in 15 minutes and emails the owner" do
-      expect { 5.times { log_in(password: "wrong-password-1") } }
+      expect { 5.times { log_in(password: wrong_test_password) } }
         .to have_enqueued_mail(AccountMailer, :account_locked).with(user)
 
       expect(response).to have_http_status(:locked)
@@ -51,10 +51,10 @@ RSpec.describe "Sessions", type: :request do
     end
 
     it "AC-3.3 does not count failures older than 15 minutes" do
-      4.times { log_in(password: "wrong-password-1") }
+      4.times { log_in(password: wrong_test_password) }
 
       travel 16.minutes do
-        log_in(password: "wrong-password-1")
+        log_in(password: wrong_test_password)
         expect(error_code).to eq("invalid_credentials")
         expect(user.reload.failed_attempts).to eq(1)
       end

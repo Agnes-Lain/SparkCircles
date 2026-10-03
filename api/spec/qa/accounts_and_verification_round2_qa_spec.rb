@@ -2,11 +2,13 @@ require "rails_helper"
 
 # QA re-test round (2026-10-03) for PR #2. See docs/qa/accounts-and-verification.md, round 2.
 RSpec.describe "QA round 2: accounts and verification", type: :request do
-  let(:password) { "correct-horse-battery" }
+  let(:password) { strong_test_password }
 
   describe "AC-1.4 breached-password list is wired up" do
     it "refuses SecLists entries (any case) and French starter entries at sign-up" do
-      %w[Basketball 1q2w3e4r5t6y azerty1234].each do |common|
+      # Read from config/common_passwords.txt: a SecLists entry in another case, a second
+      # SecLists entry and a French addition.
+      [ common_test_password.capitalize, TestPasswords.common_entries[30], common_test_password(:french) ].each do |common|
         post "/api/v1/registrations", params: { user: {
           first_name: "Eve", last_name: "Test", email: "eve-#{common}@example.com", password: common,
           adult_confirmed: true, terms_accepted: true
@@ -51,7 +53,7 @@ RSpec.describe "QA round 2: accounts and verification", type: :request do
       stored = nil
       logs = capture_job_logs do
         post "/api/v1/registrations", params: { user: {
-          first_name: "Ana", last_name: "Test", email: "ana@example.com", password: "uncommon-pass-9182",
+          first_name: "Ana", last_name: "Test", email: "ana@example.com", password: new_test_password,
           adult_confirmed: true, terms_accepted: true
         } }, as: :json
         stored = enqueued_jobs.map { |job| job["arguments"] }.inspect

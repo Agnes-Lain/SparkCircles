@@ -31,7 +31,7 @@ RSpec.describe "Back office UI fixes from QA", type: :request do
 
   it "BUG-10 shows field errors under the field and keeps the email after a wrong password" do
     delete "/admin/logout"
-    post "/admin/login", params: { email: admin.email, password: "wrong-password-1" }
+    post "/admin/login", params: { email: admin.email, password: wrong_test_password }
 
     expect(response.body).to include('id="login-error"', 'aria-describedby="login-error"', "value=\"#{admin.email}\"")
   end

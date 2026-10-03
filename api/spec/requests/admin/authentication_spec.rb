@@ -4,7 +4,7 @@ RSpec.describe "Back office authentication", type: :request do
   let(:admin) { create(:user, :admin) }
 
   it "AC-9.5 requires the password and then a 6-digit code" do
-    post "/admin/login", params: { email: admin.email, password: "correct-horse-battery" }
+    post "/admin/login", params: { email: admin.email, password: strong_test_password }
     expect(response).to redirect_to("/admin/login/code")
 
     get "/admin/verifications"
@@ -22,7 +22,7 @@ RSpec.describe "Back office authentication", type: :request do
   end
 
   it "AC-9.5 BUG-01 locks the code step for 15 minutes after 5 wrong codes, counted on the server" do
-    post "/admin/login", params: { email: admin.email, password: "correct-horse-battery" }
+    post "/admin/login", params: { email: admin.email, password: strong_test_password }
     4.times { post "/admin/login/code", params: { code: "000000" } }
     expect(response).to have_http_status(:unprocessable_content)
 
@@ -30,7 +30,7 @@ RSpec.describe "Back office authentication", type: :request do
     expect(response).to redirect_to("/admin/login")
     expect(admin.reload).to be_otp_locked
 
-    post "/admin/login", params: { email: admin.email, password: "correct-horse-battery" }
+    post "/admin/login", params: { email: admin.email, password: strong_test_password }
     post "/admin/login/code", params: { code: admin.reload.current_otp }
     expect(response).to redirect_to("/admin/login")
 
@@ -46,7 +46,7 @@ RSpec.describe "Back office authentication", type: :request do
     live_cookie = cookies["_sparkcircles_admin"]
 
     other = open_session
-    other.post "/admin/login", params: { email: admin.email, password: "correct-horse-battery" }
+    other.post "/admin/login", params: { email: admin.email, password: strong_test_password }
     5.times { other.post "/admin/login/code", params: { code: "000000" } }
 
     cookies["_sparkcircles_admin"] = live_cookie
@@ -71,12 +71,12 @@ RSpec.describe "Back office authentication", type: :request do
     codes = admin.generate_otp_backup_codes!
     admin.save!
 
-    post "/admin/login", params: { email: admin.email, password: "correct-horse-battery" }
+    post "/admin/login", params: { email: admin.email, password: strong_test_password }
     post "/admin/login/code", params: { code: codes.first }
     expect(response).to redirect_to("/admin")
 
     delete "/admin/logout"
-    post "/admin/login", params: { email: admin.email, password: "correct-horse-battery" }
+    post "/admin/login", params: { email: admin.email, password: strong_test_password }
     post "/admin/login/code", params: { code: codes.first }
     expect(response).to have_http_status(:unprocessable_content)
   end
@@ -85,7 +85,7 @@ RSpec.describe "Back office authentication", type: :request do
     member = create(:user)
     member.roles.create!(name: "admin")
 
-    post "/admin/login", params: { email: member.email, password: "correct-horse-battery" }
+    post "/admin/login", params: { email: member.email, password: strong_test_password }
     expect(response).to redirect_to("/admin/login/setup")
 
     get "/admin/login/setup"
@@ -105,12 +105,12 @@ RSpec.describe "Back office authentication", type: :request do
   it "AC-9.4 gives a non-admin the same neutral message as a wrong password" do
     parent = create(:user)
 
-    post "/admin/login", params: { email: parent.email, password: "correct-horse-battery" }
+    post "/admin/login", params: { email: parent.email, password: strong_test_password }
     neutral = response.body
     expect(response).to have_http_status(:unprocessable_content)
     expect(neutral).to include("Email or password doesn&#39;t match")
 
-    post "/admin/login", params: { email: admin.email, password: "wrong-password-1" }
+    post "/admin/login", params: { email: admin.email, password: wrong_test_password }
     expect(response.body).to include("Email or password doesn&#39;t match")
   end
 
@@ -153,7 +153,7 @@ RSpec.describe "Back office authentication", type: :request do
 
   it "uses CSRF protection on back office forms" do
     ActionController::Base.allow_forgery_protection = true
-    post "/admin/login", params: { email: admin.email, password: "correct-horse-battery" }
+    post "/admin/login", params: { email: admin.email, password: strong_test_password }
     expect(response).to have_http_status(:unprocessable_content).or have_http_status(:forbidden)
   ensure
     ActionController::Base.allow_forgery_protection = false

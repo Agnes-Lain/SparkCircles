@@ -36,10 +36,10 @@ RSpec.describe "Back office \"This wasn't me\" reports (design section 8)", type
       expect(flash[:notice]).to eq("Email restored. A password reset link was sent to claire.m@…")
 
       expect(member.reload).to have_attributes(email: "claire.m@example.com", security_locked_at: nil)
-      expect(member.valid_password?("correct-horse-battery")).to be(false)
+      expect(member.valid_password?(strong_test_password)).to be(false)
       get "/api/v1/me", headers: device
       expect(response).to have_http_status(:unauthorized)
-      post "/api/v1/sessions", params: { email: "claire.m@example.com", password: "correct-horse-battery" }, as: :json
+      post "/api/v1/sessions", params: { email: "claire.m@example.com", password: strong_test_password }, as: :json
       expect(response).to have_http_status(:unauthorized)
 
       perform_enqueued_jobs(only: AccountTokenEmailJob)
@@ -94,7 +94,7 @@ RSpec.describe "Back office \"This wasn't me\" reports (design section 8)", type
       end.to have_enqueued_job(AccountTokenEmailJob).with(member, "report_closed")
 
       expect(member.reload).to have_attributes(email: "attacker@example.com", security_locked_at: nil)
-      expect(member.valid_password?("correct-horse-battery")).to be(false)
+      expect(member.valid_password?(strong_test_password)).to be(false)
       expect(report.reload).to have_attributes(closed_by_id: admin.id)
       event = AuditEvent.last
       expect(event).to have_attributes(action: "closed_email_change_report", reason: "email_change_report",
@@ -117,7 +117,7 @@ RSpec.describe "Back office \"This wasn't me\" reports (design section 8)", type
       expect(response.body).to include("Closed without restoring", "<dt>Reason</dt>", "Checked by phone\n<br />with the member", "by #{admin.display_name} The email stayed")
       expect(AuditEvent.last.fields).to include("report_close_reasons")
 
-      member.update!(password: "a-brand-new-secret") # the member set a new password
+      member.update!(password: new_test_password) # the member set a new password
       headers = auth_headers(member)
       member_responses = [ "/api/v1/me", "/api/v1/verification", "/api/v1/users/#{member.id}", "/api/v1/me/public_profile" ].map do |path|
         get path, headers: headers

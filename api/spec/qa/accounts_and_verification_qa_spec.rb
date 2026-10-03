@@ -4,7 +4,7 @@ require "rails_helper"
 # Examples marked `pending` reproduce a reported bug: they fail today (reported as pending) and
 # RSpec will flag them as "fixed" once the bug is corrected, so the `pending` line can be removed.
 RSpec.describe "QA: accounts and verification", type: :request do
-  let(:password) { "correct-horse-battery" }
+  let(:password) { strong_test_password }
 
   describe "AC-10.1 AC-10.2 encryption actually applied in the database and storage" do
     it "stores no sensitive value of verifications, email changes, pending emails or audit IPs in plain text" do
@@ -33,7 +33,7 @@ RSpec.describe "QA: accounts and verification", type: :request do
   describe "authentication and tokens" do
     it "AC-3.3 keeps refusing the right password during the 15-minute lock, then lets it in" do
       user = create(:user, email: "lock@example.com")
-      5.times { post "/api/v1/sessions", params: { email: "lock@example.com", password: "wrong-password-1" }, as: :json }
+      5.times { post "/api/v1/sessions", params: { email: "lock@example.com", password: wrong_test_password }, as: :json }
 
       post "/api/v1/sessions", params: { email: "lock@example.com", password: password }, as: :json
       expect(response).to have_http_status(:locked)
@@ -86,7 +86,7 @@ RSpec.describe "QA: accounts and verification", type: :request do
 
     it "AC-1.5 ignores roles, verification status and confirmation sent at sign-up" do
       post "/api/v1/registrations", params: { user: {
-        first_name: "Eve", last_name: "Hacker", email: "eve@example.com", password: "uncommon-pass-9182",
+        first_name: "Eve", last_name: "Hacker", email: "eve@example.com", password: new_test_password,
         adult_confirmed: true, terms_accepted: true, roles: [ "admin" ], verification_status: "verified",
         confirmed_at: Time.current, verification_expires_on: "2030-01-01"
       } }, as: :json

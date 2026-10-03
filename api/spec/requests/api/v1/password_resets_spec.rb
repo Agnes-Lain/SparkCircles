@@ -36,13 +36,13 @@ RSpec.describe "Password reset", type: :request do
 
       expect do
         travel 50.minutes do
-          put "/api/v1/password_resets", params: { token: token, password: "a-brand-new-secret" }, as: :json
+          put "/api/v1/password_resets", params: { token: token, password: new_test_password }, as: :json
         end
       end.to have_enqueued_mail(AccountMailer, :password_changed)
 
       expect(response).to have_http_status(:ok)
       expect(json["token"]).to be_present
-      expect(user.reload.valid_password?("a-brand-new-secret")).to be(true)
+      expect(user.reload.valid_password?(new_test_password)).to be(true)
       get "/api/v1/me", headers: other_device
       expect(response).to have_http_status(:unauthorized)
     end
@@ -50,23 +50,23 @@ RSpec.describe "Password reset", type: :request do
     it "AC-4.3 refuses an expired link" do
       token = reset_token
       travel 61.minutes do
-        put "/api/v1/password_resets", params: { token: token, password: "a-brand-new-secret" }, as: :json
+        put "/api/v1/password_resets", params: { token: token, password: new_test_password }, as: :json
       end
 
       expect(error_code).to eq("invalid_or_expired_token")
-      expect(user.reload.valid_password?("correct-horse-battery")).to be(true)
+      expect(user.reload.valid_password?(strong_test_password)).to be(true)
     end
 
     it "AC-4.3 refuses a link that was already used" do
       token = reset_token
-      put "/api/v1/password_resets", params: { token: token, password: "a-brand-new-secret" }, as: :json
-      put "/api/v1/password_resets", params: { token: token, password: "another-new-secret" }, as: :json
+      put "/api/v1/password_resets", params: { token: token, password: new_test_password }, as: :json
+      put "/api/v1/password_resets", params: { token: token, password: another_test_password }, as: :json
 
       expect(error_code).to eq("invalid_or_expired_token")
     end
 
     it "AC-1.4 applies the password rules" do
-      put "/api/v1/password_resets", params: { token: reset_token, password: "short" }, as: :json
+      put "/api/v1/password_resets", params: { token: reset_token, password: short_test_password(5) }, as: :json
 
       expect(json.dig("error", "details", "password")).to eq([ "too_short" ])
     end
@@ -77,11 +77,11 @@ RSpec.describe "Password reset", type: :request do
       headers = auth_headers(user, device_name: "phone")
       other = auth_headers(user, device_name: "tablet")
 
-      put "/api/v1/me/password", params: { current_password: "wrong-password-1", password: "a-brand-new-secret" },
+      put "/api/v1/me/password", params: { current_password: wrong_test_password, password: new_test_password },
                                  headers: headers, as: :json
       expect(error_code).to eq("invalid_password")
 
-      put "/api/v1/me/password", params: { current_password: "correct-horse-battery", password: "a-brand-new-secret" },
+      put "/api/v1/me/password", params: { current_password: strong_test_password, password: new_test_password },
                                  headers: headers, as: :json
       expect(response).to have_http_status(:ok)
 

@@ -4,7 +4,7 @@ RSpec.describe "Email change", type: :request do
   let(:user) { create(:user, email: "claire@example.com") }
   let(:headers) { auth_headers(user) }
 
-  def request_change(email, password: "correct-horse-battery", with: headers)
+  def request_change(email, password: strong_test_password, with: headers)
     token = nil
     allow(AccountMailer).to receive(:confirmation_instructions).and_wrap_original do |original, record, raw, *rest|
       token = raw
@@ -20,7 +20,7 @@ RSpec.describe "Email change", type: :request do
   end
 
   it "AC-13.1 changes nothing and sends nothing with a wrong password" do
-    expect { request_change("new@example.com", password: "wrong-password-1") }
+    expect { request_change("new@example.com", password: wrong_test_password) }
       .to not_change(ActionMailer::Base.deliveries, :count).and not_have_enqueued_mail
 
     expect(error_code).to eq("invalid_password")

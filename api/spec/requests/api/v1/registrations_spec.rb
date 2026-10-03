@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe "POST /api/v1/registrations", type: :request do
   let(:valid_params) do
-    { user: { first_name: "Claire", last_name: "Martin", email: "claire@example.com", password: "correct-horse-battery",
+    { user: { first_name: "Claire", last_name: "Martin", email: "claire@example.com", password: strong_test_password,
               adult_confirmed: true, terms_accepted: true, marketing_opt_in: false, locale: "fr" } }
   end
 
@@ -44,13 +44,13 @@ RSpec.describe "POST /api/v1/registrations", type: :request do
   end
 
   it "AC-1.4 refuses a password shorter than 10 characters" do
-    sign_up(password: "short1")
+    sign_up(password: short_test_password)
 
     expect(json.dig("error", "details", "password")).to eq([ "too_short" ])
   end
 
   it "AC-1.4 refuses a commonly breached password" do
-    sign_up(password: "motdepasse123")
+    sign_up(password: common_test_password(:french))
 
     expect(json.dig("error", "details", "password")).to eq([ "too_common" ])
   end
