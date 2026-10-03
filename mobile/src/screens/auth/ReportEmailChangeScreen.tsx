@@ -1,0 +1,80 @@
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import { Clock, ShieldCheck } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+
+import { auth } from '../../api';
+import { ApiError } from '../../api/errors';
+import { useAfterMount } from '../../auth/useAfterMount';
+import { useSession } from '../../auth/useSession';
+import { Button } from '../../components/Button';
+import { MessageScreen } from './layouts';
+import { LinkPending } from './LinkPending';
+import { UnreachableNotification } from './UnreachableNotification';
+import { useLinkToken } from './useLinkToken';
+
+/**
+ * Target of the "This wasn't me" link sent to the old address after an email change
+ * (`/this-wasnt-me?token=…`, AC-13.7, 13.8). Works without logging in: the account is secured
+ * at once (every device logged out, account locked, report sent to the team).
+ */
+export function ReportEmailChangeScreen() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const token = useLinkToken();
+  const { status, signOut } = useSession();
+
+  const report = useMutation({
+    mutationFn: (value: string) => auth().reportEmailChange(value),
+    // Every device of the account is logged out: forget this one's token too, if it has one.
+    onSuccess: async () => {
+      if (status === 'signedIn') await signOut();
+    },
+  });
+
+  useAfterMount(() => {
+    if (token) report.mutate(token);
+  });
+
+  const error = report.error instanceof ApiError ? report.error : null;
+  const expired =
+    !token || error?.code === 'invalid_or_expired_token' || error?.code === 'bad_request';
+  const leave = () => router.replace('/');
+
+  if (report.isSuccess) {
+    return (
+      <MessageScreen
+        testID="report-secured-screen"
+        icon={ShieldCheck}
+        title={t('report.securedTitle')}
+        body={t('report.securedBody')}
+      >
+        <Button size="large" label={t('common.ok')} onPress={leave} />
+      </MessageScreen>
+    );
+  }
+
+  if (expired) {
+    return (
+      <MessageScreen
+        testID="report-expired-screen"
+        icon={Clock}
+        title={t('linkExpired.title')}
+        body={t('report.expiredBody')}
+      >
+        <Button size="large" label={t('common.ok')} onPress={leave} />
+      </MessageScreen>
+    );
+  }
+
+  return (
+    <LinkPending>
+      {error ? (
+        <UnreachableNotification
+          onRetry={() => token && report.mutate(token)}
+          retrying={report.isPending}
+        />
+      ) : null}
+    </LinkPending>
+  );
+}

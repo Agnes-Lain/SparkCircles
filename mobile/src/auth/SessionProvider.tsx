@@ -6,8 +6,12 @@ import { secureTokenStore, type TokenStore } from './tokenStore';
 
 export type SessionStatus = 'loading' | 'signedOut' | 'signedIn';
 
+/** Why the device is signed out: the person chose to, or the API refused the token. */
+export type SignOutReason = 'logout' | 'unauthorized' | null;
+
 export type Session = {
   status: SessionStatus;
+  reason: SignOutReason;
   /** Store the token returned by login, sign-up confirmation or password reset. */
   signIn(token: string): Promise<void>;
   /** Forget the token on this device (the API call to log out is made by the caller). */
@@ -17,8 +21,8 @@ export type Session = {
 export const SessionContext = createContext<Session | null>(null);
 
 /**
- * Knows whether this device holds a token. The auth gate that sends signed-out users to
- * Welcome is switched on with the login screens (proposal M-9).
+ * Knows whether this device holds a token. The auth gate (src/auth/gate.ts, root layout)
+ * sends signed-out devices to Welcome, or to Log in after a refused token (M-9, M-18).
  */
 export function SessionProvider({
   children,
@@ -29,6 +33,7 @@ export function SessionProvider({
 }) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<SessionStatus>('loading');
+  const [reason, setReason] = useState<SignOutReason>(null);
 
   useEffect(() => {
     let active = true;
@@ -46,6 +51,7 @@ export function SessionProvider({
     () =>
       onUnauthorized(() => {
         queryClient.clear();
+        setReason('unauthorized');
         setStatus('signedOut');
       }),
     [queryClient],
@@ -54,6 +60,7 @@ export function SessionProvider({
   const signIn = useCallback(
     async (token: string) => {
       await tokenStore.setToken(token);
+      setReason(null);
       setStatus('signedIn');
     },
     [tokenStore],
@@ -62,9 +69,13 @@ export function SessionProvider({
   const signOut = useCallback(async () => {
     await tokenStore.clearToken();
     queryClient.clear();
+    setReason('logout');
     setStatus('signedOut');
   }, [tokenStore, queryClient]);
 
-  const value = useMemo(() => ({ status, signIn, signOut }), [status, signIn, signOut]);
+  const value = useMemo(
+    () => ({ status, reason, signIn, signOut }),
+    [status, reason, signIn, signOut],
+  );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

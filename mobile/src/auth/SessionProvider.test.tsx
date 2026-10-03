@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
 import { memoryTokenStore } from '../test/fakes';
@@ -8,7 +8,13 @@ import { SessionProvider } from './SessionProvider';
 import { useSession } from './useSession';
 
 function Status() {
-  return <Text>{useSession().status}</Text>;
+  const { status, reason, signOut } = useSession();
+  return (
+    <Text onPress={() => void signOut()}>
+      {status}
+      {reason ? ` (${reason})` : ''}
+    </Text>
+  );
 }
 
 async function renderSession(token: string | null) {
@@ -40,6 +46,17 @@ describe('SessionProvider', () => {
 
     await act(() => emitUnauthorized());
 
-    await waitFor(() => expect(screen.getByText('signedOut')).toBeOnTheScreen());
+    // The gate then opens Log in rather than Welcome (M-18).
+    await waitFor(() => expect(screen.getByText('signedOut (unauthorized)')).toBeOnTheScreen());
+  });
+
+  it('AC-3.5 remembers that the person logged out (Welcome, not Log in)', async () => {
+    const tokenStore = await renderSession('jwt');
+    await screen.findByText('signedIn');
+
+    await fireEvent.press(screen.getByText('signedIn'));
+
+    expect(await screen.findByText('signedOut (logout)')).toBeOnTheScreen();
+    expect(tokenStore.value).toBeNull();
   });
 });

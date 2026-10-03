@@ -40,3 +40,19 @@ export const validationErrorFixture: ApiErrorBody = {
     details: { password: ['too_short'] },
   },
 };
+
+/** `me` variants for the auth gate (contract §2). */
+export const unconfirmedMe: Me = { ...meFixture, email_confirmed: false };
+export const closingMe: Me = {
+  ...meFixture,
+  closure: { closed_at: '2026-10-13T09:00:00Z', erasure_on: '2026-11-12' },
+};
+export const termsMe: Me = { ...meFixture, terms_acceptance_required: true };
+
+/** `GET /legal` (contract §5). */
+export const legalFixture = {
+  terms: { version: '1.1', url: 'https://sparkcircles.fr/terms' },
+  privacy: { version: '1.1', url: 'https://sparkcircles.fr/privacy' },
+  requires_acceptance: true,
+  changes: ['We now explain how long we keep your data.'],
+};

@@ -1,6 +1,7 @@
 import { emitUnauthorized } from '../auth/sessionEvents';
 import { secureTokenStore } from '../auth/tokenStore';
 import { currentLocale } from '../i18n';
+import { authApi } from './auth';
 import { createApiClient } from './client';
 import { apiBaseUrl } from './config';
 
@@ -18,4 +19,9 @@ export function api() {
     onUnauthorized: emitUnauthorized,
   });
   return client;
+}
+
+/** The account endpoints (sign-up, login, links, terms, closure) on the app's client. */
+export function auth() {
+  return authApi(api());
 }

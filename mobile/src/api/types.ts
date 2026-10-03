@@ -117,3 +117,29 @@ export type PublicProfile = {
 
 /** §4 Endpoints that log a device in answer { token, user }. */
 export type SessionResponse = { token: string; user: Me };
+
+/** §3 `POST /registrations` body (AC-1.1–1.6, 5.1–5.3). */
+export type RegistrationParams = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  adult_confirmed: boolean;
+  terms_accepted: boolean;
+  marketing_opt_in: boolean;
+  locale: 'fr' | 'en';
+};
+
+/**
+ * §3 `POST /email_confirmations`: a sign-up link logs the device in ({ token, user });
+ * an email-change link answers { token: null, user: me | null }.
+ */
+export type EmailConfirmationResponse = SessionResponse | { token: null; user: Me | null };
+
+/** §5 `GET /legal` (AC-5.1, 5.5). */
+export type Legal = {
+  terms: { version: string; url: string };
+  privacy: { version: string; url: string };
+  requires_acceptance: boolean;
+  changes: string[];
+};

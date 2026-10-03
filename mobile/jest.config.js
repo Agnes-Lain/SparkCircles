@@ -12,6 +12,8 @@ module.exports = {
   ],
   // lucide-react-native's default entry is ESM (.mjs); Jest uses its CommonJS build.
   moduleNameMapper: {
+    // The root layout imports global.css (NativeWind); Jest doesn't need it.
+    '\\.css$': '<rootDir>/src/test/styleStub.js',
     '^lucide-react-native$':
       '<rootDir>/node_modules/lucide-react-native/dist/cjs/lucide-react-native.js',
   },
