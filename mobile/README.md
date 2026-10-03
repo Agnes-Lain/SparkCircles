@@ -5,7 +5,7 @@ React Native app built with Expo SDK 57, TypeScript, Expo Router, NativeWind (th
 ## Requirements
 
 - **Node 22**. The Mac's nvm default is Node 18, which is too old, so run `nvm use` in `mobile/` first (it reads `.nvmrc`).
-- **Expo Go** on your iPhone (free on the App Store, no account needed).
+- **Expo Go** on your iPhone (free on the App Store) and a **free Expo account**: Expo Go on an iPhone may ask you to sign in, and the CLI then needs the same account (see step below).
 - The Rails API from `api/`, set up as described in [`api/README.md`](../api/README.md).
 
 ## Open the app on your iPhone (Expo Go)
@@ -23,6 +23,12 @@ ipconfig getifaddr en0          # prints the Mac's Wi-Fi address, e.g. 192.168.1
 ```
 
 Open `mobile/.env.local` and set `EXPO_PUBLIC_API_URL=http://<that address>:3000`. The file is git-ignored. Everything in `EXPO_PUBLIC_` is built into the app, so never put a secret there. The address can change when the router restarts: run `ipconfig getifaddr en0` again and update the file.
+
+Sign in with your free Expo account (create one at https://expo.dev/signup if needed), once on the Mac and once in Expo Go on the iPhone, with the same account:
+
+```bash
+npx expo login        # in mobile/; `npx expo whoami` shows who is signed in
+```
 
 **Every time**
 
