@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,7 +9,7 @@ import { Skeleton } from '../../components/Skeleton';
  * Loading state of the email-link screens: a skeleton of the message layout (icon circle,
  * title, two lines), never a lone spinner (design section 3). Screen readers hear "One moment…".
  */
-export function LinkPending({ children }: { children?: React.ReactNode }) {
+export function LinkPending({ children }: { children?: ReactNode }) {
   const { t } = useTranslation();
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-shell px-lg pb-3xl pt-lg">
