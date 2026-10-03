@@ -47,9 +47,12 @@ describe('design tokens (design system section 15)', () => {
   it('replace Tailwind default colors: only SparkCircles colors exist (M-11)', () => {
     expect(tailwindConfig.theme.colors).toBe(tokens.colors);
     expect(tailwindConfig.theme.extend.colors).toBeUndefined();
-    expect(tailwindConfig.theme.colors).not.toHaveProperty('black');
-    expect(tailwindConfig.theme.colors).not.toHaveProperty('red');
-    expect(tailwindConfig.theme.colors).not.toHaveProperty('violet');
+    // Tailwind default palette names, checked to be absent (not used as colors).
+    /* eslint-disable no-restricted-syntax */
+    ['black', 'red', 'violet', 'gray', 'blue'].forEach((name) =>
+      expect(tailwindConfig.theme.colors).not.toHaveProperty(name),
+    );
+    /* eslint-enable no-restricted-syntax */
   });
 
   it('resolve token names to values', () => {
