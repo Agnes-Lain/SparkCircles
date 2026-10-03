@@ -21,13 +21,13 @@ describe('TabBar (design system section 10)', () => {
     const tabs = screen.getAllByRole('tab');
     expect(tabs.map((tab) => tab.props.accessibilityLabel)).toEqual([
       'Accueil',
-      'Événements',
-      'Communauté',
+      'Sorties',
+      'Cercles',
       'Services',
       'Voyages',
     ]);
     // Labels are always visible text, never icon-only.
-    ['Accueil', 'Événements', 'Communauté', 'Services', 'Voyages'].forEach((label) =>
+    ['Accueil', 'Sorties', 'Cercles', 'Services', 'Voyages'].forEach((label) =>
       expect(screen.getByText(label)).toBeVisible(),
     );
   });
@@ -53,7 +53,7 @@ describe('TabBar (design system section 10)', () => {
 
   it('marks only the active tab as selected', async () => {
     await renderBar('community');
-    expect(screen.getByRole('tab', { name: 'Communauté' })).toBeSelected();
+    expect(screen.getByRole('tab', { name: 'Cercles' })).toBeSelected();
     expect(screen.getByRole('tab', { name: 'Accueil' })).not.toBeSelected();
     expect(screen.getAllByRole('tab', { selected: true })).toHaveLength(1);
   });
@@ -69,5 +69,28 @@ describe('TabBar (design system section 10)', () => {
     const { onTabPress } = await renderBar();
     await fireEvent.press(screen.getByRole('tab', { name: 'Voyages' }));
     expect(onTabPress).toHaveBeenCalledWith('travel');
+  });
+
+  // Design system v1.4.2 section 10: tab labels ≤ about 8 characters (50 pt at 11 pt).
+  // Known conflict, reported to the PM: English "Community" (9) is kept unchanged by the
+  // same decision. Remove the exception once the design system settles it.
+  const LABEL_LENGTH_EXCEPTIONS = ['en:tabs.community'];
+
+  it('keeps every tab label to 8 characters at most, in French and English (v1.4.2)', () => {
+    for (const lng of ['fr', 'en'] as const) {
+      TABS.filter((tab) => !LABEL_LENGTH_EXCEPTIONS.includes(`${lng}:${tab.labelKey}`)).forEach(
+        (tab) => {
+          const label = i18n.getFixedT(lng)(tab.labelKey);
+          expect(`${lng}:${label}`).toMatch(new RegExp(`^${lng}:.{1,8}$`, 'u'));
+        },
+      );
+    }
+  });
+
+  it('lets tab labels grow at most 1.15× with Dynamic Type, full name for VoiceOver', async () => {
+    await renderBar();
+    const label = screen.getByText('Cercles');
+    expect(label).toHaveProp('maxFontSizeMultiplier', 1.15);
+    expect(screen.getByRole('tab', { name: 'Cercles' })).toBeOnTheScreen();
   });
 });

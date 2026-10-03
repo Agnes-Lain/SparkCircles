@@ -40,10 +40,10 @@ describe('app shell', () => {
     await renderShell();
     await screen.findByRole('header', { name: 'Accueil' });
 
-    await fireEvent.press(screen.getByRole('tab', { name: 'Événements' }));
+    await fireEvent.press(screen.getByRole('tab', { name: 'Sorties' }));
 
-    expect(await screen.findByRole('header', { name: 'Événements' })).toBeOnTheScreen();
-    expect(screen.getByRole('tab', { name: 'Événements' })).toBeSelected();
+    expect(await screen.findByRole('header', { name: 'Sorties' })).toBeOnTheScreen();
+    expect(screen.getByRole('tab', { name: 'Sorties' })).toBeSelected();
   });
 
   it('shows the API check on Home in development', async () => {

@@ -50,8 +50,11 @@ export function TabBar({ tabs, activeRoute, onTabPress, bottomInset = 0 }: TabBa
               style={{ minHeight: MIN_TOUCH_TARGET }}
             >
               <Icon icon={tab.icon} size={20} color={selected ? 'ink' : accent.inactiveIcon} />
+              {/* Labels grow at most 1.15× with Dynamic Type (design system 10, v1.4.2); the
+                  tab's accessibility label keeps the full name for VoiceOver. */}
               <Text
                 numberOfLines={1}
+                maxFontSizeMultiplier={1.15}
                 className={`mt-0.5 text-label tracking-normal ${selected ? 'text-ink' : accent.inactiveText}`}
               >
                 {label}
