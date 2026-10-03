@@ -20,7 +20,7 @@ export declare const colors: {
 };
 export declare const borderRadius: Record<'sm' | 'md' | 'lg' | 'xl' | 'pill', string>;
 export declare const fontSize: Record<
-  'data' | 'h1' | 'h2' | 'h3' | 'body' | 'caption' | 'label',
+  'data' | 'h1' | 'h2' | 'h3' | 'body' | 'caption' | 'label' | 'note-title',
   FontSize
 >;
 export declare const spacing: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl', string>;

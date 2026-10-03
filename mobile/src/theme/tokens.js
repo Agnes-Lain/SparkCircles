@@ -37,6 +37,7 @@ const fontSize = {
   body: ['14px', { lineHeight: '1.6', fontWeight: '400' }],
   caption: ['12px', { lineHeight: '1.5', fontWeight: '400' }],
   label: ['11px', { lineHeight: '1.4', fontWeight: '500', letterSpacing: '0.06em' }],
+  'note-title': ['13px', { lineHeight: '1.4', fontWeight: '500' }],
 };
 
 const spacing = {
