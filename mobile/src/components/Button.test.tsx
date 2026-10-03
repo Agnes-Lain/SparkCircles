@@ -33,4 +33,31 @@ describe('Button (design system section 5)', () => {
     await fireEvent.press(button);
     expect(onPress).not.toHaveBeenCalled();
   });
+
+  it('Module CTA: module Base fill with Ink text (section 5)', async () => {
+    await renderWithProviders(
+      <Button
+        label="Créer ma communauté"
+        variant="module"
+        module="community"
+        onPress={jest.fn()}
+      />,
+    );
+    const button = screen.getByRole('button', { name: 'Créer ma communauté' });
+    expect(button.props.className).toContain('bg-sky');
+    expect(screen.getByText('Créer ma communauté').props.className).toContain('text-ink');
+  });
+
+  it('QA BUG-09 Primary keeps its size when pressed: the reserved border only changes color', async () => {
+    await renderWithProviders(<Button label="Log in" onPress={jest.fn()} />);
+    const button = screen.getByRole('button', { name: 'Log in' });
+    expect(button.props.className).toContain('border-[1.5px] border-transparent');
+
+    await fireEvent(button, 'pressIn');
+
+    const pressed = screen.getByRole('button', { name: 'Log in' });
+    expect(pressed.props.className).toContain('border-[1.5px] border-green-dark');
+    expect(pressed.props.className).not.toContain('border-transparent');
+    expect(pressed).toHaveStyle({ transform: [{ scale: 0.97 }] });
+  });
 });

@@ -4,9 +4,10 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { MIN_TOUCH_TARGET } from '../theme/a11y';
 import { type ColorToken, colorValue } from '../theme/colors';
+import type { Module } from '../navigation/tabs';
 import { Icon } from './Icon';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'module';
 export type ButtonSize = 'large' | 'default' | 'small';
 
 export type ButtonProps = {
@@ -18,22 +19,56 @@ export type ButtonProps = {
   loading?: boolean;
   /** Leading line icon (required look for Destructive, design system section 5). */
   icon?: LucideIcon;
+  /** Module whose Base color fills a `module` (Module CTA) button, e.g. in empty states. */
+  module?: Module;
   /** Extra accessibility hint, e.g. how to enable a disabled button. */
   accessibilityHint?: string;
   testID?: string;
 };
 
-// Class names are written out in full so Tailwind finds them.
-const VARIANT: Record<ButtonVariant, { box: string; text: string; tint: ColorToken }> = {
-  primary: { box: 'bg-green', text: 'text-ink', tint: 'ink' },
-  secondary: { box: 'bg-green-light', text: 'text-green-dark', tint: 'green-dark' },
+// Class names are written out in full so Tailwind finds them. Every variant has a 1.5 px
+// border (transparent unless it shows) so the Primary pressed border appears inside the
+// pill without resizing it (QA BUG-09), and all variants share the same height.
+const VARIANT: Record<
+  Exclude<ButtonVariant, 'module'>,
+  { box: string; text: string; tint: ColorToken }
+> = {
+  primary: { box: 'bg-green border-[1.5px] border-transparent', text: 'text-ink', tint: 'ink' },
+  secondary: {
+    box: 'bg-green-light border-[1.5px] border-transparent',
+    text: 'text-green-dark',
+    tint: 'green-dark',
+  },
   ghost: {
     box: 'bg-transparent border-[1.5px] border-green-dark',
     text: 'text-green-dark',
     tint: 'green-dark',
   },
-  destructive: { box: 'bg-error-dark', text: 'text-white', tint: 'white' },
+  destructive: {
+    box: 'bg-error-dark border-[1.5px] border-transparent',
+    text: 'text-white',
+    tint: 'white',
+  },
 };
+
+// Module CTA (section 5): module Base fill, Ink text (contrast rule 2).
+const MODULE_FILL: Record<Module, string> = {
+  home: 'bg-lavender',
+  events: 'bg-green',
+  community: 'bg-sky',
+  market: 'bg-pink',
+  travel: 'bg-sunny',
+};
+
+function variantLook(variant: ButtonVariant, module: Module | undefined) {
+  if (variant !== 'module') return VARIANT[variant];
+  if (!module) throw new Error('A Module CTA button needs its `module`.');
+  return {
+    box: `${MODULE_FILL[module]} border-[1.5px] border-transparent`,
+    text: 'text-ink',
+    tint: 'ink' as ColorToken,
+  };
+}
 
 // Large 14/28 · 15px, Default 10/20 · 14px, Small 7/14 · 12px; all 500 weight.
 const SIZE: Record<ButtonSize, { box: string; text: string }> = {
@@ -60,15 +95,21 @@ export function Button({
   disabled = false,
   loading = false,
   icon,
+  module,
   accessibilityHint,
   testID,
 }: ButtonProps) {
   const [pressed, setPressed] = useState(false);
   const inactive = disabled || loading;
   const solidDisabled = disabled && (variant === 'primary' || variant === 'destructive');
-  const look = solidDisabled ? DISABLED_SOLID : VARIANT[variant];
-  const tint: ColorToken = solidDisabled ? 'ink-3' : VARIANT[variant].tint;
-  const pressedBorder = pressed && variant === 'primary' ? 'border-[1.5px] border-green-dark' : '';
+  const base = variantLook(variant, module);
+  const look = solidDisabled ? DISABLED_SOLID : base;
+  const tint: ColorToken = solidDisabled ? 'ink-3' : base.tint;
+  // Primary pressed: the reserved transparent border turns green-dark (inset, no resize).
+  const box =
+    pressed && variant === 'primary'
+      ? look.box.replace('border-transparent', 'border-green-dark')
+      : look.box;
   const fade = disabled && !solidDisabled ? 'opacity-40' : '';
 
   return (
@@ -82,7 +123,7 @@ export function Button({
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
-      className={`flex-row items-center justify-center rounded-pill ${SIZE[size].box} ${look.box} ${pressedBorder} ${fade}`}
+      className={`flex-row items-center justify-center rounded-pill ${SIZE[size].box} ${box} ${fade}`}
       style={{ minHeight: MIN_TOUCH_TARGET, transform: [{ scale: pressed ? 0.97 : 1 }] }}
     >
       <View className="flex-row items-center" style={{ opacity: loading ? 0 : 1 }}>
