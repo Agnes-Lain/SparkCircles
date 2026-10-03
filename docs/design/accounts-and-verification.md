@@ -2,7 +2,7 @@
 
 > Feature slug: `accounts-and-verification` · Author: designer · Date: 2026-10-02 · **Status: Approved by the PM on 2026-10-02**
 >
-> Spec: [`docs/specs/accounts-and-verification.md`](../specs/accounts-and-verification.md) (approved by the PM on 2026-10-02) · Design system: [`docs/SPARKCIRCLES_Design_System_EN.md`](../SPARKCIRCLES_Design_System_EN.md) **v1.4**
+> Spec: [`docs/specs/accounts-and-verification.md`](../specs/accounts-and-verification.md) (approved by the PM on 2026-10-02) · Design system: [`docs/SparkCircles_Design_System_EN.md`](../SparkCircles_Design_System_EN.md) **v1.4**
 >
 > Mockups in `docs/design/mockups/`:
 > - Mobile (390px): `accounts-and-verification-signup.html`, `-check-inbox.html`, `-account.html`, `-profile-preview.html` (badge sheet open), `-verify-gate.html`, `-verify-capture.html`, `-verify-status.html`, `-close-account.html`

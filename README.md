@@ -28,7 +28,7 @@ Project rules for every agent are in [CLAUDE.md](CLAUDE.md). Agent definitions a
 | `mobile/` | App: React Native + Expo, TypeScript, NativeWind, Jest *(created at first build)* |
 | `CLAUDE.md` | Product context, workflow, tech stack, non-negotiables, git rules |
 | `.claude/agents/` | The five subagent definitions |
-| `docs/SPARKCIRCLES_Design_System_EN.md` | Design system v1.4, the source of truth for all UI |
+| `docs/SparkCircles_Design_System_EN.md` | Design system v1.4, the source of truth for all UI |
 | `docs/specs/`, `docs/design/`, `docs/api/`, `docs/qa/`, `docs/marketing/` | Handoff files between agents, named after the feature slug |
 
 ## Getting started

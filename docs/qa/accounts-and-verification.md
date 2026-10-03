@@ -7,7 +7,7 @@
 > - **Round 2** (2026-10-03, re-test after the developer's fix round): code at `f973051`. Verdict PASS WITH ISSUES.
 > - **Round 3** (2026-10-03, check of the R2 fixes and the closing-reason row): code at `2765e0c`.
 >
-> Sources: [spec](../specs/accounts-and-verification.md) (approved, with AC-7.15 and AC-13.10 added on 2026-10-02), [design](../design/accounts-and-verification.md) (approved, with section 8 for reports), [API contract](../api/accounts-and-verification.md) (updated 2026-10-03), [design system](../SPARKCIRCLES_Design_System_EN.md) v1.4.
+> Sources: [spec](../specs/accounts-and-verification.md) (approved, with AC-7.15 and AC-13.10 added on 2026-10-02), [design](../design/accounts-and-verification.md) (approved, with section 8 for reports), [API contract](../api/accounts-and-verification.md) (updated 2026-10-03), [design system](../SparkCircles_Design_System_EN.md) v1.4.
 > Scope: backend only. That means the Rails API in `api/` and the ERB admin web back office. There is no mobile app yet.
 
 ## Round 3 (check, 2026-10-03)
