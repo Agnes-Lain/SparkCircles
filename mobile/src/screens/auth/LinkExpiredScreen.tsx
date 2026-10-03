@@ -12,6 +12,7 @@ import { useSession } from '../../auth/useSession';
 import { Button } from '../../components/Button';
 import { MessageScreen } from './layouts';
 import { UnreachableNotification } from './UnreachableNotification';
+import { useSubmitOnce } from './useSubmitOnce';
 
 /** Which email link expired: sign-up / email-change confirmation, or password reset. */
 export type ExpiredLinkKind = 'confirm' | 'reset';
@@ -37,11 +38,12 @@ export function LinkExpiredScreen() {
       auth().resendConfirmation(status === 'signedIn' ? undefined : (pendingEmail ?? undefined)),
     onSuccess: () => router.replace('/check-inbox'),
   });
+  const sendResend = useSubmitOnce(resend);
 
   const sendNewLink = () => {
     if (kind === 'reset') return router.replace('/forgot-password');
     if (gate === 'ready') return router.replace('/'); // already confirmed: nothing to resend
-    if (status === 'signedIn' || pendingEmail) return resend.mutate();
+    if (status === 'signedIn' || pendingEmail) return sendResend();
     return router.replace('/log-in');
   };
 
@@ -54,7 +56,7 @@ export function LinkExpiredScreen() {
       onBack={() => router.replace(home)}
     >
       {resend.isError ? (
-        <UnreachableNotification onRetry={() => resend.mutate()} retrying={resend.isPending} />
+        <UnreachableNotification onRetry={() => sendResend()} retrying={resend.isPending} />
       ) : null}
       <View className="gap-md">
         <Button

@@ -44,7 +44,7 @@ describe('S8 New password (reset link)', () => {
     expect(
       screen.getByRole('header', { name: 'Choisis un nouveau mot de passe' }),
     ).toBeOnTheScreen();
-    expect(screen.getByText('Tu seras déconnecté·e de tes autres appareils.')).toBeOnTheScreen();
+    expect(screen.getByText('Tes autres appareils seront déconnectés.')).toBeOnTheScreen();
     // The token left the route as soon as it was read (M-19).
     await waitFor(() => expect(app.getPathnameWithParams()).not.toContain('reset-123'));
 
@@ -70,7 +70,7 @@ describe('S8 New password (reset link)', () => {
     );
 
     expect(await screen.findByRole('header', { name: 'Ce lien a expiré' })).toBeOnTheScreen();
-    await fireEvent.press(screen.getByRole('button', { name: 'Envoie-moi un nouveau lien' }));
+    await fireEvent.press(screen.getByRole('button', { name: "M'envoyer un nouveau lien" }));
     expect(await screen.findByText('route:forgot-password')).toBeOnTheScreen();
   });
 
@@ -155,9 +155,7 @@ describe('Confirmation link (/confirm-email)', () => {
       gate: 'unconfirmed',
     });
 
-    await fireEvent.press(
-      await screen.findByRole('button', { name: 'Envoie-moi un nouveau lien' }),
-    );
+    await fireEvent.press(await screen.findByRole('button', { name: "M'envoyer un nouveau lien" }));
 
     expect(await screen.findByText('route:check-inbox')).toBeOnTheScreen();
     expect(mockAuth.resendConfirmation).toHaveBeenCalledWith(undefined);
@@ -167,9 +165,7 @@ describe('Confirmation link (/confirm-email)', () => {
     mockAuth.confirmEmail.mockRejectedValue(apiError(422, 'invalid_or_expired_token'));
     await renderScreen(ROUTES, { url: '/confirm-email?token=old' });
 
-    await fireEvent.press(
-      await screen.findByRole('button', { name: 'Envoie-moi un nouveau lien' }),
-    );
+    await fireEvent.press(await screen.findByRole('button', { name: "M'envoyer un nouveau lien" }));
 
     expect(await screen.findByText('route:log-in')).toBeOnTheScreen();
   });
@@ -211,6 +207,6 @@ describe('"This wasn\'t me" link (/this-wasnt-me)', () => {
     expect(
       screen.getByText('Les liens fonctionnent pendant une durée limitée et une seule fois.'),
     ).toBeOnTheScreen();
-    expect(screen.queryByRole('button', { name: 'Envoie-moi un nouveau lien' })).toBeNull();
+    expect(screen.queryByRole('button', { name: "M'envoyer un nouveau lien" })).toBeNull();
   });
 });

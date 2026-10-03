@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import * as SecureStore from 'expo-secure-store';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
@@ -5,6 +6,8 @@ import i18n from '../i18n';
 import { secureTokenStore, TOKEN_KEY } from '../auth/tokenStore';
 import { apiError, mockAuth, offlineError, resetApiMock } from './apiMock';
 import { closingMe, meFixture, termsMe, unconfirmedMe } from './fixtures';
+
+afterEach(() => onlineManager.setOnline(true));
 
 jest.mock('../api', () => jest.requireActual('./apiMock').apiModule);
 
@@ -97,6 +100,7 @@ describe('auth gate (M-9)', () => {
 
   it('M-20 offline at start with a token: the error notification, then Try again', async () => {
     mockAuth.me.mockRejectedValueOnce(offlineError()).mockResolvedValue(meFixture);
+    onlineManager.setOnline(false); // NetInfo: no connection (QA BUG-A01)
 
     await openApp({ token: 'jwt' });
 
@@ -143,7 +147,7 @@ describe('auth gate (M-9)', () => {
 
     expect(await screen.findByText('Créer mon compte')).toBeOnTheScreen();
     expect(mockAuth.logOut).toHaveBeenCalled();
-    expect(screen.getByText('Tu es déconnecté·e')).toBeOnTheScreen();
+    expect(screen.getByText('Déconnexion effectuée')).toBeOnTheScreen();
     await expect(SecureStore.getItemAsync(TOKEN_KEY)).resolves.toBeNull();
   });
 

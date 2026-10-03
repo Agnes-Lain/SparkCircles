@@ -14,6 +14,7 @@ import { currentLocale } from '../../i18n';
 import { formatDate } from '../../i18n/format';
 import { MessageScreen } from './layouts';
 import { UnreachableNotification } from './UnreachableNotification';
+import { useSubmitOnce } from './useSubmitOnce';
 
 /** S10 Closure in progress (AC-11.3): log in during the 30-day grace period. */
 export function ClosureScreen() {
@@ -31,6 +32,7 @@ export function ClosureScreen() {
       showToast(t('closure.restored'));
     },
   });
+  const sendKeep = useSubmitOnce(keep);
 
   const error = keep.error instanceof ApiError ? keep.error : null;
 
@@ -54,14 +56,14 @@ export function ClosureScreen() {
       {error?.code === 'rate_limited' ? (
         <Notification level="error" title={error.message} />
       ) : error ? (
-        <UnreachableNotification onRetry={() => keep.mutate()} retrying={keep.isPending} />
+        <UnreachableNotification onRetry={() => sendKeep()} retrying={keep.isPending} />
       ) : null}
       <View className="gap-md">
         <Button
           size="large"
           label={t('closure.keep')}
           loading={keep.isPending}
-          onPress={() => keep.mutate()}
+          onPress={() => sendKeep()}
           testID="keep"
         />
         <Button

@@ -66,7 +66,8 @@ const KIND: Record<TextFieldKind, Partial<TextInputProps>> = {
 
 /**
  * Text input with its visible label, helper and error (design system section 8). Errors
- * say what to do and are read by screen readers with the field (accessibility hint); the
+ * say what to do and are part of the field's accessibility label, so screen readers read
+ * them every time they reach the field, even with hints turned off (QA BUG-A05); the
  * screen moves focus to the first field in error and announces it. Password fields have an
  * eye toggle.
  */
@@ -88,7 +89,6 @@ export function TextField({
   const isPassword = kind === 'password' || kind === 'newPassword';
   const [hidden, setHidden] = useState(true);
   const border = error ? 'border-error-dark' : focused ? 'border-green-dark' : 'border-ink-3';
-  const description = error ?? helper;
 
   return (
     <View className="gap-xs">
@@ -101,8 +101,8 @@ export function TextField({
         <TextInput
           ref={ref}
           testID={testID}
-          accessibilityLabel={label}
-          accessibilityHint={description ?? undefined}
+          accessibilityLabel={error ? `${label}. ${error}` : label}
+          accessibilityHint={error ? undefined : helper}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}

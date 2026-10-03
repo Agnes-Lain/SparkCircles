@@ -27,6 +27,7 @@ import {
 } from './formErrors';
 import { FormScreen } from './layouts';
 import { UnreachableNotification } from './UnreachableNotification';
+import { useSubmitOnce } from './useSubmitOnce';
 import { useBack } from './useBack';
 
 type Field = 'firstName' | 'lastName' | 'email' | 'password' | 'adult' | 'terms';
@@ -113,6 +114,7 @@ export function SignUpScreen() {
       }
     },
   });
+  const sendRegister = useSubmitOnce(register);
 
   const validate = (): FieldErrors<Field> => {
     const next: FieldErrors<Field> = {};
@@ -132,7 +134,7 @@ export function SignUpScreen() {
       focusFirstError(next);
       return;
     }
-    register.mutate();
+    sendRegister();
   };
 
   // Clears a field's error as soon as the person fixes it.

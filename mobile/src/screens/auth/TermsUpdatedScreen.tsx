@@ -16,6 +16,7 @@ import { TextLink } from '../../components/TextLink';
 import { openLegalDocument } from './external';
 import { FormScreen } from './layouts';
 import { UnreachableNotification } from './UnreachableNotification';
+import { useSubmitOnce } from './useSubmitOnce';
 
 /**
  * S9 Terms updated (AC-5.5, 5.2): blocks the app until the new versions are accepted.
@@ -39,6 +40,7 @@ export function TermsUpdatedScreen() {
     // The gate sees terms_acceptance_required: false and opens the tabs.
     onSuccess: (me) => queryClient.setQueryData(ME_KEY, me),
   });
+  const sendAccept = useSubmitOnce(accept);
 
   const acceptError = accept.error instanceof ApiError ? accept.error : null;
 
@@ -91,7 +93,7 @@ export function TermsUpdatedScreen() {
         <UnreachableNotification onRetry={() => void legal.refetch()} retrying={legal.isFetching} />
       ) : acceptError ? (
         <UnreachableNotification
-          onRetry={() => legal.data && accept.mutate(legal.data)}
+          onRetry={() => legal.data && sendAccept(legal.data)}
           retrying={accept.isPending}
         />
       ) : null}
@@ -102,7 +104,7 @@ export function TermsUpdatedScreen() {
           label={t('terms.accept')}
           disabled={!legal.data}
           loading={accept.isPending}
-          onPress={() => legal.data && accept.mutate(legal.data)}
+          onPress={() => legal.data && sendAccept(legal.data)}
           testID="accept"
         />
         <View className="items-center">

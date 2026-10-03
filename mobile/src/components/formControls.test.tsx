@@ -8,6 +8,7 @@ import { Checkbox } from './Checkbox';
 import { Header } from './Header';
 import { SuccessCheckmark } from './SuccessCheckmark';
 import { TextField } from './TextField';
+import { TextLink } from './TextLink';
 import { TOAST_DURATION_MS, useToast } from './ToastProvider';
 
 describe('TextField (design system section 8)', () => {
@@ -23,7 +24,7 @@ describe('TextField (design system section 8)', () => {
     expect(screen.getByText('Aide')).toBeOnTheScreen();
   });
 
-  it('replaces the helper with the error, with an icon, error border and screen-reader hint', async () => {
+  it("AC-1.2 replaces the helper with the error, read with the field's label (QA BUG-A05)", async () => {
     await renderWithProviders(
       <TextField
         label="Prénom"
@@ -37,7 +38,8 @@ describe('TextField (design system section 8)', () => {
 
     expect(screen.queryByText('Aide')).toBeNull();
     expect(screen.getByText('Ajoute ton prénom.')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Prénom')).toHaveProp('accessibilityHint', 'Ajoute ton prénom.');
+    // Part of the label, so VoiceOver reads it even with hints turned off.
+    expect(screen.getByLabelText('Prénom. Ajoute ton prénom.')).not.toHaveProp('accessibilityHint');
     expect(screen.getByTestId('first-box').props.className).toContain('border-error-dark');
   });
 
@@ -91,7 +93,7 @@ describe('Checkbox (design system section 8)', () => {
     expect(openTerms).toHaveBeenCalled();
   });
 
-  it('shows its error under the row and in the screen-reader hint', async () => {
+  it('shows its error under the row and in its accessibility label (QA BUG-A05)', async () => {
     await renderWithProviders(
       <Checkbox
         accessibilityLabel="J'ai 18 ans ou plus"
@@ -103,7 +105,19 @@ describe('Checkbox (design system section 8)', () => {
     );
 
     expect(screen.getByText('Coche cette case.')).toBeOnTheScreen();
-    expect(screen.getByRole('checkbox')).toHaveProp('accessibilityHint', 'Coche cette case.');
+    expect(
+      screen.getByRole('checkbox', { name: "J'ai 18 ans ou plus. Coche cette case." }),
+    ).toBeOnTheScreen();
+  });
+});
+
+describe('TextLink (design system section 5)', () => {
+  it('BUG-A02 gives even a short Caption link a 44×44 target', async () => {
+    await renderWithProviders(<TextLink small label="English" onPress={jest.fn()} />);
+    expect(screen.getByRole('link', { name: 'English' })).toHaveStyle({
+      minHeight: MIN_TOUCH_TARGET,
+      minWidth: MIN_TOUCH_TARGET,
+    });
   });
 });
 

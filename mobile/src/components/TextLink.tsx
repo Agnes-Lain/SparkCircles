@@ -15,7 +15,7 @@ export type TextLinkProps = {
   testID?: string;
 };
 
-/** Text link (design system section 5): Body 14/500 green-dark, 44 px tap height. */
+/** Text link (design system section 5): Body 14/500 green-dark, a 44×44 px target at least. */
 export function TextLink({
   label,
   onPress,
@@ -35,8 +35,8 @@ export function TextLink({
       accessibilityLanguage={accessibilityLanguage}
       disabled={disabled}
       onPress={onPress}
-      className="justify-center"
-      style={{ minHeight: MIN_TOUCH_TARGET }}
+      className="items-center justify-center"
+      style={{ minHeight: MIN_TOUCH_TARGET, minWidth: MIN_TOUCH_TARGET }}
     >
       <Text
         className={quiet ? `${size} text-ink-2 underline` : `${size} font-medium text-green-dark`}

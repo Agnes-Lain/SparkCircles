@@ -13,6 +13,7 @@ import { TextField } from '../../components/TextField';
 import { type FieldErrors, looksLikeEmail, useFocusFirstError } from './formErrors';
 import { FormScreen } from './layouts';
 import { UnreachableNotification } from './UnreachableNotification';
+import { useSubmitOnce } from './useSubmitOnce';
 import { useBack } from './useBack';
 
 /** S6 Forgot password (AC-4.1). The next screen is the same whether the account exists or not. */
@@ -29,6 +30,7 @@ export function ForgotPasswordScreen() {
     mutationFn: () => auth().requestPasswordReset(email.trim()),
     onSuccess: () => router.replace('/link-sent'),
   });
+  const sendRequest = useSubmitOnce(request);
 
   const submit = () => {
     const next: FieldErrors<'email'> = looksLikeEmail(email)
@@ -36,7 +38,7 @@ export function ForgotPasswordScreen() {
       : { email: t('fieldErrors.email') };
     setErrors(next);
     if (next.email) return focusFirstError(next);
-    request.mutate();
+    sendRequest();
   };
 
   const error = request.error instanceof ApiError ? request.error : null;

@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import { fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import * as WebBrowser from 'expo-web-browser';
 import { AccessibilityInfo } from 'react-native';
@@ -10,6 +11,8 @@ import { renderScreen } from '../../test/renderScreen';
 import { ApiError } from '../../api/errors';
 import { CheckInboxScreen } from './CheckInboxScreen';
 import { SignUpScreen } from './SignUpScreen';
+
+afterEach(() => onlineManager.setOnline(true));
 
 jest.mock('../../api', () => jest.requireActual('../../test/apiMock').apiModule);
 jest.mock('expo-web-browser', () => ({
@@ -69,7 +72,7 @@ describe('S2 Sign up', () => {
     boxes.forEach((box) => expect(box).not.toBeChecked());
     expect(
       screen.getByRole('checkbox', {
-        name: 'Envoie-moi des nouvelles et des idées de SparkCircles (facultatif)',
+        name: 'Recevoir des nouvelles et des idées de SparkCircles (facultatif)',
       }),
     ).toBeOnTheScreen();
   });
@@ -112,7 +115,8 @@ describe('S2 Sign up', () => {
     mockAuth.register.mockRejectedValue(
       new ApiError(422, 'validation_failed', 'x', { password: ['too_common'] }),
     );
-    await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'motdepasse123');
+    // While in error, the field's label also reads the error (QA BUG-A05).
+    await fireEvent.changeText(screen.getByLabelText(`Mot de passe. ${message}`), 'motdepasse123');
     await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
 
     expect(await screen.findByText(message)).toBeOnTheScreen();
@@ -169,6 +173,7 @@ describe('S2 Sign up', () => {
   });
 
   it('M-20 offline: the error notification, the form is kept, Try again sends it again', async () => {
+    onlineManager.setOnline(false); // NetInfo: no connection (QA BUG-A01)
     mockAuth.register
       .mockRejectedValueOnce(offlineError())
       .mockResolvedValue({ status: 'check_inbox' });

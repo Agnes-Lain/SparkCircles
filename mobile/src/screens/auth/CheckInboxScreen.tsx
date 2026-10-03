@@ -18,6 +18,7 @@ import { TextLink } from '../../components/TextLink';
 import { openMailApp } from './external';
 import { MessageScreen } from './layouts';
 import { UnreachableNotification } from './UnreachableNotification';
+import { useSubmitOnce } from './useSubmitOnce';
 
 /** How long "Send the link again" stays disabled after a resend (design S3: set by the developer). */
 export const RESEND_COOLDOWN_MS = 60_000;
@@ -52,6 +53,7 @@ export function CheckInboxScreen() {
       if (Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(t('checkInbox.resent'));
     },
   });
+  const sendResend = useSubmitOnce(resend);
 
   const leave = () => {
     if (signedIn) {
@@ -87,7 +89,7 @@ export function CheckInboxScreen() {
       {error?.code === 'rate_limited' ? (
         <Notification level="error" title={error.message} />
       ) : error ? (
-        <UnreachableNotification onRetry={() => resend.mutate()} retrying={resend.isPending} />
+        <UnreachableNotification onRetry={() => sendResend()} retrying={resend.isPending} />
       ) : null}
       <View className="gap-md">
         <Button size="large" label={t('common.openMailApp')} onPress={() => void openMailApp()} />
@@ -97,7 +99,7 @@ export function CheckInboxScreen() {
           label={t('checkInbox.resend')}
           disabled={coolingDown || !email}
           loading={resend.isPending}
-          onPress={() => resend.mutate()}
+          onPress={() => sendResend()}
           testID="resend"
         />
         {coolingDown ? (

@@ -19,8 +19,8 @@ export function createTestQueryClient() {
   return new QueryClient({
     // No background refetch in tests: data a test puts in the cache stays as it is.
     defaultOptions: {
-      queries: { retry: false, gcTime: Infinity, staleTime: Infinity },
-      mutations: { retry: false },
+      queries: { retry: false, gcTime: Infinity, staleTime: Infinity, networkMode: 'always' },
+      mutations: { retry: false, networkMode: 'always' },
     },
   });
 }

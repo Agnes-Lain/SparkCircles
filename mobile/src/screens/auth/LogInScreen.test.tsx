@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import { fireEvent, screen } from 'expo-router/testing-library';
 
 import i18n from '../../i18n';
@@ -8,6 +9,8 @@ import { renderScreen, routeStub } from '../../test/renderScreen';
 import { ForgotPasswordScreen } from './ForgotPasswordScreen';
 import { LinkSentScreen } from './LinkSentScreen';
 import { LogInScreen } from './LogInScreen';
+
+afterEach(() => onlineManager.setOnline(true));
 
 jest.mock('../../api', () => jest.requireActual('../../test/apiMock').apiModule);
 jest.mock('expo-device', () => ({ modelName: 'iPhone 15' }));
@@ -57,7 +60,7 @@ describe('S5 Log in', () => {
     await logIn('unknown@example.com');
 
     expect(
-      await screen.findByText("L'e-mail ou le mot de passe ne correspond pas"),
+      await screen.findByText("L'e-mail et le mot de passe ne correspondent pas"),
     ).toBeOnTheScreen();
     expect(screen.getByText('Vérifie les deux et réessaie.')).toBeOnTheScreen();
     expect(screen.getByRole('alert')).toBeOnTheScreen();
@@ -91,6 +94,7 @@ describe('S5 Log in', () => {
   });
 
   it('M-20 offline: the error notification, then Try again', async () => {
+    onlineManager.setOnline(false); // NetInfo: no connection (QA BUG-A01)
     mockAuth.logIn
       .mockRejectedValueOnce(offlineError())
       .mockResolvedValue({ token: 'jwt-1', user: meFixture });
@@ -129,7 +133,7 @@ describe('S6 Forgot password and S7 Link sent', () => {
     await screen.findByRole('header', { name: 'Réinitialise ton mot de passe' });
 
     await fireEvent.changeText(screen.getByLabelText('E-mail'), 'anyone@example.com');
-    await fireEvent.press(screen.getByRole('button', { name: 'Envoie-moi un lien' }));
+    await fireEvent.press(screen.getByRole('button', { name: "M'envoyer un lien" }));
 
     expect(await screen.findByRole('header', { name: 'Consulte ta boîte mail' })).toBeOnTheScreen();
     expect(

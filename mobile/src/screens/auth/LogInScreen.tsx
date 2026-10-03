@@ -17,6 +17,7 @@ import { TextLink } from '../../components/TextLink';
 import { type FieldErrors, looksLikeEmail, useFocusFirstError } from './formErrors';
 import { FormScreen } from './layouts';
 import { UnreachableNotification } from './UnreachableNotification';
+import { useSubmitOnce } from './useSubmitOnce';
 import { useBack } from './useBack';
 
 type Field = 'email';
@@ -47,12 +48,13 @@ export function LogInScreen() {
       await signIn(token);
     },
   });
+  const sendLogIn = useSubmitOnce(logIn);
 
   const submit = () => {
     const next: FieldErrors<Field> = looksLikeEmail(email) ? {} : { email: t('fieldErrors.email') };
     setErrors(next);
     if (next.email) return focusFirstError(next);
-    logIn.mutate();
+    sendLogIn();
   };
 
   // An empty password is refused by the API as bad_request: same message as a wrong one.

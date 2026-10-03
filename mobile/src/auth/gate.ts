@@ -33,8 +33,19 @@ export function gateState(
   return meError ? 'unreachable' : 'loading';
 }
 
-/** Routes opened from email links: reachable whatever the session (M-19). */
-export const LINK_ROUTES = ['confirm-email', 'reset-password', 'this-wasnt-me', 'link-expired'];
+/**
+ * Routes opened from email links: reachable whatever the session (M-19). Security emails
+ * (account locked, password changed, someone tried to register) link to Forgot password,
+ * which therefore opens on a logged-in phone too, with its Link sent screen (QA BUG-A04).
+ */
+export const LINK_ROUTES = [
+  'confirm-email',
+  'reset-password',
+  'this-wasnt-me',
+  'link-expired',
+  'forgot-password',
+  'link-sent',
+];
 
 const ALLOWED: Record<Exclude<GateState, 'loading'>, string[]> = {
   signedOut: ['welcome', 'sign-up', 'log-in', 'forgot-password', 'link-sent', 'check-inbox'],

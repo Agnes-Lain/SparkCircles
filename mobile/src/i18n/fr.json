@@ -26,7 +26,7 @@
     "logOut": "Me déconnecter",
     "openMailApp": "Ouvrir ma messagerie",
     "ok": "OK",
-    "loggedOut": "Tu es déconnecté·e",
+    "loggedOut": "Déconnexion effectuée",
     "oneMoment": "Un instant…"
   },
   "welcome": {
@@ -37,7 +37,7 @@
   },
   "signUp": {
     "title": "Crée ton compte",
-    "intro": "Ça prend 2 minutes. Tu pourras en dire plus sur ta famille plus tard.",
+    "intro": "Ça prend 2 minutes. Tu pourras parler de ta famille ensuite.",
     "firstName": "Prénom",
     "lastName": "Nom",
     "lastNamePlaceholder": "Ton nom",
@@ -52,7 +52,7 @@
     "termsPlain": "J'accepte les conditions d'utilisation et la politique de confidentialité",
     "termsLink": "conditions d'utilisation",
     "privacyLink": "politique de confidentialité",
-    "marketing": "Envoie-moi des nouvelles et des idées de SparkCircles",
+    "marketing": "Recevoir des nouvelles et des idées de SparkCircles",
     "optional": "(facultatif)",
     "submit": "Créer mon compte",
     "haveAccount": "Tu as déjà un compte ?",
@@ -68,8 +68,8 @@
   },
   "checkInbox": {
     "title": "Consulte ta boîte mail",
-    "body": "Nous avons envoyé un lien à <b>{{email}}</b>. Touche-le dans les 24 heures pour confirmer ton e-mail.",
-    "bodyNoEmail": "Nous t'avons envoyé un lien. Touche-le dans les 24 heures pour confirmer ton e-mail.",
+    "body": "Nous avons envoyé un lien à <b>{{email}}</b>. Appuie dessus dans les 24 heures pour confirmer ton e-mail.",
+    "bodyNoEmail": "Nous t'avons envoyé un lien. Appuie dessus dans les 24 heures pour confirmer ton e-mail.",
     "resend": "Renvoyer le lien",
     "resent": "Nouveau lien envoyé. Tu pourras en redemander un dans un instant.",
     "helpTitle": "Tu ne le trouves pas ?",
@@ -79,7 +79,7 @@
   "linkExpired": {
     "title": "Ce lien a expiré",
     "body": "Les liens fonctionnent pendant une durée limitée et une seule fois. Nous t'en enverrons un nouveau.",
-    "action": "Envoie-moi un nouveau lien"
+    "action": "M'envoyer un nouveau lien"
   },
   "logIn": {
     "title": "Connexion",
@@ -89,7 +89,7 @@
     "submit": "Me connecter",
     "newHere": "Première visite ?",
     "createAccount": "Créer mon compte",
-    "wrongTitle": "L'e-mail ou le mot de passe ne correspond pas",
+    "wrongTitle": "L'e-mail et le mot de passe ne correspondent pas",
     "wrongCaption": "Vérifie les deux et réessaie.",
     "lockedTitle": "Trop de tentatives",
     "lockedCaption": "Réessaie dans 15 minutes ou réinitialise ton mot de passe.",
@@ -98,7 +98,7 @@
   "forgotPassword": {
     "title": "Réinitialise ton mot de passe",
     "intro": "Saisis ton e-mail et nous t'enverrons un lien.",
-    "submit": "Envoie-moi un lien"
+    "submit": "M'envoyer un lien"
   },
   "linkSent": {
     "title": "Consulte ta boîte mail",
@@ -108,7 +108,7 @@
     "title": "Choisis un nouveau mot de passe",
     "label": "Nouveau mot de passe",
     "submit": "Enregistrer mon nouveau mot de passe",
-    "caption": "Tu seras déconnecté·e de tes autres appareils.",
+    "caption": "Tes autres appareils seront déconnectés.",
     "changed": "Mot de passe modifié"
   },
   "terms": {
@@ -129,7 +129,7 @@
   },
   "report": {
     "securedTitle": "Ton compte est sécurisé",
-    "securedBody": "Nous t'avons déconnecté·e de tous tes appareils et avons bloqué ton compte. Notre équipe va vérifier le changement d'e-mail et t'aider à récupérer ton compte.",
+    "securedBody": "Nous avons déconnecté tous tes appareils et bloqué ton compte. Notre équipe va vérifier le changement d'e-mail et t'aider à récupérer ton compte.",
     "expiredBody": "Les liens fonctionnent pendant une durée limitée et une seule fois."
   }
 }

@@ -19,6 +19,7 @@ import { useToast } from '../../components/ToastProvider';
 import { type FieldErrors, MIN_PASSWORD_LENGTH, useFocusFirstError } from './formErrors';
 import { FormScreen } from './layouts';
 import { UnreachableNotification } from './UnreachableNotification';
+import { useSubmitOnce } from './useSubmitOnce';
 import { useLinkToken } from './useLinkToken';
 
 /**
@@ -61,13 +62,15 @@ export function NewPasswordScreen() {
       }
     },
   });
+  const sendReset = useSubmitOnce(reset);
 
   const submit = () => {
+    if (done) return; // the link is used: a second send would only find it expired
     const next: FieldErrors<'password'> =
       password.length >= MIN_PASSWORD_LENGTH ? {} : { password: t('fieldErrors.password') };
     setErrors(next);
     if (next.password) return focusFirstError(next);
-    reset.mutate();
+    sendReset();
   };
 
   const error = reset.error instanceof ApiError ? reset.error : null;

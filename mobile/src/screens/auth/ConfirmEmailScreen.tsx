@@ -14,6 +14,7 @@ import { useSession } from '../../auth/useSession';
 import { useToast } from '../../components/ToastProvider';
 import { LinkPending } from './LinkPending';
 import { UnreachableNotification } from './UnreachableNotification';
+import { useSubmitOnce } from './useSubmitOnce';
 import { useLinkToken } from './useLinkToken';
 
 /**
@@ -58,10 +59,11 @@ export function ConfirmEmailScreen() {
       }
     },
   });
+  const sendConfirm = useSubmitOnce(confirm);
 
   // Sent once, when the screen opens.
   useAfterMount(() => {
-    if (token) confirm.mutate(token);
+    if (token) sendConfirm(token);
     else router.replace('/link-expired?kind=confirm');
   });
 
@@ -72,10 +74,7 @@ export function ConfirmEmailScreen() {
   return (
     <LinkPending>
       {offline && token ? (
-        <UnreachableNotification
-          onRetry={() => confirm.mutate(token)}
-          retrying={confirm.isPending}
-        />
+        <UnreachableNotification onRetry={() => sendConfirm(token)} retrying={confirm.isPending} />
       ) : null}
     </LinkPending>
   );

@@ -134,7 +134,7 @@ describe('S3 Check your inbox', () => {
 
     await fireEvent.press(screen.getByRole('link', { name: 'Me déconnecter' }));
 
-    expect(await screen.findByText('Tu es déconnecté·e')).toBeOnTheScreen();
+    expect(await screen.findByText('Déconnexion effectuée')).toBeOnTheScreen();
     expect(mockAuth.logOut).toHaveBeenCalled();
     expect(tokenStore.value).toBeNull();
   });

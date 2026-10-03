@@ -32,9 +32,13 @@ export function createQueryClient(): QueryClient {
   const client: QueryClient = new QueryClient({
     queryCache: new QueryCache({ onError }),
     mutationCache: new MutationCache({ onError }),
+    // networkMode 'always' (QA BUG-A01): never pause a request because NetInfo says the
+    // phone is offline. The request runs, the client turns the failure into network_error,
+    // and the screen shows the designed "couldn't reach" notification with "Try again"
+    // (M-20). NetInfo still drives refetch-on-reconnect.
     defaultOptions: {
-      queries: { retry: shouldRetry, staleTime: 30_000 },
-      mutations: { retry: false },
+      queries: { retry: shouldRetry, staleTime: 30_000, networkMode: 'always' },
+      mutations: { retry: false, networkMode: 'always' },
     },
   });
   return client;

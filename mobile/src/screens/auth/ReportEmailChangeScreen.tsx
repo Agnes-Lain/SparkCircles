@@ -11,6 +11,7 @@ import { Button } from '../../components/Button';
 import { MessageScreen } from './layouts';
 import { LinkPending } from './LinkPending';
 import { UnreachableNotification } from './UnreachableNotification';
+import { useSubmitOnce } from './useSubmitOnce';
 import { useLinkToken } from './useLinkToken';
 
 /**
@@ -31,9 +32,10 @@ export function ReportEmailChangeScreen() {
       if (status === 'signedIn') await signOut();
     },
   });
+  const sendReport = useSubmitOnce(report);
 
   useAfterMount(() => {
-    if (token) report.mutate(token);
+    if (token) sendReport(token);
   });
 
   const error = report.error instanceof ApiError ? report.error : null;
@@ -71,7 +73,7 @@ export function ReportEmailChangeScreen() {
     <LinkPending>
       {error ? (
         <UnreachableNotification
-          onRetry={() => token && report.mutate(token)}
+          onRetry={() => token && sendReport(token)}
           retrying={report.isPending}
         />
       ) : null}

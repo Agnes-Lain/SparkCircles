@@ -26,9 +26,9 @@ describe('QA auth flows', () => {
   });
   afterEach(() => jest.restoreAllMocks());
 
-  // QA BUG-A03: the keyboard's "go" key calls submit() again while the first request is
-  // pending (the button is disabled, the keyboard isn't).
-  it.failing('BUG-A03 Log in: pressing "go" twice sends one request', async () => {
+  // QA BUG-A03 (fixed): the keyboard's "go" key no longer sends a second request while the
+  // first is pending.
+  it('BUG-A03 Log in: pressing "go" twice sends one request', async () => {
     mockAuth.logIn.mockReturnValue(new Promise(() => undefined));
     await renderScreen({ 'log-in': LogInScreen }, { url: '/log-in' });
     await fireEvent.changeText(screen.getByLabelText('E-mail'), 'claire@example.com');
@@ -39,7 +39,7 @@ describe('QA auth flows', () => {
     expect(mockAuth.logIn).toHaveBeenCalledTimes(1);
   });
 
-  it.failing('BUG-A03 New password: pressing "done" twice sends one request', async () => {
+  it('BUG-A03 New password: pressing "done" twice sends one request', async () => {
     mockAuth.resetPassword.mockReturnValue(new Promise(() => undefined));
     await renderScreen(
       { 'reset-password': NewPasswordScreen, 'link-expired': routeStub('link-expired') },
@@ -52,18 +52,22 @@ describe('QA auth flows', () => {
     expect(mockAuth.resetPassword).toHaveBeenCalledTimes(1);
   });
 
-  // QA BUG-A04: the API emails "forgot-password" links (account locked, password changed,
-  // registration attempt), but the gate only treats confirm-email, reset-password and
-  // this-wasnt-me as email-link routes.
-  it('BUG-A04 evidence: a forgot-password link on a logged-in phone ends on Home', async () => {
+  // QA BUG-A04 (fixed): the API emails "forgot-password" links (account locked, password
+  // changed, registration attempt); they open Forgot password on a logged-in phone too.
+  it('BUG-A04 a forgot-password link on a logged-in phone opens Forgot password', async () => {
     mockAuth.me.mockResolvedValue(meFixture);
     await secureTokenStore.setToken('jwt');
     const app = renderRouter(APP_DIR, { initialUrl: '/forgot-password' });
     await app;
 
-    await screen.findByRole('header', { name: 'Accueil' }, { timeout: 2000 });
-    expect(app.getPathname()).toBe('/');
-    expect(screen.queryByText('Réinitialise ton mot de passe')).toBeNull();
+    expect(
+      await screen.findByRole(
+        'header',
+        { name: 'Réinitialise ton mot de passe' },
+        { timeout: 2000 },
+      ),
+    ).toBeOnTheScreen();
+    expect(app.getPathname()).toBe('/forgot-password');
   });
 
   it('Sign up: the first field in error gets focus and its message is announced', async () => {

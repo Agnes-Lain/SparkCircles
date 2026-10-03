@@ -50,8 +50,7 @@ export function Checkbox({
       <Pressable
         testID={testID}
         accessibilityRole="checkbox"
-        accessibilityLabel={accessibilityLabel}
-        accessibilityHint={error ?? undefined}
+        accessibilityLabel={error ? `${accessibilityLabel}. ${error}` : accessibilityLabel}
         accessibilityState={{ checked }}
         accessibilityActions={[
           { name: 'activate' },
