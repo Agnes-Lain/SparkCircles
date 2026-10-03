@@ -22,4 +22,18 @@ describe('useReduceMotion', () => {
     await act(() => listener?.(false));
     expect(result.current).toBe(false);
   });
+
+  it('QA BUG-05 is unknown (null) until the system answers, so nothing animates yet', async () => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockReturnValue(new Promise(() => {}));
+    const { result } = await renderHook(() => useReduceMotion());
+    expect(result.current).toBeNull();
+  });
+
+  it('stays still when the system cannot tell', async () => {
+    jest
+      .spyOn(AccessibilityInfo, 'isReduceMotionEnabled')
+      .mockRejectedValue(new Error('unavailable'));
+    const { result } = await renderHook(() => useReduceMotion());
+    await waitFor(() => expect(result.current).toBe(true));
+  });
 });

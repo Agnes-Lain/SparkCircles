@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Animated, Easing, type DimensionValue } from 'react-native';
 
-import { useReduceMotion } from '../hooks/useReduceMotion';
+import { useMotionAllowed } from '../hooks/useReduceMotion';
 
 export type SkeletonProps = {
   width?: DimensionValue;
@@ -13,7 +13,8 @@ export type SkeletonProps = {
 
 /**
  * Skeleton block (design system section 13): rgba(0,0,0,0.08) via the `border-soft`
- * token, opacity pulsing 0.5 → 1.0 over 1.5 s, ease-in-out. Static under reduced motion.
+ * token, opacity pulsing 0.5 → 1.0 over 1.5 s, ease-in-out. Static under reduced motion, and
+ * static from the first frame until the system says motion is allowed.
  */
 export function Skeleton({
   width = '100%',
@@ -21,11 +22,11 @@ export function Skeleton({
   roundedClassName = 'rounded-sm',
   testID,
 }: SkeletonProps) {
-  const reduceMotion = useReduceMotion();
+  const motionAllowed = useMotionAllowed();
   const [opacity] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
-    if (reduceMotion) {
+    if (!motionAllowed) {
       opacity.setValue(1);
       return;
     }
@@ -38,7 +39,7 @@ export function Skeleton({
     );
     loop.start();
     return () => loop.stop();
-  }, [opacity, reduceMotion]);
+  }, [opacity, motionAllowed]);
 
   return (
     <Animated.View
