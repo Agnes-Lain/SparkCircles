@@ -43,3 +43,7 @@ api/storage/*
 !api/storage/.keep
 api/.bundle/
 api/vendor/bundle/
+
+# Agent documents (specs, designs, API contracts, QA reports, backlog, design system, brand
+# sources) stay on the PM's Mac only, not in git (PM decision 2026-10-03). Back them up separately.
+docs/

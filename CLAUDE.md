@@ -17,7 +17,9 @@ Survey insight (80 parents): socializing/organizing events is pain point #1, vac
 
 ## Source of truth
 
-- Design: `docs/SparkCircles_Design_System_EN.md` (v1.4). Read it before any design or UI work. If something is missing or contradictory, **flag it, don't invent it**.
+**Everything under `docs/` is local-only:** it is git-ignored (PM decision 2026-10-03), so it lives only on the PM's Mac. Agents read and write these files as usual, but never `git add` them, never use `git add -f` on them, and never put their content into commits, code comments or PR descriptions beyond a path reference. Code must not depend on `docs/` at run time or in CI (a test may read it only if it skips when the file is absent).
+
+- Design: `docs/SparkCircles_Design_System_EN.md` (v1.4.1). Read it before any design or UI work. If something is missing or contradictory, **flag it, don't invent it**.
 - Backlog of deferred work: `docs/backlog.md` (maintained by `po`; the PM decides what moves into a spec)
 - Specs: `docs/specs/<feature>.md`
 - Design deliverables: `docs/design/<feature>.md` and `docs/design/mockups/`
@@ -70,7 +72,7 @@ Confirm the setup (Ruby/Rails versions, auth approach, Expo template) with the P
 
 - Never push to `main`. One branch per feature: `feat/<feature-slug>`. One PR per feature, covering both `api/` and `mobile/` when the feature touches both.
 - Conventional commits (`feat:`, `fix:`, `test:`, `docs:`).
-- PR description links to the spec and the design file and lists the acceptance criteria covered.
+- PR description names the spec and design files by path (they are local-only, see Source of truth) and lists the acceptance criteria covered.
 - Use the GitHub CLI (`gh`) for PRs and issues.
 
 ## Definition of done

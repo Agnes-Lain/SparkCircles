@@ -4,13 +4,11 @@ on:
   pull_request:
     paths:
       - "mobile/**"
-      - "docs/SparkCircles_Design_System_EN.md" # tokens are tested against section 15
       - ".github/workflows/mobile.yml"
   push:
     branches: [ main ]
     paths:
       - "mobile/**"
-      - "docs/SparkCircles_Design_System_EN.md"
       - ".github/workflows/mobile.yml"
 
 defaults:

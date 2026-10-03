@@ -3,7 +3,10 @@ import { colorValue } from './colors';
 // Node built-ins, typed inline (the app itself has no Node types).
 declare const __dirname: string;
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { readFileSync } = require('fs') as { readFileSync(path: string, encoding: 'utf8'): string };
+const { existsSync, readFileSync } = require('fs') as {
+  existsSync(path: string): boolean;
+  readFileSync(path: string, encoding: 'utf8'): string;
+};
 const { join } = require('path') as { join(...parts: string[]): string };
 const { runInNewContext } = require('vm') as {
   runInNewContext(code: string, sandbox: object): unknown;
@@ -15,12 +18,14 @@ const tailwindConfig = require('../../tailwind.config.js');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const tokens = require('./tokens');
 
+// docs/ is local-only (git-ignored, PM decision 2026-10-03): the design system file exists on the
+// PM's Mac but not in CI, so the comparison with section 15 runs locally and is skipped in CI.
+const designSystemPath = join(__dirname, '../../../docs/SparkCircles_Design_System_EN.md');
+const hasDesignSystem = existsSync(designSystemPath);
+
 /** Evaluates the config block of section 15 of the design system, the source of truth. */
 function designSystemSection15() {
-  const doc = readFileSync(
-    join(__dirname, '../../../docs/SparkCircles_Design_System_EN.md'),
-    'utf8',
-  );
+  const doc = readFileSync(designSystemPath, 'utf8');
   const section = doc.slice(doc.indexOf('## 15.'), doc.indexOf('## 16.'));
   const code = /```js\n([\s\S]*?)```/.exec(section)?.[1];
   if (!code) throw new Error('Section 15 config block not found');
@@ -30,9 +35,8 @@ function designSystemSection15() {
 }
 
 describe('design tokens (design system section 15)', () => {
-  const theme = designSystemSection15();
-
-  it('match section 15 of the design system exactly', () => {
+  (hasDesignSystem ? it : it.skip)('match section 15 of the design system exactly', () => {
+    const theme = designSystemSection15();
     expect(tokens.colors).toEqual(theme.colors);
     expect(tokens.borderRadius).toEqual(theme.extend.borderRadius);
     expect(tokens.fontSize).toEqual(theme.extend.fontSize);
