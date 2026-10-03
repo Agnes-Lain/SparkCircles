@@ -25,7 +25,7 @@ fr:
     errors:
       bad_request: "Il manque quelque chose dans la demande."
       unauthorized: "Connecte-toi pour continuer."
-      invalid_credentials: "L'e-mail ou le mot de passe ne correspond pas"
+      invalid_credentials: "L'e-mail et le mot de passe ne correspondent pas"
       email_not_confirmed: "Confirme ton e-mail pour continuer."
       closure_pending: "Ton compte est en cours de fermeture. Garde-le pour continuer."
       terms_acceptance_required: "Nos conditions ont changé. Accepte-les pour continuer."
