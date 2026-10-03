@@ -1,4 +1,4 @@
-# SparkCircles — Design System v1.4
+# SparkCircles — Design System v1.4.1
 > The Sober Unicorn · Design reference for the whole product team
 
 ---
@@ -24,6 +24,9 @@
 ---
 
 ## Changelog
+
+**v1.4.1 (October 3, 2026)** — requested by the PM, 2026-10-03
+- **Section 15**: colors move from `theme.extend.colors` to `theme.colors`, so Tailwind's default palette disappears and only SparkCircles colors exist (token names unchanged). Added the three utility tokens the system needs once defaults are gone: `white` (white text on Dark fills), `transparent` (Ghost buttons, transparent backgrounds and borders) and `current` (`currentColor`, used by line icons). Spacing, radii, font sizes and shadows stay under `extend` (see the note under the config).
 
 **v1.4 (October 2, 2026)** — requested by the PM
 - **Brand name written "SparkCircles"** (capital S and C) everywhere in copy, titles and alt text.
@@ -547,24 +550,29 @@ Level 3 → box-shadow: 0 8px 32px rgba(0,0,0,0.12)            (toasts, floating
 ```js
 module.exports = {
   theme: {
+    // Colors replace Tailwind's defaults (not under `extend`): only SparkCircles colors exist.
+    colors: {
+      // Utilities kept explicitly because the defaults are gone
+      'transparent': 'transparent',
+      'current': 'currentColor',               // line icons inherit the text color
+      'white': '#FFFFFF',                      // white text on Dark fills only (contrast rule 3)
+      // Accents (module in comment)
+      'lavender': { light: '#EDE9FD', DEFAULT: '#C5B8F5', dark: '#6B5BC4' }, // Home + recommendations (was 'violet')
+      'green':    { light: '#E6F7DD', DEFAULT: '#A5E07F', dark: '#2F7A1F' }, // Events + success + verified · Primary button = bg-green text-ink · green text/borders/focus = green-dark
+      'sky':      { light: '#E3F3FD', DEFAULT: '#8FD3F7', dark: '#1F6FA8' }, // Community
+      'pink':     { light: '#FFEEF5', DEFAULT: '#FFB6D3', dark: '#B03A78' }, // Market
+      'sunny':    { light: '#FFF6CC', DEFAULT: '#FFD93D', dark: '#8F5E00' }, // Travel + soft alerts
+      // Status (not a module)
+      'error':    { light: '#FDECEC', DEFAULT: '#F4A6A6', dark: '#B42318' }, // errors + destructive actions
+      // Neutrals
+      'shell': '#F8F7F4',
+      'surface': '#FFFFFF',
+      'ink': { DEFAULT: '#1A1A1A', 2: '#4A4A4A', 3: '#6E6E6E' },
+      'border-soft': 'rgba(0,0,0,0.08)',
+      'border-control': '#6E6E6E',
+      'scrim': 'rgba(26,26,26,0.4)',
+    },
     extend: {
-      colors: {
-        // Accents (module in comment)
-        'lavender': { light: '#EDE9FD', DEFAULT: '#C5B8F5', dark: '#6B5BC4' }, // Home + recommendations (was 'violet')
-        'green':    { light: '#E6F7DD', DEFAULT: '#A5E07F', dark: '#2F7A1F' }, // Events + success + verified · Primary button = bg-green text-ink · green text/borders/focus = green-dark
-        'sky':      { light: '#E3F3FD', DEFAULT: '#8FD3F7', dark: '#1F6FA8' }, // Community
-        'pink':     { light: '#FFEEF5', DEFAULT: '#FFB6D3', dark: '#B03A78' }, // Market
-        'sunny':    { light: '#FFF6CC', DEFAULT: '#FFD93D', dark: '#8F5E00' }, // Travel + soft alerts
-        // Status (not a module)
-        'error':    { light: '#FDECEC', DEFAULT: '#F4A6A6', dark: '#B42318' }, // errors + destructive actions
-        // Neutrals
-        'shell': '#F8F7F4',
-        'surface': '#FFFFFF',
-        'ink': { DEFAULT: '#1A1A1A', 2: '#4A4A4A', 3: '#6E6E6E' },
-        'border-soft': 'rgba(0,0,0,0.08)',
-        'border-control': '#6E6E6E',
-        'scrim': 'rgba(26,26,26,0.4)',
-      },
       borderRadius: {
         'sm': '8px', 'md': '12px', 'lg': '16px', 'xl': '24px', 'pill': '100px',
       },
@@ -591,7 +599,7 @@ module.exports = {
 };
 ```
 
-> Note: `green`, `sky` and `pink` override Tailwind's default palettes of the same name. This is intentional so that only the SparkCircles colors exist in the product. `violet` is no longer defined (renamed `lavender` in v1.3): replace any `violet-*` class with `lavender-*` for Home and recommendations, or `green-*` for Events. Primary button: `bg-green text-ink`; pressed `border-green-dark`; disabled `bg-shell border-dashed border-ink-3 text-ink-3`. Green text, icons, borders and focus always use `green-dark`, never `green` (Base).
+> Note: colors sit under `theme.colors`, so Tailwind's default palette (including `black`, `gray-*`, `red-*`…) no longer exists: only the SparkCircles colors above can be used. There is deliberately no `black` token (contrast rule 4). Spacing, radii, font sizes and shadows are still under `extend`, so Tailwind's default scales for those (e.g. `p-4`, `rounded-2xl`, `text-sm`, `shadow-md`) remain available next to the SparkCircles tokens; keys with the same name (`sm`, `md`, `lg`, `xl`) are overridden. Same issue as colors, not changed in v1.4.1: to decide if the team wants to lock them too. `violet` is no longer defined (renamed `lavender` in v1.3): replace any `violet-*` class with `lavender-*` for Home and recommendations, or `green-*` for Events. Primary button: `bg-green text-ink`; pressed `border-green-dark`; disabled `bg-shell border-dashed border-ink-3 text-ink-3`. Green text, icons, borders and focus always use `green-dark`, never `green` (Base).
 
 ---
 
@@ -724,5 +732,5 @@ Source geometry: `docs/design/brand/_source/build_ripple.py` (edit there and reg
 
 ---
 
-*Document updated on October 2, 2026 — SparkCircles v1.4*
+*Document updated on October 3, 2026 — SparkCircles v1.4.1*
 *To be updated after each user testing cycle.*
