@@ -78,7 +78,7 @@ module SparkCircles
     config.active_storage.previewers = []
 
     # Links in emails open the mobile app (universal links on our domain later).
-    config.x.app_link_base = ENV.fetch("APP_LINK_BASE", "http://localhost:8081")
+    config.x.app_link_base = ENV.fetch("APP_LINK_BASE", "http://localhost:8081").chomp("/")
     # Terms and privacy policy versions (AC-5.2, AC-5.5).
     config.x.legal = config_for(:legal)
   end

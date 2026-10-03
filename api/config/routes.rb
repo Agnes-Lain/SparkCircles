@@ -6,6 +6,10 @@ Rails.application.routes.draw do
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # Development emails, readable in a browser on the Mac or the phone. The gem is in the
+  # Gemfile's development group only, so test and production never load or mount it.
+  mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
+
   # JSON API for the mobile app (docs/api/accounts-and-verification.md).
   namespace :api, defaults: { format: :json } do
     namespace :v1 do

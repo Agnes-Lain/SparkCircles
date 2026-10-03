@@ -20,6 +20,13 @@ RSpec.describe AccountMailer do
     expect(mail.html_part.body.to_s).to include("reset-password?token=abc")
   end
 
+  it "builds app links from APP_LINK_BASE (Expo Go in development: exp://<LAN IP>:8081/--)" do
+    allow(Rails.configuration.x).to receive(:app_link_base).and_return("exp://192.168.1.77:8081/--")
+    mail = described_class.confirmation_instructions(user, "token123")
+
+    expect(mail.text_part.body.to_s).to include("exp://192.168.1.77:8081/--/confirm-email?token=token123")
+  end
+
   it "AC-13.2 sends the email-change link to the new address" do
     mail = described_class.confirmation_instructions(user, "t", to: "new@example.com")
 

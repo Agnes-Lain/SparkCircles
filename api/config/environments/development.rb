@@ -35,12 +35,23 @@ Rails.application.configure do
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
+  # Links in development emails open the app in Expo Go on the phone:
+  # exp://<Mac Wi-Fi address>:8081/-- (Metro's address) followed by the route path, e.g.
+  # exp://192.168.1.77:8081/--/confirm-email?token=... Set APP_LINK_BASE to override it
+  # (Android emulator, another port, or `expo start --tunnel`). See mobile/README.md.
+  config.x.app_link_base = ENV.fetch("APP_LINK_BASE") do
+    lan_ip = Socket.ip_address_list.find { |address| address.ipv4_private? }&.ip_address
+    "exp://#{lan_ip || "127.0.0.1"}:8081/--"
+  end.chomp("/")
+
   # Set localhost to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
-  # Emails are not sent in development: they are written to the log. Preview them at
-  # http://localhost:3000/rails/mailers (previews live in spec/mailers/previews).
-  config.action_mailer.delivery_method = :test
+  # Emails are not sent in development: they are kept on disk (tmp/letter_opener) and
+  # listed at http://localhost:3000/letter_opener, also from the phone at
+  # http://<Mac Wi-Fi address>:3000/letter_opener when the server runs with -b 0.0.0.0.
+  # Templates can still be previewed at /rails/mailers (spec/mailers/previews).
+  config.action_mailer.delivery_method = :letter_opener_web
   config.action_mailer.preview_paths = [ Rails.root.join("spec/mailers/previews").to_s ]
 
   # Print deprecation notices to the Rails logger.
