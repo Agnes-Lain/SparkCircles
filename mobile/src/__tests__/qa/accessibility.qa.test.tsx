@@ -45,12 +45,12 @@ describe('QA Notification (section 9)', () => {
     expect(screen.getByText('16:30').props.className).toContain('text-sunny-dark');
   });
 
-  // QA BUG-01: accessibilityLiveRegion is Android-only and React Native's `alert` role does
-  // not make iOS VoiceOver speak a newly shown view. Proposal section 7 promises
-  // AccessibilityInfo.announceForAccessibility for errors. `it.failing` passes while the bug
-  // exists; once fixed, Jest reports it so it can become a normal `it`.
-  it.failing('BUG-01 announces an Error notification when it appears (VoiceOver)', async () => {
+  // QA BUG-01 (fixed): accessibilityLiveRegion is Android-only and React Native's `alert`
+  // role does not make iOS VoiceOver speak a newly shown view, so errors also call
+  // AccessibilityInfo.announceForAccessibility (proposal section 7).
+  it('BUG-01 announces an Error notification when it appears (VoiceOver)', async () => {
     const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
+    announce.mockClear();
     await renderWithProviders(
       <Notification level="error" title="Impossible de joindre SparkCircles" />,
     );
@@ -74,15 +74,18 @@ describe('QA Skeleton and reduced motion (section 13, P6)', () => {
     await waitFor(() => expect(loop).toHaveBeenCalled());
   });
 
-  it('stays static (opacity 1, loop stopped) under reduced motion', async () => {
+  // Updated with the BUG-05 fix: under reduced motion the loop is never started (it used to
+  // start, then stop once the setting arrived).
+  it('stays static (opacity 1, loop never started) under reduced motion', async () => {
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
-    const stop = jest.fn();
-    jest
+    const start = jest.fn();
+    const loop = jest
       .spyOn(Animated, 'loop')
-      .mockReturnValue({ start: jest.fn(), stop, reset: jest.fn() } as never);
+      .mockReturnValue({ start, stop: jest.fn(), reset: jest.fn() } as never);
     await renderWithProviders(<Skeleton testID="sk" />);
     await act(async () => undefined);
-    await waitFor(() => expect(stop).toHaveBeenCalled());
+    expect(loop).not.toHaveBeenCalled();
+    expect(start).not.toHaveBeenCalled();
     const node = screen.getByTestId('sk', { includeHiddenElements: true });
     const opacity = node.props.style.opacity;
     expect(typeof opacity === 'number' ? opacity : opacity.__getValue()).toBe(1);

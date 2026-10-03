@@ -1,6 +1,6 @@
 import { CircleAlert } from 'lucide-react-native';
-import type { ReactNode } from 'react';
-import { Text, View } from 'react-native';
+import { type ReactNode, useEffect, useRef } from 'react';
+import { AccessibilityInfo, Platform, Text, View } from 'react-native';
 
 import { Icon } from './Icon';
 
@@ -30,11 +30,23 @@ const LEVEL: Record<NotificationLevel, { bg: string; dot: string; caption: strin
 
 /**
  * Notification card (design system section 9). Error replaces the dot with an
- * alert-circle icon and is announced to screen readers; color is never the only signal.
+ * alert-circle icon and is announced to screen readers when it appears or changes:
+ * VoiceOver through announceForAccessibility (iOS has no live regions), TalkBack through
+ * the polite live region. Color is never the only signal.
  */
 export function Notification({ level, title, caption, action, testID }: NotificationProps) {
   const style = LEVEL[level];
   const isError = level === 'error';
+
+  const announced = useRef<string | null>(null);
+  useEffect(() => {
+    // Android already speaks the live region below; announcing too would read it twice.
+    if (!isError || Platform.OS !== 'ios') return;
+    const message = caption ? `${title}. ${caption}` : title;
+    if (announced.current === message) return; // once per message, not per render
+    announced.current = message;
+    AccessibilityInfo.announceForAccessibility(message);
+  }, [isError, title, caption]);
   return (
     <View testID={testID} className={`rounded-lg px-lg py-md ${style.bg}`}>
       {/* Title and caption are read together; the action stays a separate control. */}
@@ -52,8 +64,7 @@ export function Notification({ level, title, caption, action, testID }: Notifica
           )}
         </View>
         <View className="flex-1">
-          {/* Title 13px/500 Ink: specified in section 9, not a section 15 token. */}
-          <Text className="text-[13px] font-medium text-ink">{title}</Text>
+          <Text className="text-note-title text-ink">{title}</Text>
           {caption ? <Text className={`text-caption ${style.caption}`}>{caption}</Text> : null}
         </View>
       </View>
