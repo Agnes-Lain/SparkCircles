@@ -26,6 +26,10 @@ rsvg-convert -w 1024 -h 1024 "$SRC/ripple-icon-mono.svg" -o "$OUT/adaptive-icon-
 # Splash: stacked lockup on Shell (PM decision M-14), transparent PNG, 1024 px wide.
 rsvg-convert -w 1024 "$SRC/ripple-lockup-stacked.svg" -o "$OUT/splash-lockup.png"
 
+# Welcome screen logo: horizontal lockup on light backgrounds, shown 40 px tall (section 19),
+# exported at 3x for sharp rendering on every phone.
+rsvg-convert -h 120 "$SRC/ripple-lockup-horizontal.svg" -o "$OUT/lockup-horizontal.png"
+
 # The iOS master must be opaque: drop the alpha channel if the renderer added one.
 if command -v magick >/dev/null; then
   magick "$OUT/icon.png" -background "#1A1A1A" -alpha remove -alpha off "$OUT/icon.png"
