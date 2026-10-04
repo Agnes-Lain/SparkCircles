@@ -10,6 +10,7 @@ import { ME_KEY, useMe } from '../../auth/useMe';
 import { Checkbox } from '../../components/Checkbox';
 import { Header } from '../../components/Header';
 import { SettingsList } from '../../components/SettingsList';
+import { Skeleton } from '../../components/Skeleton';
 import { useToast } from '../../components/ToastProvider';
 import { currentLocale } from '../../i18n';
 import { formatMomentDate } from '../../i18n/format';
@@ -21,6 +22,7 @@ import { useBack } from '../auth/useBack';
 /**
  * A4 Privacy and messages (AC-5.2, 5.4): the marketing choice saves at once ("Saved"), and
  * the accepted versions of the terms and privacy policy, which open in the in-app browser.
+ * A skeleton shows while the account loads (M-7).
  */
 export function PrivacyScreen() {
   const { t } = useTranslation();
@@ -112,7 +114,18 @@ export function PrivacyScreen() {
         </>
       ) : me.isError ? (
         <UnreachableNotification onRetry={() => void me.refetch()} retrying={me.isFetching} />
-      ) : null}
+      ) : (
+        <View
+          accessible
+          accessibilityLabel={t('common.oneMoment')}
+          className="gap-lg"
+          testID="privacy-loading"
+        >
+          <Skeleton width="90%" height={20} />
+          <Skeleton width="100%" height={52} />
+          <Skeleton width="100%" height={52} />
+        </View>
+      )}
     </FormScreen>
   );
 }

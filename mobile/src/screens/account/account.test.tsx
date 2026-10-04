@@ -491,6 +491,14 @@ describe('A06 expired email-change link on a logged-in phone', () => {
 });
 
 describe('A4 Privacy and messages', () => {
+  it('M-7 shows a skeleton while the account loads', async () => {
+    mockAuth.me.mockReturnValue(new Promise<Me>(() => {}));
+    await open('/account/privacy', null);
+
+    expect(screen.getByTestId('privacy-loading')).toBeOnTheScreen();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+  });
+
   it('AC-5.4 saves the marketing choice at once with "Saved"', async () => {
     mockAuth.legal.mockResolvedValue(legalFixture);
     mockAccount.setMarketing.mockResolvedValue({
@@ -704,6 +712,10 @@ describe('A7 Close my account', () => {
       screen.getByText('Ton profil disparaît immédiatement pour les autres.'),
     ).toBeOnTheScreen();
     expect(screen.getByText('Tous tes appareils sont déconnectés.')).toBeOnTheScreen();
+    // M-6: no date computed on the phone; A8 shows the server's date.
+    expect(
+      screen.getByText('Tes données personnelles sont supprimées dans 30 jours.'),
+    ).toBeOnTheScreen();
     const close = screen.getByRole('button', { name: 'Fermer mon compte' });
     expect(close).toBeDisabled();
     expect(screen.getByText('Saisis ton mot de passe pour continuer.')).toBeOnTheScreen();
