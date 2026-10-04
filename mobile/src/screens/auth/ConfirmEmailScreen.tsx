@@ -24,7 +24,8 @@ import { useLinkToken } from './useLinkToken';
  * Target of the confirmation link (`/confirm-email?token=…`, AC-2.1, 2.2, 13.3, 13.6).
  * - Sign-up link: the device is logged in and lands on Today with the success checkmark and
  *   the toast "Email confirmed. Welcome to SparkCircles!" (design P1).
- * - Email-change link: the toast "Email changed" (My account comes with the next PR).
+ * - Email-change link: My account with the toast "Email changed" (design A3b) when this phone
+ *   is logged in, otherwise wherever the gate sends it.
  * - Expired or used link: S4. Address taken meanwhile (409, AC-13.6): a full screen (D-7) that
  *   never says another account uses the address (AC-13.5).
  */
@@ -48,8 +49,12 @@ export function ConfirmEmailScreen() {
         celebrate();
         showToast(t('checkInbox.confirmed'));
       } else {
-        if (result.user) queryClient.setQueryData(ME_KEY, result.user);
         showToast(t('emailChange.changed'));
+        if (result.user) {
+          queryClient.setQueryData(ME_KEY, result.user);
+          router.replace('/account');
+          return;
+        }
       }
       setDone(true);
     },
@@ -73,8 +78,7 @@ export function ConfirmEmailScreen() {
     error && !['invalid_or_expired_token', 'bad_request', 'email_taken'].includes(error.code);
 
   if (error?.code === 'email_taken') {
-    // D-7: OK → My account when logged in (it comes with a later PR, so the home tab for now),
-    // Welcome otherwise.
+    // D-7: OK → My account when logged in, Welcome otherwise.
     return (
       <MessageScreen
         testID="email-change-failed-screen"
@@ -85,7 +89,7 @@ export function ConfirmEmailScreen() {
         <Button
           size="large"
           label={t('common.ok')}
-          onPress={() => router.replace(status === 'signedIn' ? '/' : '/welcome')}
+          onPress={() => router.replace(status === 'signedIn' ? '/account' : '/welcome')}
           testID="ok"
         />
       </MessageScreen>

@@ -9,6 +9,7 @@ import { ApiError } from '../../api/errors';
 import { homeFor } from '../../auth/gate';
 import { useGate } from '../../auth/GateContext';
 import { usePendingEmail } from '../../auth/pendingEmail';
+import { useMe } from '../../auth/useMe';
 import { useSession } from '../../auth/useSession';
 import { Button } from '../../components/Button';
 import { MessageScreen } from './layouts';
@@ -23,7 +24,9 @@ export type ExpiredLinkKind = 'confirm' | 'reset';
  * S4 Link expired (AC-2.2, AC-4.3, AC-13.3): nothing changed, offer a fresh link.
  * - reset: the Forgot password screen (S6) sends a new one;
  * - confirm: sent at once when this device knows the account (logged in, or the email typed
- *   at sign-up), otherwise Log in leads to Check your inbox, which can send it again.
+ *   at sign-up), otherwise Log in leads to Check your inbox, which can send it again. On a
+ *   logged-in, confirmed phone it was an email-change link: Change my email (A3b) sends a new
+ *   one (A06).
  * ("This wasn't me" links can't be sent again: that screen explains it itself.)
  */
 export function LinkExpiredScreen() {
@@ -32,6 +35,7 @@ export function LinkExpiredScreen() {
   const gate = useGate();
   const { status, reason } = useSession();
   const pendingEmail = usePendingEmail();
+  const me = useMe();
   const { kind } = useLocalSearchParams<{ kind?: ExpiredLinkKind }>();
   const home = gate === 'loading' ? '/' : homeFor(gate, reason);
 
@@ -48,7 +52,12 @@ export function LinkExpiredScreen() {
 
   const sendNewLink = () => {
     if (kind === 'reset') return router.replace('/forgot-password');
-    if (gate === 'ready') return router.replace('/'); // already confirmed: nothing to resend
+    if (gate === 'ready') {
+      // A06: an expired email-change link on a logged-in phone. A new link needs the password
+      // again (POST /me/email_change), so Change my email opens with the waiting address.
+      if (me.data?.pending_email) return router.replace('/account/change-email?resend=1');
+      return router.replace('/account');
+    }
     if (status === 'signedIn' || pendingEmail) return sendResend();
     return router.replace('/log-in');
   };

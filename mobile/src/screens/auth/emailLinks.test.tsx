@@ -26,11 +26,14 @@ const ROUTES = {
   'log-in': routeStub('log-in'),
   welcome: routeStub('welcome'),
   index: routeStub('home'),
+  'account/index': routeStub('account'),
+  'account/change-email': routeStub('change-email'),
 };
 
 describe('S8 New password (reset link)', () => {
   beforeEach(async () => {
     resetApiMock();
+    mockAuth.me.mockResolvedValue(meFixture); // GET /me refetches answer like the API
     await i18n.changeLanguage('fr');
   });
 
@@ -96,10 +99,11 @@ describe('S8 New password (reset link)', () => {
 describe('Confirmation link (/confirm-email)', () => {
   beforeEach(async () => {
     resetApiMock();
+    mockAuth.me.mockResolvedValue(meFixture); // GET /me refetches answer like the API
     await i18n.changeLanguage('fr');
   });
 
-  it('AC-13.3 an email-change link says "Email changed" and keeps the session', async () => {
+  it('AC-13.3 an email-change link opens My account with "Email changed" and keeps the session', async () => {
     const changed = { ...meFixture, email: 'new@example.com' };
     mockAuth.confirmEmail.mockResolvedValue({ token: null, user: changed });
     const { queryClient, tokenStore } = await renderScreen(ROUTES, {
@@ -111,7 +115,7 @@ describe('Confirmation link (/confirm-email)', () => {
     expect(await screen.findByText('E-mail modifié')).toBeOnTheScreen();
     expect(queryClient.getQueryData(ME_KEY)).toEqual(changed);
     expect(tokenStore.value).toBe('jwt');
-    expect(await screen.findByText('route:home')).toBeOnTheScreen();
+    expect(await screen.findByText('route:account')).toBeOnTheScreen();
   });
 
   it('D-7 AC-13.6 an address taken meanwhile: a full screen that never says it is taken', async () => {
@@ -131,7 +135,7 @@ describe('Confirmation link (/confirm-email)', () => {
       ),
     ).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: 'OK' }));
-    expect(await screen.findByText('route:home')).toBeOnTheScreen();
+    expect(await screen.findByText('route:account')).toBeOnTheScreen();
   });
 
   it('D-7 OK leads to Welcome on a device without a session', async () => {
@@ -203,6 +207,7 @@ describe('Confirmation link (/confirm-email)', () => {
 describe('"This wasn\'t me" link (/this-wasnt-me)', () => {
   beforeEach(async () => {
     resetApiMock();
+    mockAuth.me.mockResolvedValue(meFixture); // GET /me refetches answer like the API
     await i18n.changeLanguage('fr');
   });
 

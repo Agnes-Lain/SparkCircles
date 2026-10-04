@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
@@ -6,7 +7,6 @@ import { auth } from '../../api';
 import { LEGAL_KEY } from '../../api/auth';
 import { ApiError } from '../../api/errors';
 import type { Legal } from '../../api/types';
-import { useLogOut } from '../../auth/useLogOut';
 import { ME_KEY } from '../../auth/useMe';
 import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
@@ -20,13 +20,12 @@ import { useSubmitOnce } from './useSubmitOnce';
 
 /**
  * S9 Terms updated (AC-5.5, 5.2): blocks the app until the new versions are accepted.
- * The design's Ghost "I don't accept" leads to Close my account (A7), which arrives with the
- * My account PR; until then the quiet "Log out" link is the way out.
+ * Ghost "I don't accept" leads to Close my account (A7): closing is the only alternative.
  */
 export function TermsUpdatedScreen() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const logOut = useLogOut();
+  const router = useRouter();
 
   const legal = useQuery<Legal, ApiError>({
     queryKey: LEGAL_KEY,
@@ -107,9 +106,13 @@ export function TermsUpdatedScreen() {
           onPress={() => legal.data && sendAccept(legal.data)}
           testID="accept"
         />
-        <View className="items-center">
-          <TextLink quiet label={t('common.logOut')} onPress={() => void logOut()} />
-        </View>
+        <Button
+          size="large"
+          variant="ghost"
+          label={t('terms.decline')}
+          onPress={() => router.push('/close-account')}
+          testID="decline"
+        />
       </View>
     </FormScreen>
   );

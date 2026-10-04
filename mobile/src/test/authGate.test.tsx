@@ -138,12 +138,16 @@ describe('auth gate (M-9)', () => {
     expect(app.getPathname()).toBe('/link-expired');
   });
 
-  it('AC-3.5 logs out from the temporary Home button: Welcome and "You\'re logged out"', async () => {
+  it('AC-3.5 logs out from My account (avatar on Home): Welcome and "You\'re logged out"', async () => {
     mockAuth.me.mockResolvedValue(meFixture);
-    await openApp({ token: 'jwt' });
+    const { app } = await openApp({ token: 'jwt' });
     await screen.findByRole('header', { name: 'Accueil' });
+    expect(screen.queryByTestId('dev-log-out')).toBeNull();
 
-    await fireEvent.press(screen.getByTestId('dev-log-out'));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Mon compte' }));
+    expect(await screen.findByRole('header', { name: 'Mon compte' })).toBeOnTheScreen();
+    expect(app.getPathname()).toBe('/account');
+    await fireEvent.press(screen.getByRole('button', { name: 'Me déconnecter' }));
 
     expect(await screen.findByText('Créer mon compte')).toBeOnTheScreen();
     expect(mockAuth.logOut).toHaveBeenCalled();
@@ -154,18 +158,35 @@ describe('auth gate (M-9)', () => {
   it('M-18 logs out on the device even when the API cannot be reached', async () => {
     mockAuth.me.mockResolvedValue(meFixture);
     mockAuth.logOut.mockRejectedValue(offlineError());
-    await openApp({ token: 'jwt' });
-    await screen.findByRole('header', { name: 'Accueil' });
+    await openApp({ token: 'jwt', url: '/account' });
 
-    await fireEvent.press(screen.getByTestId('dev-log-out'));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Me déconnecter' }));
 
     expect(await screen.findByText('Créer mon compte')).toBeOnTheScreen();
     await expect(SecureStore.getItemAsync(TOKEN_KEY)).resolves.toBeNull();
   });
 
   it('sends unknown paths (e.g. a later-PR email link) back through the gate', async () => {
-    await openApp({ token: null, url: '/my-data' });
+    await openApp({ token: null, url: '/verification-status' });
 
     expect(await screen.findByText('Créer mon compte')).toBeOnTheScreen();
+  });
+
+  it('AC-12.2 the "your data is ready" link needs a logged-in phone', async () => {
+    const { app } = await openApp({ token: null, url: '/my-data' });
+
+    expect(await screen.findByText('Créer mon compte')).toBeOnTheScreen();
+    expect(app.getPathname()).toBe('/welcome');
+  });
+
+  it('AC-5.5 S9 "I don\'t accept" opens Close my account (A7)', async () => {
+    mockAuth.me.mockResolvedValue(termsMe);
+    mockAuth.legal.mockReturnValue(new Promise(() => undefined));
+    const { app } = await openApp({ token: 'jwt' });
+
+    await fireEvent.press(await screen.findByRole('button', { name: "Je n'accepte pas" }));
+
+    expect(await screen.findByRole('header', { name: 'Ferme ton compte' })).toBeOnTheScreen();
+    expect(app.getPathname()).toBe('/close-account');
   });
 });
