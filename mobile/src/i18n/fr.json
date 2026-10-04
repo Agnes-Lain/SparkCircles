@@ -189,10 +189,10 @@
     "verifiedBody": "Valable jusqu'au {{date}}.",
     "whatThisMeans": "Ce que cela signifie",
     "expiresSoonTitle": "Ta vérification prend fin le {{date}}",
-    "expiresSoonBody": "Vérifie-toi à nouveau avec un document valide pour continuer à organiser des sorties.",
+    "expiresSoonBody": "Fais vérifier ton identité à nouveau avec un document valide pour continuer à organiser des sorties.",
     "rejectedTitle": "Nous n'avons pas pu vérifier ton identité",
     "expiredTitle": "Ta vérification a pris fin",
-    "expiredBody": "Les autres ne voient plus ton badge Vérifié. Vérifie-toi à nouveau pour organiser des sorties.",
+    "expiredBody": "Les autres ne voient plus ton badge Vérifié. Fais vérifier ton identité à nouveau pour organiser des sorties.",
     "revokedTitle": "Ta vérification a été retirée"
   },
   "profilePreview": {

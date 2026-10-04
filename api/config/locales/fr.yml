@@ -63,8 +63,8 @@ fr:
       residence_permit: "Titre de séjour"
       other_residence_card: "Autre carte de séjour officielle"
     revocation_messages:
-      safety_report: "Notre équipe a retiré ta vérification après un signalement de sécurité. Vérifie-toi à nouveau pour organiser des événements."
-      other: "Notre équipe a retiré ta vérification. Vérifie-toi à nouveau pour organiser des événements."
+      safety_report: "Notre équipe a retiré ta vérification après un signalement de sécurité. Fais vérifier ton identité à nouveau pour organiser des sorties."
+      other: "Notre équipe a retiré ta vérification. Fais vérifier ton identité à nouveau pour organiser des sorties."
     rejection_messages:
       photo_blurry: "La photo est floue. Prends-en une nouvelle avec une bonne lumière."
       document_cut_off: "Une partie du document manque. Montre les 4 coins."
@@ -131,9 +131,9 @@ fr:
         - "Ton compte SparkCircles est fermé et ton profil est masqué."
         - "Tes données personnelles seront effacées le %{date}. Tu as changé d'avis ? Connecte-toi avant cette date pour garder ton compte."
     verification_approved:
-      subject: "Tu es vérifié·e"
+      subject: "Ton identité est vérifiée"
       lines:
-        - "Tu peux organiser des événements dès maintenant. Ta vérification est valable jusqu'au %{date}."
+        - "Tu peux organiser des sorties dès maintenant. Ta vérification est valable jusqu'au %{date}."
     verification_rejected:
       subject: "Ta vérification doit être refaite"
       lines:
@@ -146,11 +146,11 @@ fr:
     verification_expiring:
       subject: "Ta vérification se termine dans %{days} jours"
       lines:
-        - "Ta vérification se termine dans %{days} jours. Vérifie-toi à nouveau avec un document valide pour continuer à organiser des événements."
+        - "Ta vérification se termine dans %{days} jours. Fais vérifier ton identité à nouveau avec un document valide pour continuer à organiser des sorties."
     verification_expired:
       subject: "Ta vérification est terminée"
       lines:
-        - "Les autres membres te voient désormais comme non vérifié·e. Vérifie-toi à nouveau pour organiser des événements."
+        - "Les autres membres ne voient plus ton badge Vérifié. Fais vérifier ton identité à nouveau pour organiser des sorties."
     report_closed:
       subject: "Choisis un nouveau mot de passe pour te connecter"
       lines:

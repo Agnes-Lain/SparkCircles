@@ -124,7 +124,7 @@ describe('A1 My account', () => {
       { ...meFixture.verification, expires_on: '2026-11-01', expires_soon: true },
       'Expire bientôt',
       'Ta vérification prend fin le 1 nov.',
-      'Vérifie-toi à nouveau avec un document valide pour continuer à organiser des sorties.',
+      'Fais vérifier ton identité à nouveau avec un document valide pour continuer à organiser des sorties.',
     ],
     [
       'not accepted',
@@ -146,7 +146,7 @@ describe('A1 My account', () => {
       { ...notVerified, status: 'expired' },
       'Expirée',
       'Ta vérification a pris fin',
-      'Les autres ne voient plus ton badge Vérifié. Vérifie-toi à nouveau pour organiser des sorties.',
+      'Les autres ne voient plus ton badge Vérifié. Fais vérifier ton identité à nouveau pour organiser des sorties.',
     ],
     [
       'removed',
