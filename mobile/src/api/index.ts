@@ -1,6 +1,7 @@
 import { emitUnauthorized } from '../auth/sessionEvents';
 import { secureTokenStore } from '../auth/tokenStore';
 import { currentLocale } from '../i18n';
+import { accountApi } from './account';
 import { authApi } from './auth';
 import { createApiClient } from './client';
 import { apiBaseUrl } from './config';
@@ -24,4 +25,9 @@ export function api() {
 /** The account endpoints (sign-up, login, links, terms, closure) on the app's client. */
 export function auth() {
   return authApi(api());
+}
+
+/** The My account endpoints (profile, privacy, password, data copy, closure). */
+export function account() {
+  return accountApi(api());
 }

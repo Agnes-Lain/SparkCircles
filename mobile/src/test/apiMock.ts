@@ -1,6 +1,7 @@
 // Shared mock of src/api for screen and gate tests:
 //   import { mockAuth, resetApiMock } from '../test/apiMock';
 //   jest.mock('../api', () => jest.requireActual('../test/apiMock').apiModule);
+import type { AccountApi } from '../api/account';
 import type { AuthApi } from '../api/auth';
 import { ApiError } from '../api/errors';
 
@@ -21,23 +22,45 @@ export const mockAuth: MockedAuth = {
   cancelClosure: jest.fn(),
 };
 
+type MockedAccount = { [K in keyof AccountApi]: jest.Mock };
+
+export const mockAccount: MockedAccount = {
+  logOutEverywhere: jest.fn(),
+  changePassword: jest.fn(),
+  updateProfile: jest.fn(),
+  publicProfile: jest.fn(),
+  setMarketing: jest.fn(),
+  requestEmailChange: jest.fn(),
+  closeAccount: jest.fn(),
+  dataExport: jest.fn(),
+  requestDataExport: jest.fn(),
+  downloadDataExport: jest.fn(),
+};
+
 export const mockHealth = jest.fn();
 
 export const apiModule = {
   api: () => ({ health: mockHealth, request: jest.fn() }),
   auth: () => mockAuth,
+  account: () => mockAccount,
   ApiError,
 };
 
 export function resetApiMock() {
   Object.values(mockAuth).forEach((fn) => fn.mockReset());
+  Object.values(mockAccount).forEach((fn) => fn.mockReset());
   mockHealth.mockReset().mockResolvedValue(true);
   mockAuth.logOut.mockResolvedValue(undefined);
 }
 
 /** An API error as the client throws it. */
-export function apiError(status: number, code: ApiError['code'], message: string = code) {
-  return new ApiError(status, code, message);
+export function apiError(
+  status: number,
+  code: ApiError['code'],
+  message: string = code,
+  details?: ApiError['details'],
+) {
+  return new ApiError(status, code, message, details);
 }
 
 export const offlineError = () => new ApiError(0, 'network_error', 'offline');

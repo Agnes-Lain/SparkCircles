@@ -95,7 +95,7 @@ export type Me = {
   roles: string[];
   email_confirmed: boolean;
   terms_acceptance_required: boolean;
-  closure: { closed_at: string; erasure_on: string } | null;
+  closure: Closure | null;
   marketing_opt_in: boolean;
   marketing_opt_in_changed_at: string | null;
   consents: {
@@ -144,4 +144,23 @@ export type Legal = {
   privacy: { version: string; url: string };
   requires_acceptance: boolean;
   changes: string[];
+};
+
+/** §2 / §7 Closure during the 30-day grace period (AC-11.1–11.3). */
+export type Closure = { closed_at: string; erasure_on: string };
+
+/** §5 `PATCH /me` body (AC-6.1, 7.8). */
+export type ProfileParams = {
+  first_name?: string;
+  last_name?: string;
+  city_shown?: string | null;
+  locale?: 'fr' | 'en';
+};
+
+/** §8 Copy of my data (AC-12.1–12.3). */
+export type DataExport = {
+  status: 'pending' | 'ready' | 'expired';
+  requested_at: string;
+  delivered_at?: string | null;
+  expires_at?: string | null;
 };
