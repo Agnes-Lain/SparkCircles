@@ -283,5 +283,137 @@
   "accountClosed": {
     "title": "Ton compte est fermé",
     "body": "Nous t'avons envoyé un e-mail. Tes données seront supprimées le {{date}}. Tu as changé d'avis ? Connecte-toi avant cette date."
+  },
+  "verify": {
+    "step": "Étape {{step}} sur 4",
+    "gate": {
+      "title": "Vérifie ton identité pour organiser des sorties",
+      "body": "Des organisateurs vérifiés, c'est plus de sécurité pour les enfants. Pour participer à une sortie, ce n'est jamais nécessaire.",
+      "needTitle": "Ce qu'il te faut",
+      "needDocument": "Un passeport, une carte d'identité, un permis de conduire ou un titre de séjour en cours de validité",
+      "needSelfie": "Un selfie, pris maintenant",
+      "needTime": "Environ 3 minutes. Ta vérification est faite sous 48 heures.",
+      "privacy": "Tes photos ne sont vues que par notre équipe et sont effacées dans les 30 jours qui suivent la décision.",
+      "start": "Vérifier mon identité",
+      "notNow": "Pas maintenant",
+      "pendingTitle": "Nous vérifions ton identité",
+      "pendingBody": "En général sous 48 heures. Tu pourras organiser des sorties dès que ton identité sera vérifiée."
+    },
+    "document": {
+      "title": "Quel document as-tu ?",
+      "hint": "Ton document ne doit pas être expiré.",
+      "frontAndBack": "Recto et verso",
+      "passportCaption": "Page photo",
+      "residencePermitCaption": "Recto et verso",
+      "name": {
+        "passport": "Passeport",
+        "national_id_card": "Carte nationale d'identité",
+        "driving_licence": "Permis de conduire",
+        "residence_permit": "Titre de séjour",
+        "other_residence_card": "Autre carte de séjour officielle"
+      },
+      "short": {
+        "passport": "Passeport",
+        "national_id_card": "Carte d'identité",
+        "driving_licence": "Permis de conduire",
+        "residence_permit": "Titre de séjour",
+        "other_residence_card": "Carte de séjour"
+      }
+    },
+    "captureTitle": {
+      "passport": {
+        "front": "Page photo de ton passeport",
+        "back": "Page photo de ton passeport"
+      },
+      "national_id_card": {
+        "front": "Recto de ta carte d'identité",
+        "back": "Verso de ta carte d'identité"
+      },
+      "driving_licence": {
+        "front": "Recto de ton permis de conduire",
+        "back": "Verso de ton permis de conduire"
+      },
+      "residence_permit": {
+        "front": "Recto de ton titre de séjour",
+        "back": "Verso de ton titre de séjour"
+      },
+      "other_residence_card": {
+        "front": "Recto de ta carte de séjour",
+        "back": "Verso de ta carte de séjour"
+      }
+    },
+    "capture": {
+      "intro": "Pose le document à plat, dans le cadre.",
+      "guide": "Aligne les 4 coins",
+      "tips": "Conseils",
+      "tipLight": "Bonne lumière",
+      "tipCorners": "Les 4 coins visibles",
+      "tipGlare": "Pas de reflet",
+      "cameraView": "Vue de l'appareil photo",
+      "photo": "La photo que tu as prise",
+      "shutter": "Prendre la photo",
+      "fromPhotos": "Choisir dans mes photos",
+      "checkTitle": "Tout est lisible ?",
+      "taken": "Photo prise.",
+      "use": "Utiliser cette photo",
+      "retake": "La reprendre",
+      "cameraDenied": "SparkCircles a besoin de ton appareil photo pour prendre la photo",
+      "openSettings": "Ouvrir les réglages",
+      "failedTitle": "La photo n'a pas fonctionné",
+      "failedCaption": "Réessaie, ou choisis-en une dans tes photos."
+    },
+    "selfie": {
+      "title": "Maintenant, un selfie",
+      "tipLight": "Face à la lumière",
+      "tipGlasses": "Sans lunettes ni chapeau",
+      "tipNeutral": "Expression neutre"
+    },
+    "review": {
+      "title": "Dernière étape",
+      "dateOfBirth": "Date de naissance",
+      "day": "Jour",
+      "month": "Mois",
+      "year": "Année",
+      "photoPage": "{{document}}, page photo",
+      "front": "{{document}}, recto",
+      "back": "{{document}}, verso",
+      "selfie": "Selfie",
+      "retake": "Reprendre",
+      "retakeA11y": "Reprendre : {{photo}}",
+      "send": "Envoyer pour vérification",
+      "sending": "Envoi sécurisé de tes photos…",
+      "failedTitle": "Tes photos ne sont pas parties",
+      "failedCaption": "Vérifie ta connexion et réessaie.",
+      "photoRejected": "Reprends cette photo.",
+      "photosRejectedCaption": "Reprends les photos indiquées, puis envoie-les.",
+      "dobBlank": "Ajoute ta date de naissance.",
+      "dobInvalid": "Vérifie ta date de naissance.",
+      "dobUnderage": "Tu dois avoir 18 ans ou plus pour vérifier ton identité.",
+      "expired": "Ce document est expiré. Utilise un document valide.",
+      "otherDocument": "Choisir un autre document"
+    },
+    "status": {
+      "sentTitle": "Vérification envoyée",
+      "sentBody": "Notre équipe vérifie chaque demande à la main. Nous t'enverrons une notification et un e-mail.",
+      "reviewTime": "48 h",
+      "reviewTimeCaption": "Délai habituel de vérification",
+      "progress": "Avancement",
+      "stepSent": "Envoyée",
+      "stepReview": "Vérification par notre équipe",
+      "stepReviewCaption": "Tu ne peux pas organiser de sorties en attendant",
+      "stepDecision": "Décision",
+      "stepDecisionCaption": "Par notification et e-mail",
+      "backToAccount": "Retour à mon compte",
+      "verifiedBody": "Tu peux organiser des sorties dès maintenant.",
+      "validUntil": "Valable jusqu'au",
+      "rejectedTitle": "On réessaie",
+      "tryAgain": "Réessayer",
+      "verifyAgain": "Vérifier à nouveau",
+      "seeDetails": "Voir le détail",
+      "renewalPending": "Renouvellement en attente",
+      "renewalBody": "Ton identité reste vérifiée pendant que notre équipe contrôle tes nouveaux documents. En général sous 48 heures.",
+      "renewalReviewCaption": "Tu peux continuer à organiser des sorties en attendant",
+      "renewalKept": "Ton identité reste vérifiée jusqu'au {{date}}."
+    }
   }
 }

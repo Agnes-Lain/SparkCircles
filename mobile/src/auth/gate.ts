@@ -68,8 +68,9 @@ const ALLOWED: Record<Exclude<GateState, 'loading'>, string[]> = {
   // S9 "I don't accept" leads to Close my account (A7).
   terms: ['terms-updated', 'close-account', ACCOUNT_CLOSED],
   unreachable: ['unreachable'],
-  // The tabs and My account (A1–A8; `my-data` is also the "your data is ready" email link).
-  ready: ['(tabs)', 'account', 'my-data', 'close-account', ACCOUNT_CLOSED],
+  // The tabs, My account (A1–A8; `my-data` is also the "your data is ready" email link) and
+  // identity verification (V0–V5).
+  ready: ['(tabs)', 'account', 'my-data', 'close-account', ACCOUNT_CLOSED, 'verify'],
 };
 
 /** The route name the gate reasons about: the tab group, or the screen's own name. */

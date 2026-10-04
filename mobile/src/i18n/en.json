@@ -283,5 +283,137 @@
   "accountClosed": {
     "title": "Your account is closed",
     "body": "We've sent you an email. Your data will be erased on {{date}}. Changed your mind? Log in before then."
+  },
+  "verify": {
+    "step": "Step {{step}} of 4",
+    "gate": {
+      "title": "Verify your identity to host",
+      "body": "Verified hosts keep children safe. Joining events never needs it.",
+      "needTitle": "What you'll need",
+      "needDocument": "A valid passport, ID card, driving licence or residence permit",
+      "needSelfie": "A selfie, taken now",
+      "needTime": "About 3 minutes, reviewed within 48 hours.",
+      "privacy": "Your photos are only seen by our team and erased within 30 days of the decision.",
+      "start": "Verify my identity",
+      "notNow": "Not now",
+      "pendingTitle": "We're checking your identity",
+      "pendingBody": "Usually within 48 hours. You'll be able to host as soon as you're verified."
+    },
+    "document": {
+      "title": "Which document do you have?",
+      "hint": "Your document must not be expired.",
+      "frontAndBack": "Front and back",
+      "passportCaption": "Photo page",
+      "residencePermitCaption": "Titre de séjour, front and back",
+      "name": {
+        "passport": "Passport",
+        "national_id_card": "National ID card",
+        "driving_licence": "Driving licence",
+        "residence_permit": "Residence permit",
+        "other_residence_card": "Other government residence card"
+      },
+      "short": {
+        "passport": "Passport",
+        "national_id_card": "ID card",
+        "driving_licence": "Driving licence",
+        "residence_permit": "Residence permit",
+        "other_residence_card": "Residence card"
+      }
+    },
+    "captureTitle": {
+      "passport": {
+        "front": "Photo page of your passport",
+        "back": "Photo page of your passport"
+      },
+      "national_id_card": {
+        "front": "Front of your ID card",
+        "back": "Back of your ID card"
+      },
+      "driving_licence": {
+        "front": "Front of your driving licence",
+        "back": "Back of your driving licence"
+      },
+      "residence_permit": {
+        "front": "Front of your residence permit",
+        "back": "Back of your residence permit"
+      },
+      "other_residence_card": {
+        "front": "Front of your residence card",
+        "back": "Back of your residence card"
+      }
+    },
+    "capture": {
+      "intro": "Place it flat, inside the frame.",
+      "guide": "Line up the 4 corners",
+      "tips": "Tips",
+      "tipLight": "Good light",
+      "tipCorners": "All 4 corners visible",
+      "tipGlare": "No glare",
+      "cameraView": "Camera view",
+      "photo": "The photo you took",
+      "shutter": "Take the photo",
+      "fromPhotos": "Choose from my photos",
+      "checkTitle": "Is everything readable?",
+      "taken": "Photo taken.",
+      "use": "Use this photo",
+      "retake": "Take it again",
+      "cameraDenied": "SparkCircles needs your camera to take the photo",
+      "openSettings": "Open settings",
+      "failedTitle": "The photo didn't work",
+      "failedCaption": "Try again, or choose one from your photos."
+    },
+    "selfie": {
+      "title": "Now a selfie",
+      "tipLight": "Face the light",
+      "tipGlasses": "No glasses or hat",
+      "tipNeutral": "Neutral expression"
+    },
+    "review": {
+      "title": "Last step",
+      "dateOfBirth": "Date of birth",
+      "day": "Day",
+      "month": "Month",
+      "year": "Year",
+      "photoPage": "{{document}}, photo page",
+      "front": "{{document}}, front",
+      "back": "{{document}}, back",
+      "selfie": "Selfie",
+      "retake": "Retake",
+      "retakeA11y": "Retake: {{photo}}",
+      "send": "Send for review",
+      "sending": "Sending your photos securely…",
+      "failedTitle": "Your photos didn't send",
+      "failedCaption": "Check your connection and try again.",
+      "photoRejected": "Take this photo again.",
+      "photosRejectedCaption": "Take the marked photos again, then send them.",
+      "dobBlank": "Add your date of birth.",
+      "dobInvalid": "Check your date of birth.",
+      "dobUnderage": "You need to be 18 or older to verify your identity.",
+      "expired": "This document has expired. Use a valid one.",
+      "otherDocument": "Choose another document"
+    },
+    "status": {
+      "sentTitle": "Verification sent",
+      "sentBody": "Our team checks every request by hand. We'll send you a notification and an email.",
+      "reviewTime": "48 h",
+      "reviewTimeCaption": "Usual review time",
+      "progress": "Progress",
+      "stepSent": "Sent",
+      "stepReview": "Review by our team",
+      "stepReviewCaption": "You can't host events until it's done",
+      "stepDecision": "Decision",
+      "stepDecisionCaption": "By notification and email",
+      "backToAccount": "Back to my account",
+      "verifiedBody": "You can host events now.",
+      "validUntil": "Valid until",
+      "rejectedTitle": "Let's try again",
+      "tryAgain": "Try again",
+      "verifyAgain": "Verify again",
+      "seeDetails": "See details",
+      "renewalPending": "Renewal pending",
+      "renewalBody": "You stay verified while our team checks your new documents. Usually within 48 hours.",
+      "renewalReviewCaption": "You can keep hosting events meanwhile",
+      "renewalKept": "You stay verified until {{date}}."
+    }
   }
 }

@@ -40,6 +40,12 @@ describe('auth gate rules (M-9, contract §1 "Account gates")', () => {
     expect(isAllowed('ready', 'welcome')).toBe(false);
   });
 
+  it('AC-7.2 only a logged-in, ready account reaches identity verification (V0–V5)', () => {
+    expect(isAllowed('ready', routeName(['verify', 'review']))).toBe(true);
+    expect(isAllowed('unconfirmed', 'verify')).toBe(false);
+    expect(isAllowed('signedOut', 'verify')).toBe(false);
+  });
+
   it('names routes by their screen, the tabs as one group', () => {
     expect(routeName(['(tabs)', 'events'])).toBe('(tabs)');
     expect(routeName(['(auth)', 'log-in'])).toBe('log-in');
