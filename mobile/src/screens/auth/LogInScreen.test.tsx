@@ -1,7 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
-import { fireEvent, screen } from 'expo-router/testing-library';
+import { act, fireEvent, screen } from 'expo-router/testing-library';
 
 import i18n from '../../i18n';
+import { emitUnauthorized } from '../../auth/sessionEvents';
 import { ME_KEY } from '../../auth/useMe';
 import { apiError, mockAuth, offlineError, resetApiMock } from '../../test/apiMock';
 import { meFixture } from '../../test/fixtures';
@@ -17,7 +18,7 @@ jest.mock('expo-device', () => ({ modelName: 'iPhone 15' }));
 
 const PASSWORD = `pw-${Math.random().toString(36).slice(2, 12)}-test`;
 
-function open() {
+function open(token: string | null = null) {
   return renderScreen(
     {
       'log-in': LogInScreen,
@@ -25,7 +26,7 @@ function open() {
       'link-sent': LinkSentScreen,
       'sign-up': routeStub('sign-up'),
     },
-    { url: '/log-in' },
+    { url: '/log-in', token },
   );
 }
 
@@ -80,6 +81,62 @@ describe('S5 Log in', () => {
     expect(
       await screen.findByRole('header', { name: 'Réinitialise ton mot de passe' }),
     ).toBeOnTheScreen();
+  });
+
+  it('D-8 a report lock (account_secured) says the team will help, with no reset action', async () => {
+    mockAuth.logIn.mockRejectedValue(apiError(423, 'account_secured'));
+    await open();
+
+    await logIn();
+
+    expect(await screen.findByText('Ton compte est bloqué pour ta sécurité')).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        "Après le signalement du changement d'e-mail, notre équipe doit vérifier ton compte. Nous t'enverrons un lien par e-mail pour choisir un nouveau mot de passe. Attendre ne le débloquera pas.",
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.getByTestId('support-contact')).toHaveTextContent('[SUPPORT CONTACT]');
+    expect(screen.queryByRole('button', { name: 'Réinitialiser mon mot de passe' })).toBeNull();
+    expect(screen.queryByText('Trop de tentatives')).toBeNull();
+  });
+
+  it('D-6 rate limited: the error notification above the form, typed input kept', async () => {
+    mockAuth.logIn.mockRejectedValue(apiError(429, 'rate_limited'));
+    await open();
+
+    await logIn();
+
+    expect(await screen.findByText("Trop d'essais pour le moment")).toBeOnTheScreen();
+    expect(screen.getByText('Attends quelques minutes, puis réessaie.')).toBeOnTheScreen();
+    expect(screen.getByLabelText('E-mail')).toHaveProp('value', 'claire@example.com');
+    expect(screen.getByLabelText('Mot de passe')).toHaveProp('value', PASSWORD);
+    expect(screen.getByRole('button', { name: 'Me connecter' })).toBeEnabled();
+  });
+
+  it('D-3 after a server-side logout, a reminder says the session has ended', async () => {
+    mockAuth.logIn.mockResolvedValue({ token: 'jwt-2', user: meFixture });
+    await open('jwt-1');
+    expect(screen.queryByTestId('session-ended')).toBeNull();
+
+    await act(() => emitUnauthorized());
+
+    expect(await screen.findByText('Ta session a pris fin')).toBeOnTheScreen();
+    expect(screen.getByText('Reconnecte-toi pour continuer.')).toBeOnTheScreen();
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    await logIn();
+    await screen.findByRole('button', { name: 'Me connecter' });
+    expect(screen.queryByText('Ta session a pris fin')).toBeNull();
+  });
+
+  it('D-3 shows the English reminder', async () => {
+    await i18n.changeLanguage('en');
+    await open('jwt-1');
+
+    await act(() => emitUnauthorized());
+
+    expect(await screen.findByText('Your session has ended')).toBeOnTheScreen();
+    expect(screen.getByText('Log in again to continue.')).toBeOnTheScreen();
   });
 
   it('checks the email format before calling the API', async () => {
@@ -143,5 +200,23 @@ describe('S6 Forgot password and S7 Link sent', () => {
     ).toBeOnTheScreen();
     expect(mockAuth.requestPasswordReset).toHaveBeenCalledWith('anyone@example.com');
     expect(screen.getByRole('button', { name: 'Ouvrir ma messagerie' })).toBeOnTheScreen();
+  });
+
+  it('D-6 AC-4.1 rate limited: a neutral error notification, the email stays typed', async () => {
+    mockAuth.requestPasswordReset.mockRejectedValue(apiError(429, 'rate_limited'));
+    await open();
+    await fireEvent.press(screen.getByRole('link', { name: 'Mot de passe oublié ?' }));
+    await screen.findByRole('header', { name: 'Réinitialise ton mot de passe' });
+
+    await fireEvent.changeText(screen.getByLabelText('E-mail'), 'anyone@example.com');
+    await fireEvent.press(screen.getByRole('button', { name: "M'envoyer un lien" }));
+
+    expect(await screen.findByText("Trop d'essais pour le moment")).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        'Attends quelques minutes, puis réessaie. Si tu as déjà fait la demande, regarde dans ta boîte mail et tes spams.',
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.getByLabelText('E-mail')).toHaveProp('value', 'anyone@example.com');
   });
 });

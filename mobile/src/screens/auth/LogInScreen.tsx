@@ -16,6 +16,7 @@ import { TextField } from '../../components/TextField';
 import { TextLink } from '../../components/TextLink';
 import { type FieldErrors, looksLikeEmail, useFocusFirstError } from './formErrors';
 import { FormScreen } from './layouts';
+import { SupportContact } from './SupportContact';
 import { UnreachableNotification } from './UnreachableNotification';
 import { useSubmitOnce } from './useSubmitOnce';
 import { useBack } from './useBack';
@@ -24,7 +25,9 @@ type Field = 'email';
 
 /**
  * S5 Log in (AC-3.1, 3.2, 3.3). Wrong email and wrong password get the same message
- * (AC-3.2). After login the auth gate opens the screen the account needs: the tabs, or
+ * (AC-3.2). Too many attempts (account_locked) and a report lock (account_secured) get different
+ * messages (D-8); a 429 keeps what was typed (D-6); after a server-side logout a reminder says
+ * the session has ended (D-3). After login the auth gate opens the screen the account needs: the tabs, or
  * Check your inbox / Terms updated / Closure in progress.
  */
 export function LogInScreen() {
@@ -32,7 +35,7 @@ export function LogInScreen() {
   const router = useRouter();
   const back = useBack('/welcome');
   const queryClient = useQueryClient();
-  const { signIn } = useSession();
+  const { signIn, reason } = useSession();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -84,10 +87,31 @@ export function LogInScreen() {
             />
           }
         />
+      ) : error?.code === 'account_secured' ? (
+        // D-8: locked after a "This wasn't me" report. No reset action: it wouldn't unlock it.
+        <Notification
+          level="error"
+          title={t('logIn.securedTitle')}
+          caption={t('logIn.securedCaption')}
+          action={<SupportContact />}
+        />
       ) : error?.code === 'rate_limited' ? (
-        <Notification level="error" title={error.message} />
+        <Notification
+          level="error"
+          title={t('rateLimited.title')}
+          caption={t('rateLimited.logIn')}
+          testID="rate-limited"
+        />
       ) : error ? (
         <UnreachableNotification onRetry={submit} retrying={logIn.isPending} />
+      ) : reason === 'unauthorized' ? (
+        // D-3: logged out by the server. Reminder, not Error: the person did nothing wrong.
+        <Notification
+          level="reminder"
+          title={t('logIn.sessionEndedTitle')}
+          caption={t('logIn.sessionEndedCaption')}
+          testID="session-ended"
+        />
       ) : null}
 
       <View className="gap-lg">
