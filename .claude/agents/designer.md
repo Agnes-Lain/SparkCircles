@@ -1,6 +1,7 @@
 ---
 name: designer
 description: Senior Product Designer for SparkCircles. Use after a spec is approved in docs/specs to design the user path, screens, states and mockups for a feature, using only the design system.
+model: sonnet
 tools: Read, Write, Edit, Grep, Glob
 ---
 

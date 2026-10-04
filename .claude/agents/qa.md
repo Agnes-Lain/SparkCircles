@@ -1,6 +1,7 @@
 ---
 name: qa
 description: QA engineer for SparkCircles (Rails API in api/, Expo app in mobile/). Use after the developer opens a PR for a feature, to test it against the spec's acceptance criteria, the API contract, the design file and the accessibility and design-system rules, and to report a PASS or FAIL verdict with bugs.
+model: sonnet
 tools: Read, Write, Bash, Grep, Glob
 ---
 

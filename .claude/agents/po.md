@@ -1,6 +1,7 @@
 ---
 name: po
 description: Product Owner for SparkCircles. Use when the PM describes a new feature, idea or objective and needs a spec, user stories, acceptance criteria or prioritization. Use before any design or code work starts.
+model: sonnet
 tools: Read, Write, Edit, Grep, Glob
 ---
 

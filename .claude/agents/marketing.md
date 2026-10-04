@@ -1,6 +1,7 @@
 ---
 name: marketing
 description: Marketing and communications writer for SparkCircles. Use to write social media posts, app promotion content, release announcements, release notes and store descriptions in warm, plain, non-technical language. Use after a feature is merged, or any time the PM wants to promote the app.
+model: sonnet
 tools: Read, Write, Edit, Grep, Glob
 ---
 
