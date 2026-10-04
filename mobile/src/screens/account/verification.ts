@@ -62,6 +62,7 @@ export function verificationCard(
         body: v.expires_on
           ? t('verificationCard.verifiedBody', { date: formatDate(v.expires_on, locale) })
           : '',
+        caption: renewalCaption(v, t),
       };
     case 'expiresSoon':
       return {
@@ -69,6 +70,7 @@ export function verificationCard(
           date: v.expires_on ? formatDayMonth(v.expires_on, locale) : '',
         }),
         body: t('verificationCard.expiresSoonBody'),
+        caption: renewalCaption(v, t),
       };
     case 'rejected':
       return { title: t('verificationCard.rejectedTitle'), body: v.rejection?.message ?? '' };
@@ -81,5 +83,50 @@ export function verificationCard(
         title: t('verificationCard.notVerifiedTitle'),
         body: t('verificationCard.notVerifiedBody'),
       };
+  }
+}
+
+/** AC-7.15: a renewal sent early is shown as "Renewal pending" while the parent stays verified. */
+function renewalCaption(v: Verification, t: TFunction): string | undefined {
+  if (v.renewal?.status === 'pending') return t('verify.status.renewalPending');
+  if (v.renewal?.status === 'rejected') return v.renewal.rejection?.message;
+  return undefined;
+}
+
+export type CardAction = {
+  label: string;
+  variant: 'primary' | 'ghost';
+  href: '/verify' | '/verify/status';
+};
+
+/**
+ * The A1 card's button (design A1 table, M-1): verify actions open V0, "See details" opens
+ * V5. A verified parent gets the "What this means" link instead, unless a renewal is in
+ * progress (AC-7.15).
+ */
+export function verificationCardAction(
+  v: Verification,
+  state: OwnerVerificationState,
+  t: TFunction,
+): CardAction | null {
+  const seeDetails: CardAction = {
+    label: t('verify.status.seeDetails'),
+    variant: 'ghost',
+    href: '/verify/status',
+  };
+  if (v.verified && v.renewal) return seeDetails;
+  switch (state) {
+    case 'notVerified':
+      return { label: t('verify.gate.start'), variant: 'primary', href: '/verify' };
+    case 'pending':
+      return seeDetails;
+    case 'rejected':
+      return { label: t('verify.status.tryAgain'), variant: 'primary', href: '/verify' };
+    case 'expiresSoon':
+    case 'expired':
+    case 'revoked':
+      return { label: t('verify.status.verifyAgain'), variant: 'primary', href: '/verify' };
+    default:
+      return null;
   }
 }

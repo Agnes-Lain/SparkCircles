@@ -20,7 +20,12 @@ import { FormScreen } from '../auth/layouts';
 import { UnreachableNotification } from '../auth/UnreachableNotification';
 import { useBack } from '../auth/useBack';
 import { BadgeSheet } from './BadgeSheet';
-import { ownerBadge, ownerVerificationState, verificationCard } from './verification';
+import {
+  ownerBadge,
+  ownerVerificationState,
+  verificationCard,
+  verificationCardAction,
+} from './verification';
 
 /** "Claire M.": the name as others see it (first name + last-name initial, AC-6.1). */
 export function publicName(firstName: string, lastName: string): string {
@@ -31,8 +36,7 @@ export function publicName(firstName: string, lastName: string): string {
 /**
  * A1 My account (AC-3.5, 6.3, 7.5, 11.1, 12.1): header with the owner's verification badge,
  * the verification card by status, the settings list, "Log out" and "Close my account".
- * The verification flow (V0–V5) arrives with the next PR, so the card's verify actions
- * aren't shown yet; "What this means" opens B1.
+ * The card's button opens V0 (verify) or V5 ("See details"); "What this means" opens B1.
  */
 export function AccountScreen() {
   const { t } = useTranslation();
@@ -73,6 +77,7 @@ export function AccountScreen() {
   const state = ownerVerificationState(user.verification);
   const badge = ownerBadge(state, t);
   const card = verificationCard(user.verification, state, t, currentLocale());
+  const action = verificationCardAction(user.verification, state, t);
 
   return (
     <FormScreen testID="account-screen">
@@ -114,6 +119,16 @@ export function AccountScreen() {
             {card.caption ? <Text className="text-caption text-ink-3">{card.caption}</Text> : null}
           </View>
         </View>
+        {action ? (
+          <View className="items-start">
+            <Button
+              variant={action.variant}
+              label={action.label}
+              onPress={() => router.push(action.href)}
+              testID="verification-action"
+            />
+          </View>
+        ) : null}
         {state === 'verified' ? (
           <View className="items-start">
             <TextLink
