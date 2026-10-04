@@ -617,7 +617,7 @@ describe('A6 Copy of my data', () => {
     mockFiles.length = 0;
     let fileWhileSharing: (typeof mockFiles)[number] | undefined;
     const share = jest.mocked(Sharing.shareAsync).mockImplementation(async () => {
-      fileWhileSharing = { ...mockFiles[0] };
+      fileWhileSharing = mockFiles[0] && { ...mockFiles[0] };
     });
     mockAccount.dataExport.mockResolvedValue({
       data_export: {
@@ -644,7 +644,7 @@ describe('A6 Copy of my data', () => {
     );
     expect(fileWhileSharing?.exists).toBe(true);
     expect(fileWhileSharing?.content).toContain('"first_name": "Claire"');
-    await waitFor(() => expect(mockFiles[0].exists).toBe(false));
+    await waitFor(() => expect(mockFiles[0]?.exists).toBe(false));
   });
 
   it('M-2 names the file with the local date', () => {
@@ -668,7 +668,7 @@ describe('A6 Copy of my data', () => {
     await fireEvent.press(await screen.findByRole('button', { name: 'Télécharger mes données' }));
 
     await waitFor(() => expect(Sharing.shareAsync).toHaveBeenCalled());
-    await waitFor(() => expect(mockFiles[0].exists).toBe(false));
+    await waitFor(() => expect(mockFiles[0]?.exists).toBe(false));
   });
 
   it('AC-12.3 offers a new copy once the link has expired', async () => {
