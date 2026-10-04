@@ -142,7 +142,7 @@ describe('S2 Sign up', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
 
-    expect(await screen.findByRole('header', { name: 'Consulte ta boîte mail' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Consulte tes e-mails' })).toBeOnTheScreen();
     expect(mockAuth.register).toHaveBeenCalledWith({
       first_name: 'Claire',
       last_name: 'Martin',
@@ -187,7 +187,7 @@ describe('S2 Sign up', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Réessayer' }));
 
-    expect(await screen.findByRole('header', { name: 'Consulte ta boîte mail' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Consulte tes e-mails' })).toBeOnTheScreen();
   });
 
   it('D-6 rate limited: the error notification, what was typed is kept', async () => {

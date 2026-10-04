@@ -54,7 +54,7 @@ describe('auth gate (M-9)', () => {
 
     const { app } = await openApp({ token: 'jwt', url: '/events' });
 
-    expect(await screen.findByRole('header', { name: 'Consulte ta boîte mail' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Consulte tes e-mails' })).toBeOnTheScreen();
     expect(app.getPathname()).toBe('/check-inbox');
     expect(screen.getByText('c•••••@example.com')).toBeOnTheScreen();
     expect(screen.queryByRole('tab')).toBeNull();

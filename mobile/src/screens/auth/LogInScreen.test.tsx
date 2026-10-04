@@ -192,7 +192,7 @@ describe('S6 Forgot password and S7 Link sent', () => {
     await fireEvent.changeText(screen.getByLabelText('E-mail'), 'anyone@example.com');
     await fireEvent.press(screen.getByRole('button', { name: "M'envoyer un lien" }));
 
-    expect(await screen.findByRole('header', { name: 'Consulte ta boîte mail' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Consulte tes e-mails' })).toBeOnTheScreen();
     expect(
       screen.getByText(
         "Si un compte existe pour cet e-mail, nous t'avons envoyé un lien. Il fonctionne pendant 1 heure.",
@@ -214,7 +214,7 @@ describe('S6 Forgot password and S7 Link sent', () => {
     expect(await screen.findByText("Trop d'essais pour le moment")).toBeOnTheScreen();
     expect(
       screen.getByText(
-        'Attends quelques minutes, puis réessaie. Si tu as déjà fait la demande, regarde dans ta boîte mail et tes spams.',
+        'Attends quelques minutes, puis réessaie. Si tu as déjà fait la demande, regarde dans tes e-mails et tes spams.',
       ),
     ).toBeOnTheScreen();
     expect(screen.getByLabelText('E-mail')).toHaveProp('value', 'anyone@example.com');

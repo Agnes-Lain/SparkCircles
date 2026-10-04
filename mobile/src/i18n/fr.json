@@ -72,7 +72,7 @@
     "passwordRequired": "Saisis ton mot de passe pour continuer."
   },
   "checkInbox": {
-    "title": "Consulte ta boîte mail",
+    "title": "Consulte tes e-mails",
     "body": "Nous avons envoyé un lien à <b>{{email}}</b>. Appuie dessus dans les 24 heures pour confirmer ton e-mail.",
     "bodyNoEmail": "Nous t'avons envoyé un lien. Appuie dessus dans les 24 heures pour confirmer ton e-mail.",
     "resend": "Renvoyer le lien",
@@ -110,7 +110,7 @@
     "submit": "M'envoyer un lien"
   },
   "linkSent": {
-    "title": "Consulte ta boîte mail",
+    "title": "Consulte tes e-mails",
     "body": "Si un compte existe pour cet e-mail, nous t'avons envoyé un lien. Il fonctionne pendant 1 heure."
   },
   "newPassword": {
@@ -155,7 +155,7 @@
     "title": "Trop d'essais pour le moment",
     "logIn": "Attends quelques minutes, puis réessaie.",
     "signUp": "Attends quelques minutes, puis réessaie. Ce que tu as saisi est conservé.",
-    "forgotPassword": "Attends quelques minutes, puis réessaie. Si tu as déjà fait la demande, regarde dans ta boîte mail et tes spams.",
+    "forgotPassword": "Attends quelques minutes, puis réessaie. Si tu as déjà fait la demande, regarde dans tes e-mails et tes spams.",
     "resend": "Tu as demandé plusieurs liens. Attends quelques minutes avant d'en redemander un, et regarde dans tes spams.",
     "wait": "Attends quelques minutes, puis réessaie."
   },
@@ -170,18 +170,18 @@
     "close": "Fermer mon compte"
   },
   "badge": {
-    "verified": "Vérifié ✓",
-    "notVerified": "Non vérifié",
+    "verified": "Vérifiée ✓",
+    "notVerified": "Non vérifiée",
     "pending": "En attente",
     "expiresSoon": "Expire bientôt",
     "notAccepted": "Non acceptée",
     "expired": "Expirée",
-    "verifiedA11y": "Vérifié, identité contrôlée par SparkCircles. Ouvre une explication.",
+    "verifiedA11y": "Vérifiée, identité contrôlée par SparkCircles. Ouvre une explication.",
     "opensExplanation": "{{status}}. Ouvre une explication."
   },
   "verificationCard": {
     "notVerifiedTitle": "Vérifie ton identité pour organiser des sorties",
-    "notVerifiedBody": "Pour participer à une sortie, ce n'est jamais nécessaire. Environ 3 minutes, vérifiée sous 48 heures.",
+    "notVerifiedBody": "Pour participer à une sortie, ce n'est jamais nécessaire. Environ 3 minutes. Ta vérification est faite sous 48 heures.",
     "pendingTitle": "Nous vérifions ton identité",
     "pendingBody": "En général sous 48 heures. Nous te préviendrons.",
     "pendingCaption": "Envoyée le {{date}}",
@@ -225,7 +225,7 @@
     "save": "Enregistrer",
     "saved": "Profil enregistré",
     "nameSheetTitle": "Changer ton nom ?",
-    "nameSheetBody": "Ton badge Vérifié sera retiré. Tu devras te vérifier à nouveau avant d'organiser de nouvelles sorties.",
+    "nameSheetBody": "Ton badge Vérifié sera retiré. Tu devras faire vérifier ton identité à nouveau avant d'organiser de nouvelles sorties.",
     "nameSheetConfirm": "Changer mon nom",
     "nameSheetKeep": "Garder mon nom"
   },
@@ -235,7 +235,7 @@
     "newEmail": "Nouvel e-mail",
     "password": "Ton mot de passe",
     "submit": "Envoyer un lien de confirmation",
-    "sentTitle": "Consulte ta nouvelle boîte mail",
+    "sentTitle": "Consulte tes e-mails sur ta nouvelle adresse",
     "sentBody": "Nous avons envoyé un lien à <b>{{email}}</b>. Appuie dessus pour confirmer ton nouvel e-mail. Nous avons aussi prévenu ton adresse actuelle de ce changement.",
     "sameEmail": "C'est déjà ton e-mail."
   },

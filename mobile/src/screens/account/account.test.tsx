@@ -101,9 +101,9 @@ describe('A1 My account', () => {
     [
       'not verified',
       notVerified,
-      'Non vérifié',
+      'Non vérifiée',
       'Vérifie ton identité pour organiser des sorties',
-      "Pour participer à une sortie, ce n'est jamais nécessaire. Environ 3 minutes, vérifiée sous 48 heures.",
+      "Pour participer à une sortie, ce n'est jamais nécessaire. Environ 3 minutes. Ta vérification est faite sous 48 heures.",
     ],
     [
       'pending',
@@ -115,7 +115,7 @@ describe('A1 My account', () => {
     [
       'verified',
       meFixture.verification,
-      'Vérifié ✓',
+      'Vérifiée ✓',
       'Ton identité est vérifiée',
       "Valable jusqu'au 2 oct. 2028.",
     ],
@@ -155,7 +155,7 @@ describe('A1 My account', () => {
         revoked: true,
         rejection: { reason: 'other', message: 'Retirée après un signalement.', note: null },
       },
-      'Non vérifié',
+      'Non vérifiée',
       'Ta vérification a été retirée',
       'Retirée après un signalement.',
     ],
@@ -228,7 +228,7 @@ describe('B1 Badge explanation sheet', () => {
 
     await fireEvent.press(
       screen.getByRole('button', {
-        name: 'Vérifié, identité contrôlée par SparkCircles. Ouvre une explication.',
+        name: 'Vérifiée, identité contrôlée par SparkCircles. Ouvre une explication.',
       }),
     );
     expect(
@@ -271,7 +271,7 @@ describe('B1 Badge explanation sheet', () => {
     await open('/account/profile-preview');
 
     await fireEvent.press(
-      await screen.findByRole('button', { name: 'Non vérifié. Ouvre une explication.' }),
+      await screen.findByRole('button', { name: 'Non vérifiée. Ouvre une explication.' }),
     );
     expect(
       await screen.findByRole('header', { name: 'Identité pas encore vérifiée' }),
@@ -294,7 +294,7 @@ describe('A2 How others see me', () => {
 
     expect(await screen.findByText('Claire M.')).toBeOnTheScreen();
     expect(screen.getByText('Croix-Rousse, Lyon')).toBeOnTheScreen();
-    expect(screen.getByText('Vérifié ✓')).toBeOnTheScreen();
+    expect(screen.getByText('Vérifiée ✓')).toBeOnTheScreen();
     expect(screen.queryByText('Martin')).toBeNull();
     expect(
       screen.getByText(
@@ -349,7 +349,7 @@ describe('A3 Edit profile', () => {
     expect(await screen.findByRole('header', { name: 'Changer ton nom ?' })).toBeOnTheScreen();
     expect(
       screen.getByText(
-        "Ton badge Vérifié sera retiré. Tu devras te vérifier à nouveau avant d'organiser de nouvelles sorties.",
+        "Ton badge Vérifié sera retiré. Tu devras faire vérifier ton identité à nouveau avant d'organiser de nouvelles sorties.",
       ),
     ).toBeOnTheScreen();
     expect(mockAccount.updateProfile).not.toHaveBeenCalled();
@@ -411,7 +411,7 @@ describe('A3b Change my email', () => {
       'secret-password',
     );
     expect(
-      await screen.findByRole('header', { name: 'Consulte ta nouvelle boîte mail' }),
+      await screen.findByRole('header', { name: 'Consulte tes e-mails sur ta nouvelle adresse' }),
     ).toBeOnTheScreen();
     expect(screen.getByText('n•••••@mail.fr')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Ouvrir ma messagerie' })).toBeOnTheScreen();
