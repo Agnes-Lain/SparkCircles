@@ -16,7 +16,16 @@ const INPUT_TEXT = {
 };
 
 export type TextFieldKind =
-  'text' | 'name' | 'givenName' | 'familyName' | 'email' | 'password' | 'newPassword';
+  | 'text'
+  | 'name'
+  | 'givenName'
+  | 'familyName'
+  | 'email'
+  | 'password'
+  | 'newPassword'
+  | 'birthDay'
+  | 'birthMonth'
+  | 'birthYear';
 
 export type TextFieldProps = {
   label: string;
@@ -28,6 +37,8 @@ export type TextFieldProps = {
   helper?: string;
   /** Error text (Caption error-dark with an alert-circle icon), e.g. "Add your first name." */
   error?: string | null;
+  /** Keeps the error border and spoken error but leaves the text to the caller (grouped fields). */
+  hideErrorText?: boolean;
   returnKeyType?: TextInputProps['returnKeyType'];
   onSubmitEditing?: () => void;
   ref?: Ref<TextInput>;
@@ -69,6 +80,24 @@ const KIND: Record<TextFieldKind, Partial<TextInputProps>> = {
     autoComplete: 'new-password',
     textContentType: 'newPassword',
   },
+  birthDay: {
+    keyboardType: 'number-pad',
+    maxLength: 2,
+    autoComplete: 'birthdate-day',
+    textContentType: 'birthdateDay',
+  },
+  birthMonth: {
+    keyboardType: 'number-pad',
+    maxLength: 2,
+    autoComplete: 'birthdate-month',
+    textContentType: 'birthdateMonth',
+  },
+  birthYear: {
+    keyboardType: 'number-pad',
+    maxLength: 4,
+    autoComplete: 'birthdate-year',
+    textContentType: 'birthdateYear',
+  },
 };
 
 /**
@@ -86,6 +115,7 @@ export function TextField({
   placeholder,
   helper,
   error,
+  hideErrorText = false,
   returnKeyType,
   onSubmitEditing,
   ref,
@@ -137,7 +167,7 @@ export function TextField({
           </View>
         ) : null}
       </View>
-      {error ? (
+      {error && hideErrorText ? null : error ? (
         <View
           className="flex-row items-center gap-xs"
           testID={testID ? `${testID}-error` : undefined}

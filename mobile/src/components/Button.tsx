@@ -23,6 +23,8 @@ export type ButtonProps = {
   icon?: LucideIcon;
   /** Module whose Base color fills a `module` (Module CTA) button, e.g. in empty states. */
   module?: Module;
+  /** What screen readers say when the label alone lacks context ("Retake ID card, front"). */
+  accessibilityLabel?: string;
   /** Extra accessibility hint, e.g. how to enable a disabled button. */
   accessibilityHint?: string;
   testID?: string;
@@ -98,6 +100,7 @@ export function Button({
   loading = false,
   icon,
   module,
+  accessibilityLabel,
   accessibilityHint,
   ref,
   testID,
@@ -120,7 +123,7 @@ export function Button({
       ref={ref}
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}

@@ -13,10 +13,12 @@ export type HeaderProps = {
   step?: string;
   /** Optional Body text under the title. */
   intro?: ReactNode;
+  /** H2 title instead of H1 (the verification capture steps, design V2–V4). */
+  small?: boolean;
 };
 
 /** Header of pushed screens (design system section 10): back button, then the H1 title. */
-export function Header({ title, onBack, step, intro }: HeaderProps) {
+export function Header({ title, onBack, step, intro, small = false }: HeaderProps) {
   const { t } = useTranslation();
   return (
     <View className="gap-sm">
@@ -27,10 +29,14 @@ export function Header({ title, onBack, step, intro }: HeaderProps) {
           ) : (
             <View />
           )}
-          {step ? <Text className="text-caption text-ink-3">{step}</Text> : null}
+          {step ? (
+            <Text accessibilityLiveRegion="polite" className="text-caption text-ink-3">
+              {step}
+            </Text>
+          ) : null}
         </View>
       ) : null}
-      <Text accessibilityRole="header" className="text-h1 text-ink">
+      <Text accessibilityRole="header" className={`${small ? 'text-h2' : 'text-h1'} text-ink`}>
         {title}
       </Text>
       {typeof intro === 'string' ? <Text className="text-body text-ink-2">{intro}</Text> : intro}
