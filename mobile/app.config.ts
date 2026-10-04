@@ -4,6 +4,26 @@ import type { ExpoConfig } from 'expo/config';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { colors } = require('./src/theme/tokens');
 
+// Permission texts approved by the PM (M-25). English is the default; the French ones are
+// applied through `locales` on iOS. Android shows its own system wording.
+const PERMISSIONS = {
+  en: {
+    camera:
+      'SparkCircles uses your camera to take photos of your ID and a selfie when you verify your identity.',
+    photos: 'SparkCircles opens your photos only when you choose a picture of your ID.',
+  },
+  fr: {
+    camera:
+      "SparkCircles utilise ton appareil photo pour photographier ta pièce d'identité et prendre un selfie quand tu vérifies ton identité.",
+    photos:
+      "SparkCircles accède à tes photos seulement quand tu choisis une photo de ta pièce d'identité.",
+  },
+};
+
+const iosPermissionStrings = (texts: { camera: string; photos: string }) => ({
+  ios: { NSCameraUsageDescription: texts.camera, NSPhotoLibraryUsageDescription: texts.photos },
+});
+
 const config: ExpoConfig = {
   name: 'SparkCircles',
   slug: 'sparkcircles',
@@ -16,6 +36,8 @@ const config: ExpoConfig = {
   icon: './assets/brand/icon.png',
   ios: {
     supportsTablet: false,
+    // Lets iOS use the `locales` strings below in French or English.
+    infoPlist: { CFBundleAllowMixedLocalizations: true },
     icon: {
       light: './assets/brand/icon.png',
       // The main icon is already the dark version (pastel ripple on Ink, section 19).
@@ -47,7 +69,29 @@ const config: ExpoConfig = {
     'expo-localization',
     'expo-web-browser',
     'expo-sharing',
+    [
+      'expo-camera',
+      {
+        cameraPermission: PERMISSIONS.en.camera,
+        // Photos only, never video: no microphone (M-25).
+        microphonePermission: false,
+        recordAudioAndroid: false,
+        barcodeScannerEnabled: false,
+      },
+    ],
+    [
+      'expo-image-picker',
+      {
+        photosPermission: PERMISSIONS.en.photos,
+        cameraPermission: PERMISSIONS.en.camera,
+        microphonePermission: false,
+      },
+    ],
   ],
+  locales: {
+    en: iosPermissionStrings(PERMISSIONS.en),
+    fr: iosPermissionStrings(PERMISSIONS.fr),
+  },
   experiments: {
     typedRoutes: true,
   },
