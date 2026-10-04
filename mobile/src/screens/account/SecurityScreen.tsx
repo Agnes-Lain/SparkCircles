@@ -75,7 +75,7 @@ export function SecurityScreen() {
 
   const submit = () => {
     const next: FieldErrors<Field> = {};
-    if (!current) next.current = t('security.wrongCurrent');
+    if (!current) next.current = t('fieldErrors.passwordRequired');
     if (password.length < MIN_PASSWORD_LENGTH) next.password = t('fieldErrors.password');
     setErrors(next);
     if (Object.keys(next).length > 0) return focusFirstError(next);

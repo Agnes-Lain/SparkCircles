@@ -68,7 +68,8 @@
     "password": "Utilise au moins 10 caractères et évite les mots de passe courants comme « motdepasse123 ».",
     "adult": "Coche cette case pour confirmer que tu as 18 ans ou plus. SparkCircles est réservé aux adultes.",
     "terms": "Coche cette case pour accepter les conditions d'utilisation et la politique de confidentialité.",
-    "passwordMismatch": "Ce mot de passe ne correspond pas."
+    "passwordMismatch": "Ce mot de passe ne correspond pas.",
+    "passwordRequired": "Saisis ton mot de passe pour continuer."
   },
   "checkInbox": {
     "title": "Consulte ta boîte mail",

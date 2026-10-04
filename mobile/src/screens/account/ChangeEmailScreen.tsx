@@ -79,10 +79,9 @@ export function ChangeEmailScreen() {
     else if (me.data && trimmed === me.data.email.toLowerCase()) {
       next.email = t('changeEmail.sameEmail');
     }
+    if (!password) next.password = t('fieldErrors.passwordRequired');
     setErrors(next);
     if (Object.keys(next).length > 0) return focusFirstError(next);
-    // No designed copy for an empty password: the password field takes the focus.
-    if (!password) return passwordRef.current?.focus();
     sendRequest({ email: trimmed, password });
   };
 

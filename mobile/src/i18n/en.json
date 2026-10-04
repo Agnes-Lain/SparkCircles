@@ -68,7 +68,8 @@
     "password": "Use at least 10 characters, and avoid common passwords like 'motdepasse123'.",
     "adult": "Tick this box to confirm you're 18 or older. SparkCircles is for adults only.",
     "terms": "Tick this box to accept the terms and privacy policy.",
-    "passwordMismatch": "This password doesn't match."
+    "passwordMismatch": "This password doesn't match.",
+    "passwordRequired": "Enter your password to continue."
   },
   "checkInbox": {
     "title": "Check your inbox",

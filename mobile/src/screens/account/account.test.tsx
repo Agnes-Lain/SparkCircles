@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { act, fireEvent, screen, waitFor } from 'expo-router/testing-library';
 import * as Sharing from 'expo-sharing';
+import { AccessibilityInfo } from 'react-native';
 
 import i18n from '../../i18n';
 import type { Me } from '../../api/types';
@@ -423,6 +424,18 @@ describe('A3b Change my email', () => {
     await fill('nouvelle@mail.fr', 'wrong-password');
 
     expect(await screen.findByText('Ce mot de passe ne correspond pas.')).toBeOnTheScreen();
+  });
+
+  it('M-3 an empty password shows the field error and announces it', async () => {
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
+    await open('/account/change-email');
+
+    await fill('nouvelle@mail.fr', '');
+
+    expect(screen.getByText('Saisis ton mot de passe pour continuer.')).toBeOnTheScreen();
+    expect(announce).toHaveBeenCalledWith('Saisis ton mot de passe pour continuer.');
+    expect(mockAccount.requestEmailChange).not.toHaveBeenCalled();
+    announce.mockRestore();
   });
 
   it('refuses the current address, before and from the server', async () => {
