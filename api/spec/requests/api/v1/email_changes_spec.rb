@@ -128,6 +128,33 @@ RSpec.describe "Email change", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    it "D-4 answers already_reported when the link is opened again, without changing anything" do
+      token = email_change.generate_token_for(:report)
+      post "/api/v1/email_change_reports", params: { token: token }, as: :json
+      expect(json).to eq("status" => "account_secured")
+      reported_at = email_change.reload.reported_at
+
+      travel 1.hour do
+        expect do
+          post "/api/v1/email_change_reports", params: { token: token }, as: :json
+        end.not_to change(AuditEvent, :count)
+      end
+
+      expect(response).to have_http_status(:ok)
+      expect(json).to eq("status" => "already_reported")
+      expect(email_change.reload.reported_at).to eq(reported_at)
+    end
+
+    it "D-4 does not lock the account again once the team has resolved the report" do
+      token = email_change.generate_token_for(:report)
+      post "/api/v1/email_change_reports", params: { token: token }, as: :json
+      user.reload.update!(security_locked_at: nil)
+
+      post "/api/v1/email_change_reports", params: { token: token }, as: :json
+      expect(json).to eq("status" => "already_reported")
+      expect(user.reload).not_to be_security_locked
+    end
+
     it "works for 30 days only" do
       token = email_change.generate_token_for(:report)
 

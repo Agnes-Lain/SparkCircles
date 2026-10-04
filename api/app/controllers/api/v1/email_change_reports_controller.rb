@@ -8,6 +8,8 @@ module Api
       def create
         change = EmailChange.find_by_token_for(:report, params.require(:token).to_s)
         return render_error(:unprocessable_content, :invalid_or_expired_token) unless change
+        # D-4: the link opened a second time. Nothing changes (no new lock, audit entry or report).
+        return render json: { status: "already_reported" }, status: :ok if change.reported?
 
         Accounts::EmailChangeReport.new(change, ip_address: request.remote_ip).call
         render json: { status: "account_secured" }, status: :accepted

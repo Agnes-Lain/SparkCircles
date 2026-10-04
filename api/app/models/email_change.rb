@@ -12,9 +12,9 @@ class EmailChange < ApplicationRecord
   scope :open_reports, -> { reported.where(restored_at: nil, closed_at: nil) }
   scope :resolved_reports, -> { reported.where.not(restored_at: nil).or(reported.where.not(closed_at: nil)) }
 
-  generates_token_for :report, expires_in: REPORT_WINDOW do
-    reported_at
-  end
+  # The link stays readable after a report so a second opening can answer "already reported"
+  # (D-4); reporting twice changes nothing (see EmailChangeReportsController).
+  generates_token_for :report, expires_in: REPORT_WINDOW
 
   def reported? = reported_at.present?
   def open_report? = reported? && restored_at.nil? && closed_at.nil?
