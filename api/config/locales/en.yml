@@ -24,6 +24,7 @@ en:
       invalid_or_expired_token: "This link has expired"
       invalid_password: "This password doesn't match."
       account_locked: "Too many attempts. Try again in 15 minutes, or reset your password."
+      account_secured: "Your account is locked for your security. Our team will email you a link to choose a new password."
       rate_limited: "Too many requests. Try again in a moment."
   activerecord:
     errors:

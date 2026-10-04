@@ -15,7 +15,9 @@ module Api
           User.spend_password_check_time(password)
           return render_error(:unauthorized, :invalid_credentials)
         end
-        return render_error(:locked, :account_locked) if user.security_locked?
+        # D-8: a "This wasn't me" report lock (AC-13.8) only ends when the team acts, so it has
+        # its own code; account_locked stays for too many attempts (AC-3.3), which ends by waiting.
+        return render_error(:locked, :account_secured) if user.security_locked?
 
         authenticated = user.valid_for_authentication? { user.valid_password?(password) }
         return render_error(:locked, :account_locked) if user.access_locked?

@@ -72,11 +72,28 @@ RSpec.describe "Sessions", type: :request do
       expect(error_code).to eq("email_not_confirmed")
     end
 
-    it "AC-13.8 refuses login while the account is locked by a report" do
+    it "AC-13.8 D-8 refuses login with account_secured while the account is locked by a report" do
       user.update!(security_locked_at: Time.current)
 
       log_in
       expect(response).to have_http_status(:locked)
+      expect(error_code).to eq("account_secured")
+      expect(json.dig("error", "message")).to eq(I18n.t("api.errors.account_secured"))
+    end
+
+    it "AC-13.8 D-8 answers account_secured even with a wrong password, without counting a failure" do
+      user.update!(security_locked_at: Time.current)
+
+      log_in(password: wrong_test_password)
+      expect(error_code).to eq("account_secured")
+      expect(user.reload.failed_attempts).to eq(0)
+    end
+
+    it "D-8 keeps account_locked for too many attempts, distinct from account_secured" do
+      5.times { log_in(password: wrong_test_password) }
+
+      expect(response).to have_http_status(:locked)
+      expect(error_code).to eq("account_locked")
     end
   end
 

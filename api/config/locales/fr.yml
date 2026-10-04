@@ -38,6 +38,7 @@ fr:
       invalid_or_expired_token: "Ce lien a expiré"
       invalid_password: "Ce mot de passe ne correspond pas."
       account_locked: "Trop de tentatives. Réessaie dans 15 minutes ou réinitialise ton mot de passe."
+      account_secured: "Ton compte est bloqué pour ta sécurité. Notre équipe t'enverra un lien par e-mail pour choisir un nouveau mot de passe."
       rate_limited: "Trop de demandes. Réessaie dans un instant."
   activerecord:
     errors:
