@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { act, fireEvent, screen, waitFor } from 'expo-router/testing-library';
-import { Share } from 'react-native';
+import * as Sharing from 'expo-sharing';
 
 import i18n from '../../i18n';
 import type { Me } from '../../api/types';
@@ -14,13 +14,36 @@ import { AccountClosedScreen } from './AccountClosedScreen';
 import { AccountScreen } from './AccountScreen';
 import { ChangeEmailScreen } from './ChangeEmailScreen';
 import { CloseAccountScreen } from './CloseAccountScreen';
-import { DataExportScreen } from './DataExportScreen';
+import { DataExportScreen, dataFileName } from './DataExportScreen';
 import { EditProfileScreen } from './EditProfileScreen';
 import { PrivacyScreen } from './PrivacyScreen';
 import { ProfilePreviewScreen } from './ProfilePreviewScreen';
 import { SecurityScreen } from './SecurityScreen';
 
 jest.mock('../../api', () => jest.requireActual('../../test/apiMock').apiModule);
+const mockFiles: { uri: string; content?: string; exists: boolean }[] = [];
+jest.mock('expo-file-system', () => ({
+  Paths: { cache: { uri: 'file:///cache/' } },
+  File: jest.fn().mockImplementation((dir: { uri: string }, name: string) => {
+    const file = {
+      uri: `${dir.uri}${name}`,
+      exists: false,
+      content: undefined as string | undefined,
+      create: jest.fn(() => {
+        file.exists = true;
+      }),
+      write: jest.fn((text: string) => {
+        file.content = text;
+      }),
+      delete: jest.fn(() => {
+        file.exists = false;
+      }),
+    };
+    mockFiles.push(file);
+    return file;
+  }),
+}));
+jest.mock('expo-sharing', () => ({ shareAsync: jest.fn() }));
 jest.mock('expo-web-browser', () => ({
   openBrowserAsync: jest.fn(),
   WebBrowserPresentationStyle: { PAGE_SHEET: 'pageSheet' },
@@ -561,8 +584,12 @@ describe('A6 Copy of my data', () => {
     expect(screen.getByRole('button', { name: 'Demander ma copie' })).toBeDisabled();
   });
 
-  it('AC-12.2 downloads a ready copy through the share sheet', async () => {
-    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' });
+  it('AC-12.2 downloads a ready copy as a JSON file, shares it, then deletes it', async () => {
+    mockFiles.length = 0;
+    let fileWhileSharing: (typeof mockFiles)[number] | undefined;
+    const share = jest.mocked(Sharing.shareAsync).mockImplementation(async () => {
+      fileWhileSharing = { ...mockFiles[0] };
+    });
     mockAccount.dataExport.mockResolvedValue({
       data_export: {
         status: 'ready',
@@ -581,12 +608,38 @@ describe('A6 Copy of my data', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Télécharger mes données' }));
 
     await waitFor(() =>
-      expect(share).toHaveBeenCalledWith({
-        title: 'sparkcircles-data.json',
-        message: expect.stringContaining('"first_name": "Claire"'),
-      }),
+      expect(share).toHaveBeenCalledWith(
+        `file:///cache/${dataFileName()}`,
+        expect.objectContaining({ mimeType: 'application/json' }),
+      ),
     );
-    share.mockRestore();
+    expect(fileWhileSharing?.exists).toBe(true);
+    expect(fileWhileSharing?.content).toContain('"first_name": "Claire"');
+    await waitFor(() => expect(mockFiles[0].exists).toBe(false));
+  });
+
+  it('M-2 names the file with the local date', () => {
+    expect(dataFileName(new Date(2026, 9, 4, 23, 30))).toBe('sparkcircles-data-2026-10-04.json');
+  });
+
+  it('M-2 deletes the cached file even when the share sheet fails', async () => {
+    mockFiles.length = 0;
+    jest.mocked(Sharing.shareAsync).mockRejectedValue(new Error('no share sheet'));
+    mockAccount.dataExport.mockResolvedValue({
+      data_export: {
+        status: 'ready',
+        requested_at: '2026-10-02T12:05:00Z',
+        delivered_at: '2026-10-02T13:00:00Z',
+        expires_at: '2026-10-09T13:00:00Z',
+      },
+    });
+    mockAccount.downloadDataExport.mockResolvedValue({ account: { first_name: 'Claire' } });
+    await open('/my-data');
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Télécharger mes données' }));
+
+    await waitFor(() => expect(Sharing.shareAsync).toHaveBeenCalled());
+    await waitFor(() => expect(mockFiles[0].exists).toBe(false));
   });
 
   it('AC-12.3 offers a new copy once the link has expired', async () => {

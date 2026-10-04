@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Share, Text, View } from 'react-native';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { Text, View } from 'react-native';
 
 import { account } from '../../api';
 import { DATA_EXPORT_KEY } from '../../api/account';
@@ -12,21 +14,36 @@ import { Header } from '../../components/Header';
 import { Notification } from '../../components/Notification';
 import { Skeleton } from '../../components/Skeleton';
 import { currentLocale } from '../../i18n';
-import { beforeFullStop, formatMomentDay } from '../../i18n/format';
+import { beforeFullStop, formatMomentDay, isoDateInDays } from '../../i18n/format';
 import { FormScreen } from '../auth/layouts';
 import { UnreachableNotification } from '../auth/UnreachableNotification';
 import { useBack } from '../auth/useBack';
 import { useSubmitOnce } from '../auth/useSubmitOnce';
 
-export const DATA_FILE_NAME = 'sparkcircles-data.json';
+/** The copy's file name, dated today in local time: `sparkcircles-data-2026-10-04.json`. */
+export function dataFileName(today: Date = new Date()): string {
+  return `sparkcircles-data-${isoDateInDays(0, today)}.json`;
+}
 
 /**
- * Hands the JSON file to the system share sheet (save to Files, send by email…). The core
- * `Share` API takes text, so no file-system or sharing package is needed.
+ * Writes the copy (downloaded with the Authorization header by the API client, never a token
+ * in a URL) to a JSON file in the app cache, hands it to the system share sheet (save to
+ * Files, send by email…), then deletes the cached file (M-2).
  */
-export async function shareDataFile(data: unknown): Promise<void> {
+export async function shareDataFile(data: unknown, dialogTitle?: string): Promise<void> {
   const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-  await Share.share({ title: DATA_FILE_NAME, message: text });
+  const file = new File(Paths.cache, dataFileName());
+  try {
+    file.create({ overwrite: true });
+    file.write(text);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'application/json',
+      UTI: 'public.json',
+      dialogTitle,
+    });
+  } finally {
+    if (file.exists) file.delete();
+  }
 }
 
 /**
@@ -54,7 +71,8 @@ export function DataExportScreen() {
   const sendRequest = useSubmitOnce(request);
 
   const download = useMutation({
-    mutationFn: async () => shareDataFile(await account().downloadDataExport()),
+    mutationFn: async () =>
+      shareDataFile(await account().downloadDataExport(), t('dataExport.download')),
     onError: (error) => {
       // Expired in the meantime: show the "Request a new copy" state.
       if (error instanceof ApiError && error.code === 'not_found') void status.refetch();
