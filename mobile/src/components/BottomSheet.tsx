@@ -1,7 +1,15 @@
 import { X } from 'lucide-react-native';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, Modal, PanResponder, Pressable, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  Animated,
+  findNodeHandle,
+  Modal,
+  PanResponder,
+  Pressable,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useReduceMotion } from '../hooks/useReduceMotion';
@@ -10,12 +18,16 @@ import { IconButton } from './IconButton';
 
 /** How far the sheet must be dragged down before it closes (swipe down to close). */
 const SWIPE_CLOSE_DISTANCE = 80;
+/** Time for the modal to leave (its slide-out) before focus goes back to the opener. */
+const RETURN_FOCUS_DELAY = { animated: 350, still: 50 };
 
 export type BottomSheetProps = {
   visible: boolean;
   onClose: () => void;
   /** Leading element on the close button's row (e.g. the B1 icon square). */
   leading?: ReactNode;
+  /** The control that opened the sheet: the screen reader's focus returns to it on close. */
+  returnFocusTo?: RefObject<View | null>;
   children: ReactNode;
   testID?: string;
 };
@@ -24,9 +36,17 @@ export type BottomSheetProps = {
  * Bottom sheet (design system section 10): Surface, radius-xl top corners, Level 2 shadow,
  * 24/16/48 padding, Scrim behind. Closes with the 44 px `x` button ("Close"), a tap on the
  * scrim, a swipe down, Android back, or the sheet's own action. Screen readers stay inside
- * the sheet (modal). Slides in, or appears at once under reduced motion.
+ * the sheet (modal), and their focus returns to the opener when it closes (design section 5).
+ * Slides in, or appears at once under reduced motion.
  */
-export function BottomSheet({ visible, onClose, leading, children, testID }: BottomSheetProps) {
+export function BottomSheet({
+  visible,
+  onClose,
+  leading,
+  returnFocusTo,
+  children,
+  testID,
+}: BottomSheetProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
@@ -35,6 +55,22 @@ export function BottomSheet({ visible, onClose, leading, children, testID }: Bot
   useEffect(() => {
     if (visible) dragY.setValue(0);
   }, [visible, dragY]);
+
+  // On close, give the screen reader's focus back to the control that opened the sheet.
+  const wasVisible = useRef(visible);
+  useEffect(() => {
+    const closed = wasVisible.current && !visible;
+    wasVisible.current = visible;
+    if (!closed || !returnFocusTo) return;
+    const timer = setTimeout(
+      () => {
+        const tag = returnFocusTo.current ? findNodeHandle(returnFocusTo.current) : null;
+        if (tag) AccessibilityInfo.setAccessibilityFocus(tag);
+      },
+      reduceMotion === false ? RETURN_FOCUS_DELAY.animated : RETURN_FOCUS_DELAY.still,
+    );
+    return () => clearTimeout(timer);
+  }, [visible, returnFocusTo, reduceMotion]);
 
   // Swipe down with the core PanResponder (no gesture package).
   const pan = useMemo(

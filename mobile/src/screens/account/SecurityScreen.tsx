@@ -35,6 +35,7 @@ export function SecurityScreen() {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FieldErrors<Field>>({});
   const [sheetOpen, setSheetOpen] = useState(false);
+  const logOutAllRef = useRef<View>(null);
   const currentRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const refs = { current: currentRef, password: passwordRef };
@@ -134,6 +135,7 @@ export function SecurityScreen() {
       </View>
       <View className="items-center">
         <Button
+          ref={logOutAllRef}
           variant="ghost"
           label={t('security.logOutAll')}
           onPress={() => setSheetOpen(true)}
@@ -144,6 +146,7 @@ export function SecurityScreen() {
       <BottomSheet
         visible={sheetOpen}
         onClose={() => setSheetOpen(false)}
+        returnFocusTo={logOutAllRef}
         testID="log-out-all-sheet"
       >
         <View className="gap-xs">

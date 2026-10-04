@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react-native';
-import { useState } from 'react';
+import { type Ref, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { MIN_TOUCH_TARGET } from '../theme/a11y';
@@ -11,6 +11,8 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 
 export type ButtonSize = 'large' | 'default' | 'small';
 
 export type ButtonProps = {
+  /** The pressable, e.g. so focus can return to it after a sheet closes. */
+  ref?: Ref<View>;
   label: string;
   onPress: () => void;
   variant?: ButtonVariant;
@@ -97,6 +99,7 @@ export function Button({
   icon,
   module,
   accessibilityHint,
+  ref,
   testID,
 }: ButtonProps) {
   const [pressed, setPressed] = useState(false);
@@ -114,6 +117,7 @@ export function Button({
 
   return (
     <Pressable
+      ref={ref}
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={label}

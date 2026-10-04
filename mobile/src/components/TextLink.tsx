@@ -1,8 +1,11 @@
-import { Pressable, Text } from 'react-native';
+import type { Ref } from 'react';
+import { Pressable, Text, type View } from 'react-native';
 
 import { MIN_TOUCH_TARGET } from '../theme/a11y';
 
 export type TextLinkProps = {
+  /** The pressable, e.g. so focus can return to it after a sheet closes. */
+  ref?: Ref<View>;
   label: string;
   onPress: () => void;
   /** Quiet link: Body Ink 2, underlined ("Log out" under a screen). */
@@ -23,11 +26,13 @@ export function TextLink({
   small = false,
   disabled = false,
   accessibilityLanguage,
+  ref,
   testID,
 }: TextLinkProps) {
   const size = small ? 'text-caption' : 'text-body';
   return (
     <Pressable
+      ref={ref}
       testID={testID}
       accessibilityRole="link"
       accessibilityLabel={label}

@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Download, Eye, Lock, LogOut, Mail, ShieldCheck, User } from 'lucide-react-native';
-import { useState } from 'react';
+import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
@@ -42,6 +42,14 @@ export function AccountScreen() {
   const logOut = useLogOut();
   const [loggingOut, setLoggingOut] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // The badge and "What this means" both open B1; focus returns to the one used (M-5).
+  const badgeRef = useRef<View>(null);
+  const linkRef = useRef<View>(null);
+  const sheetOpener = useRef<View>(null);
+  const openSheet = (from: RefObject<View | null>) => {
+    sheetOpener.current = from.current;
+    setSheetOpen(true);
+  };
 
   const onLogOut = async () => {
     setLoggingOut(true);
@@ -76,6 +84,7 @@ export function AccountScreen() {
           <View className="flex-row flex-wrap items-center gap-sm">
             <Text className="text-h2 text-ink">{publicName(user.first_name, user.last_name)}</Text>
             <Badge
+              ref={badgeRef}
               kind={badge.kind}
               label={badge.label}
               accessibilityLabel={
@@ -83,7 +92,7 @@ export function AccountScreen() {
                   ? t('badge.verifiedA11y')
                   : t('badge.opensExplanation', { status: badge.label })
               }
-              onPress={() => setSheetOpen(true)}
+              onPress={() => openSheet(badgeRef)}
               testID="owner-badge"
             />
           </View>
@@ -108,8 +117,9 @@ export function AccountScreen() {
         {state === 'verified' ? (
           <View className="items-start">
             <TextLink
+              ref={linkRef}
               label={t('verificationCard.whatThisMeans')}
-              onPress={() => setSheetOpen(true)}
+              onPress={() => openSheet(linkRef)}
             />
           </View>
         ) : null}
@@ -177,6 +187,7 @@ export function AccountScreen() {
         verified={user.verification.verified}
         visible={sheetOpen}
         onClose={() => setSheetOpen(false)}
+        returnFocusTo={sheetOpener}
       />
     </FormScreen>
   );

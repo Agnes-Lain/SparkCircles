@@ -65,6 +65,7 @@ function EditProfileForm({ me, title }: { me: Me; title: string }) {
   const [city, setCity] = useState(me.city_shown ?? '');
   const [errors, setErrors] = useState<FieldErrors<Field>>({});
   const [nameSheet, setNameSheet] = useState(false);
+  const saveRef = useRef<View>(null);
   const firstNameRef = useRef<TextInput>(null);
   const lastNameRef = useRef<TextInput>(null);
   const cityRef = useRef<TextInput>(null);
@@ -201,6 +202,7 @@ function EditProfileForm({ me, title }: { me: Me; title: string }) {
       </View>
 
       <Button
+        ref={saveRef}
         size="large"
         label={t('editProfile.save')}
         loading={save.isPending}
@@ -208,7 +210,12 @@ function EditProfileForm({ me, title }: { me: Me; title: string }) {
         testID="save"
       />
 
-      <BottomSheet visible={nameSheet} onClose={() => setNameSheet(false)} testID="name-sheet">
+      <BottomSheet
+        visible={nameSheet}
+        onClose={() => setNameSheet(false)}
+        returnFocusTo={saveRef}
+        testID="name-sheet"
+      >
         <View className="gap-xs">
           <Text accessibilityRole="header" className="text-h2 text-ink">
             {t('editProfile.nameSheetTitle')}

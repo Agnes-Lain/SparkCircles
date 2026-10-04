@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 /** The design system's badge classes (section 6). */
@@ -5,6 +6,8 @@ export type BadgeKind =
   'badge-green' | 'badge-lavender' | 'badge-sky' | 'badge-pink' | 'badge-yellow' | 'badge-neutral';
 
 export type BadgeProps = {
+  /** The pressable, e.g. so focus can return to it after a sheet closes. */
+  ref?: Ref<View>;
   label: string;
   kind: BadgeKind;
   /** Tappable badges (verification) open an explanation sheet. */
@@ -28,7 +31,7 @@ const KIND: Record<BadgeKind, { box: string; text: string }> = {
  * Status badge (design system section 6): 4/10 padding, pill, 11 px / 500. A tappable
  * badge keeps its look but gets a 44 px tap area (design section 5: "badge tap areas padded").
  */
-export function Badge({ label, kind, onPress, accessibilityLabel, testID }: BadgeProps) {
+export function Badge({ ref, label, kind, onPress, accessibilityLabel, testID }: BadgeProps) {
   const look = KIND[kind];
   const pill = (
     <View className={`rounded-pill px-2.5 py-1 ${look.box}`}>
@@ -44,6 +47,7 @@ export function Badge({ label, kind, onPress, accessibilityLabel, testID }: Badg
   }
   return (
     <Pressable
+      ref={ref}
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}

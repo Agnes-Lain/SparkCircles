@@ -1,4 +1,5 @@
 import { Check, ShieldCheck, Shield, X } from 'lucide-react-native';
+import type { Ref, RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
@@ -16,16 +17,20 @@ export function BadgeSheet({
   verified,
   visible,
   onClose,
+  returnFocusTo,
 }: {
   verified: boolean;
   visible: boolean;
   onClose: () => void;
+  /** The badge or link that opened the sheet (focus returns to it, M-5). */
+  returnFocusTo?: RefObject<View | null>;
 }) {
   const { t } = useTranslation();
   return (
     <BottomSheet
       visible={visible}
       onClose={onClose}
+      returnFocusTo={returnFocusTo}
       testID="badge-sheet"
       leading={
         <IconSquare
@@ -64,10 +69,19 @@ export function BadgeSheet({
 }
 
 /** The public verification badge (AC-8.1): "Verified ✓" or "Not verified", opens B1. */
-export function PublicBadge({ verified, onPress }: { verified: boolean; onPress: () => void }) {
+export function PublicBadge({
+  ref,
+  verified,
+  onPress,
+}: {
+  ref?: Ref<View>;
+  verified: boolean;
+  onPress: () => void;
+}) {
   const { t } = useTranslation();
   return verified ? (
     <Badge
+      ref={ref}
       kind="badge-green"
       label={t('badge.verified')}
       accessibilityLabel={t('badge.verifiedA11y')}
@@ -76,6 +90,7 @@ export function PublicBadge({ verified, onPress }: { verified: boolean; onPress:
     />
   ) : (
     <Badge
+      ref={ref}
       kind="badge-neutral"
       label={t('badge.notVerified')}
       accessibilityLabel={t('badge.opensExplanation', { status: t('badge.notVerified') })}

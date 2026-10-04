@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Lock, MapPin } from 'lucide-react-native';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
@@ -26,6 +26,7 @@ export function ProfilePreviewScreen() {
   const router = useRouter();
   const back = useBack('/account');
   const [sheetOpen, setSheetOpen] = useState(false);
+  const badgeRef = useRef<View>(null);
   const profile = useQuery<PublicProfile, ApiError>({
     queryKey: PUBLIC_PROFILE_KEY,
     queryFn: ({ signal }) => account().publicProfile(signal),
@@ -48,7 +49,11 @@ export function ProfilePreviewScreen() {
               <Text className="text-h3 text-ink">
                 {`${profile.data.first_name} ${profile.data.last_name_initial}.`}
               </Text>
-              <PublicBadge verified={profile.data.verified} onPress={() => setSheetOpen(true)} />
+              <PublicBadge
+                ref={badgeRef}
+                verified={profile.data.verified}
+                onPress={() => setSheetOpen(true)}
+              />
             </View>
             <View className="flex-row items-center gap-xs">
               <Icon icon={MapPin} size={14} color="ink-2" />
@@ -97,6 +102,7 @@ export function ProfilePreviewScreen() {
         verified={profile.data?.verified ?? false}
         visible={sheetOpen}
         onClose={() => setSheetOpen(false)}
+        returnFocusTo={badgeRef}
       />
     </FormScreen>
   );
