@@ -27,7 +27,10 @@
     "openMailApp": "Open my mail app",
     "ok": "OK",
     "loggedOut": "You're logged out",
-    "oneMoment": "One moment…"
+    "oneMoment": "One moment…",
+    "close": "Close",
+    "cancel": "Cancel",
+    "saved": "Saved"
   },
   "welcome": {
     "tagline": "Organize family life with families near you.",
@@ -64,7 +67,8 @@
     "email": "Check your email address, it looks incomplete.",
     "password": "Use at least 10 characters, and avoid common passwords like 'motdepasse123'.",
     "adult": "Tick this box to confirm you're 18 or older. SparkCircles is for adults only.",
-    "terms": "Tick this box to accept the terms and privacy policy."
+    "terms": "Tick this box to accept the terms and privacy policy.",
+    "passwordMismatch": "This password doesn't match."
   },
   "checkInbox": {
     "title": "Check your inbox",
@@ -120,7 +124,8 @@
     "intro": "Here's what's new:",
     "readTerms": "Read the full terms",
     "readPrivacy": "Read the privacy policy",
-    "accept": "Accept and continue"
+    "accept": "Accept and continue",
+    "decline": "I don't accept"
   },
   "closure": {
     "title": "Your account is closing",
@@ -150,6 +155,132 @@
     "logIn": "Wait a few minutes, then try again.",
     "signUp": "Wait a few minutes, then try again. What you typed is kept.",
     "forgotPassword": "Wait a few minutes, then try again. If you've already asked, look in your inbox and spam folder.",
-    "resend": "You've asked for several links. Wait a few minutes before asking again, and look in your spam folder."
+    "resend": "You've asked for several links. Wait a few minutes before asking again, and look in your spam folder.",
+    "wait": "Wait a few minutes, then try again."
+  },
+  "account": {
+    "title": "My account",
+    "sectionProfile": "Profile and privacy",
+    "howOthersSee": "How others see me",
+    "editProfile": "Edit my profile",
+    "privacy": "Privacy and messages",
+    "security": "Password and devices",
+    "data": "Get a copy of my data",
+    "close": "Close my account"
+  },
+  "badge": {
+    "verified": "Verified ✓",
+    "notVerified": "Not verified",
+    "pending": "Pending",
+    "expiresSoon": "Expires soon",
+    "notAccepted": "Not accepted",
+    "expired": "Expired",
+    "verifiedA11y": "Verified, identity checked by SparkCircles. Opens an explanation.",
+    "opensExplanation": "{{status}}. Opens an explanation."
+  },
+  "verificationCard": {
+    "notVerifiedTitle": "Verify your identity to host events",
+    "notVerifiedBody": "Joining events never needs it. About 3 minutes, reviewed within 48 hours.",
+    "pendingTitle": "We're checking your identity",
+    "pendingBody": "Usually within 48 hours. We'll let you know.",
+    "pendingCaption": "Sent on {{date}}",
+    "verifiedTitle": "You're verified",
+    "verifiedBody": "Valid until {{date}}.",
+    "whatThisMeans": "What this means",
+    "expiresSoonTitle": "Your verification ends on {{date}}",
+    "expiresSoonBody": "Verify again with a valid document to keep hosting.",
+    "rejectedTitle": "We couldn't verify your identity",
+    "expiredTitle": "Your verification has ended",
+    "expiredBody": "Others now see you as not verified. Verify again to host events.",
+    "revokedTitle": "Your verification was removed"
+  },
+  "profilePreview": {
+    "title": "How others see me",
+    "intro": "This is exactly what other members see.",
+    "cardLabel": "Your public profile",
+    "noCity": "Neighborhood not shown",
+    "neverShown": "Never shown to others",
+    "neverShownBody": "Full last name, email, date of birth, identity document and selfie.",
+    "edit": "Edit my profile"
+  },
+  "badgeSheet": {
+    "verifiedTitle": "Identity checked by SparkCircles",
+    "verifiedBody": "We checked an official ID and a selfie of this person.",
+    "match": "Their name and face match an official ID",
+    "notCriminal": "This is not a criminal record check",
+    "judgment": "Always trust your own judgment with your children.",
+    "notVerifiedTitle": "Not verified yet",
+    "notVerifiedBody": "This person hasn't checked their identity with SparkCircles. They can join events open to everyone, but can't host.",
+    "gotIt": "Got it"
+  },
+  "editProfile": {
+    "title": "Edit your profile",
+    "city": "City or neighborhood shown to others",
+    "cityHelper": "Optional. Leave empty to hide it.",
+    "email": "Email",
+    "change": "Change",
+    "changeA11y": "Change my email",
+    "pending": "Waiting for confirmation of {{email}}",
+    "save": "Save",
+    "saved": "Profile saved",
+    "nameSheetTitle": "Change your name?",
+    "nameSheetBody": "Your Verified badge will be removed. You'll need to verify again before hosting new events.",
+    "nameSheetConfirm": "Change my name",
+    "nameSheetKeep": "Keep my name"
+  },
+  "changeEmail": {
+    "title": "Change your email",
+    "intro": "We'll send a link to your new address. Your current email keeps working until you confirm.",
+    "newEmail": "New email",
+    "password": "Your password",
+    "submit": "Send a confirmation link",
+    "sentTitle": "Check your new inbox",
+    "sentBody": "We've sent a link to <b>{{email}}</b>. Tap it to confirm your new email. We've also told your current address about this change.",
+    "sameEmail": "This is already your email."
+  },
+  "privacy": {
+    "title": "Privacy and messages",
+    "changedOn": "Changed on {{date}}.",
+    "terms": "Terms of use",
+    "privacyPolicy": "Privacy policy",
+    "termsAccepted": "Accepted on {{date}}, version {{version}}",
+    "privacyAccepted": "Accepted on {{date}}, version {{version}}"
+  },
+  "security": {
+    "title": "Password and devices",
+    "current": "Current password",
+    "submit": "Change my password",
+    "wrongCurrent": "Your current password doesn't match.",
+    "logOutAll": "Log out of all devices",
+    "sheetTitle": "Log out everywhere?",
+    "sheetBody": "You'll need to log in again on every device, including this one.",
+    "sheetConfirm": "Log out everywhere"
+  },
+  "dataExport": {
+    "title": "Get a copy of your data",
+    "body": "You'll get a file with your account, profile, consents, history and verification outcome. Usually within 48 hours, 30 days at most.",
+    "request": "Request my copy",
+    "requestedOn": "Requested on {{date}}. We'll send you a notification and an email.",
+    "readyTitle": "Your data is ready",
+    "readyCaption": "Download link works until {{date}}.",
+    "download": "Download my data",
+    "expired": "The download link has expired.",
+    "requestAgain": "Request a new copy"
+  },
+  "closeAccount": {
+    "title": "Close your account",
+    "intro": "Here's what happens:",
+    "hidden": "Your profile disappears for others right away.",
+    "loggedOut": "You're logged out on all your devices.",
+    "erased": "Your personal data is erased on <b>{{date}}</b>.",
+    "recover": "Until then, log in to keep your account. After that, nothing can be recovered.",
+    "password": "Your password",
+    "placeholder": "Enter your password to confirm",
+    "submit": "Close my account",
+    "needPassword": "Enter your password to continue."
+  },
+  "accountClosed": {
+    "title": "Your account is closed",
+    "body": "We've sent you an email. Your data will be erased on {{date}}. Changed your mind? Log in before then."
   }
 }

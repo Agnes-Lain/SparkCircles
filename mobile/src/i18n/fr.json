@@ -27,7 +27,10 @@
     "openMailApp": "Ouvrir ma messagerie",
     "ok": "OK",
     "loggedOut": "Déconnexion effectuée",
-    "oneMoment": "Un instant…"
+    "oneMoment": "Un instant…",
+    "close": "Fermer",
+    "cancel": "Annuler",
+    "saved": "Enregistré"
   },
   "welcome": {
     "tagline": "Organise la vie de famille avec les familles près de chez toi.",
@@ -64,7 +67,8 @@
     "email": "Vérifie ton adresse e-mail, elle semble incomplète.",
     "password": "Utilise au moins 10 caractères et évite les mots de passe courants comme « motdepasse123 ».",
     "adult": "Coche cette case pour confirmer que tu as 18 ans ou plus. SparkCircles est réservé aux adultes.",
-    "terms": "Coche cette case pour accepter les conditions d'utilisation et la politique de confidentialité."
+    "terms": "Coche cette case pour accepter les conditions d'utilisation et la politique de confidentialité.",
+    "passwordMismatch": "Ce mot de passe ne correspond pas."
   },
   "checkInbox": {
     "title": "Consulte ta boîte mail",
@@ -120,7 +124,8 @@
     "intro": "Voici ce qui change :",
     "readTerms": "Lire les conditions complètes",
     "readPrivacy": "Lire la politique de confidentialité",
-    "accept": "Accepter et continuer"
+    "accept": "Accepter et continuer",
+    "decline": "Je n'accepte pas"
   },
   "closure": {
     "title": "Ton compte est en cours de fermeture",
@@ -150,6 +155,132 @@
     "logIn": "Attends quelques minutes, puis réessaie.",
     "signUp": "Attends quelques minutes, puis réessaie. Ce que tu as saisi est conservé.",
     "forgotPassword": "Attends quelques minutes, puis réessaie. Si tu as déjà fait la demande, regarde dans ta boîte mail et tes spams.",
-    "resend": "Tu as demandé plusieurs liens. Attends quelques minutes avant d'en redemander un, et regarde dans tes spams."
+    "resend": "Tu as demandé plusieurs liens. Attends quelques minutes avant d'en redemander un, et regarde dans tes spams.",
+    "wait": "Attends quelques minutes, puis réessaie."
+  },
+  "account": {
+    "title": "Mon compte",
+    "sectionProfile": "Profil et confidentialité",
+    "howOthersSee": "Comment les autres me voient",
+    "editProfile": "Modifier mon profil",
+    "privacy": "Confidentialité et messages",
+    "security": "Mot de passe et appareils",
+    "data": "Obtenir une copie de mes données",
+    "close": "Fermer mon compte"
+  },
+  "badge": {
+    "verified": "Vérifié ✓",
+    "notVerified": "Non vérifié",
+    "pending": "En attente",
+    "expiresSoon": "Expire bientôt",
+    "notAccepted": "Non acceptée",
+    "expired": "Expirée",
+    "verifiedA11y": "Vérifié, identité contrôlée par SparkCircles. Ouvre une explication.",
+    "opensExplanation": "{{status}}. Ouvre une explication."
+  },
+  "verificationCard": {
+    "notVerifiedTitle": "Vérifie ton identité pour organiser des sorties",
+    "notVerifiedBody": "Pour participer à une sortie, ce n'est jamais nécessaire. Environ 3 minutes, vérifiée sous 48 heures.",
+    "pendingTitle": "Nous vérifions ton identité",
+    "pendingBody": "En général sous 48 heures. Nous te préviendrons.",
+    "pendingCaption": "Envoyée le {{date}}",
+    "verifiedTitle": "Ton identité est vérifiée",
+    "verifiedBody": "Valable jusqu'au {{date}}.",
+    "whatThisMeans": "Ce que cela signifie",
+    "expiresSoonTitle": "Ta vérification prend fin le {{date}}",
+    "expiresSoonBody": "Vérifie-toi à nouveau avec un document valide pour continuer à organiser des sorties.",
+    "rejectedTitle": "Nous n'avons pas pu vérifier ton identité",
+    "expiredTitle": "Ta vérification a pris fin",
+    "expiredBody": "Les autres ne voient plus ton badge Vérifié. Vérifie-toi à nouveau pour organiser des sorties.",
+    "revokedTitle": "Ta vérification a été retirée"
+  },
+  "profilePreview": {
+    "title": "Comment les autres me voient",
+    "intro": "Voici exactement ce que voient les autres membres.",
+    "cardLabel": "Ton profil public",
+    "noCity": "Quartier non affiché",
+    "neverShown": "Jamais montré aux autres",
+    "neverShownBody": "Nom de famille complet, e-mail, date de naissance, pièce d'identité et selfie.",
+    "edit": "Modifier mon profil"
+  },
+  "badgeSheet": {
+    "verifiedTitle": "Identité contrôlée par SparkCircles",
+    "verifiedBody": "Nous avons contrôlé une pièce d'identité officielle et un selfie de cette personne.",
+    "match": "Son nom et son visage correspondent à une pièce d'identité officielle",
+    "notCriminal": "Ce n'est pas une vérification du casier judiciaire",
+    "judgment": "Fie-toi toujours à ton propre jugement avec tes enfants.",
+    "notVerifiedTitle": "Identité pas encore vérifiée",
+    "notVerifiedBody": "Cette personne n'a pas fait vérifier son identité par SparkCircles. Elle peut participer aux sorties ouvertes à tous, mais pas en organiser.",
+    "gotIt": "J'ai compris"
+  },
+  "editProfile": {
+    "title": "Modifie ton profil",
+    "city": "Ville ou quartier visible par les autres",
+    "cityHelper": "Facultatif. Laisse vide pour le masquer.",
+    "email": "E-mail",
+    "change": "Modifier",
+    "changeA11y": "Modifier mon e-mail",
+    "pending": "En attente de confirmation de {{email}}",
+    "save": "Enregistrer",
+    "saved": "Profil enregistré",
+    "nameSheetTitle": "Changer ton nom ?",
+    "nameSheetBody": "Ton badge Vérifié sera retiré. Tu devras te vérifier à nouveau avant d'organiser de nouvelles sorties.",
+    "nameSheetConfirm": "Changer mon nom",
+    "nameSheetKeep": "Garder mon nom"
+  },
+  "changeEmail": {
+    "title": "Change ton e-mail",
+    "intro": "Nous enverrons un lien à ta nouvelle adresse. Ton e-mail actuel reste valable jusqu'à ta confirmation.",
+    "newEmail": "Nouvel e-mail",
+    "password": "Ton mot de passe",
+    "submit": "Envoyer un lien de confirmation",
+    "sentTitle": "Consulte ta nouvelle boîte mail",
+    "sentBody": "Nous avons envoyé un lien à <b>{{email}}</b>. Appuie dessus pour confirmer ton nouvel e-mail. Nous avons aussi prévenu ton adresse actuelle de ce changement.",
+    "sameEmail": "C'est déjà ton e-mail."
+  },
+  "privacy": {
+    "title": "Confidentialité et messages",
+    "changedOn": "Modifié le {{date}}.",
+    "terms": "Conditions d'utilisation",
+    "privacyPolicy": "Politique de confidentialité",
+    "termsAccepted": "Acceptées le {{date}}, version {{version}}",
+    "privacyAccepted": "Acceptée le {{date}}, version {{version}}"
+  },
+  "security": {
+    "title": "Mot de passe et appareils",
+    "current": "Mot de passe actuel",
+    "submit": "Changer mon mot de passe",
+    "wrongCurrent": "Ton mot de passe actuel ne correspond pas.",
+    "logOutAll": "Me déconnecter de tous mes appareils",
+    "sheetTitle": "Te déconnecter partout ?",
+    "sheetBody": "Tu devras te reconnecter sur chaque appareil, y compris celui-ci.",
+    "sheetConfirm": "Me déconnecter partout"
+  },
+  "dataExport": {
+    "title": "Obtiens une copie de tes données",
+    "body": "Tu recevras un fichier avec ton compte, ton profil, tes consentements, ton historique et le résultat de ta vérification. En général sous 48 heures, 30 jours au maximum.",
+    "request": "Demander ma copie",
+    "requestedOn": "Demandée le {{date}}. Nous t'enverrons une notification et un e-mail.",
+    "readyTitle": "Tes données sont prêtes",
+    "readyCaption": "Le lien de téléchargement fonctionne jusqu'au {{date}}.",
+    "download": "Télécharger mes données",
+    "expired": "Le lien de téléchargement a expiré.",
+    "requestAgain": "Demander une nouvelle copie"
+  },
+  "closeAccount": {
+    "title": "Ferme ton compte",
+    "intro": "Voici ce qui se passe :",
+    "hidden": "Ton profil disparaît immédiatement pour les autres.",
+    "loggedOut": "Tous tes appareils sont déconnectés.",
+    "erased": "Tes données personnelles sont supprimées le <b>{{date}}</b>.",
+    "recover": "D'ici là, connecte-toi pour garder ton compte. Ensuite, rien ne pourra être récupéré.",
+    "password": "Ton mot de passe",
+    "placeholder": "Saisis ton mot de passe pour confirmer",
+    "submit": "Fermer mon compte",
+    "needPassword": "Saisis ton mot de passe pour continuer."
+  },
+  "accountClosed": {
+    "title": "Ton compte est fermé",
+    "body": "Nous t'avons envoyé un e-mail. Tes données seront supprimées le {{date}}. Tu as changé d'avis ? Connecte-toi avant cette date."
   }
 }

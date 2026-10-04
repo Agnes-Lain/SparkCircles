@@ -103,12 +103,15 @@ describe('QA copy (section 19, CLAUDE.md tone)', () => {
     const copy = [...strings(fr), ...strings(en)].filter((s) => s !== '[SUPPORT CONTACT]');
     copy.forEach((s) => {
       const words = s.split(/\s+/);
-      // After the first word of each sentence, only the brand name, "API", the English
+      // After the first word of each sentence, only the brand name, "API", "ID", the English
       // pronoun "I" and the language names may be capitalised (copy with several sentences
       // starts each one with a capital).
       words.forEach((w, i) => {
         if (i === 0 || /[.!?:]$/.test(words[i - 1] ?? '') || !/^[A-ZÀ-Ý]/.test(w)) return;
-        expect(w).toMatch(/^(SparkCircles|API|I\b|I'm|OK|Français|English)/);
+        // The badge's own name, as the design writes it: "Your Verified badge", "ton badge Vérifié".
+        const badgeName = /^(Verified|Vérifié)[.,]?$/.test(w);
+        if (badgeName && (words[i + 1] === 'badge' || words[i - 1] === 'badge')) return;
+        expect(w).toMatch(/^(SparkCircles|API|ID\b|I\b|I'm|OK|Français|English)/);
       });
     });
   });

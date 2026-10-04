@@ -47,13 +47,29 @@ export const LINK_ROUTES = [
   'link-sent',
 ];
 
+/**
+ * A8 Account closed: shown while the closed account's token stops working, and kept after the
+ * device is signed out, until "OK".
+ */
+const ACCOUNT_CLOSED = 'account-closed';
+
 const ALLOWED: Record<Exclude<GateState, 'loading'>, string[]> = {
-  signedOut: ['welcome', 'sign-up', 'log-in', 'forgot-password', 'link-sent', 'check-inbox'],
+  signedOut: [
+    'welcome',
+    'sign-up',
+    'log-in',
+    'forgot-password',
+    'link-sent',
+    'check-inbox',
+    ACCOUNT_CLOSED,
+  ],
   unconfirmed: ['check-inbox'],
   closing: ['account-closing'],
-  terms: ['terms-updated'],
+  // S9 "I don't accept" leads to Close my account (A7).
+  terms: ['terms-updated', 'close-account', ACCOUNT_CLOSED],
   unreachable: ['unreachable'],
-  ready: ['(tabs)'],
+  // The tabs and My account (A1–A8; `my-data` is also the "your data is ready" email link).
+  ready: ['(tabs)', 'account', 'my-data', 'close-account', ACCOUNT_CLOSED],
 };
 
 /** The route name the gate reasons about: the tab group, or the screen's own name. */
