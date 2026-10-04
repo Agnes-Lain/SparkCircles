@@ -114,14 +114,8 @@ describe('Confirmation link (/confirm-email)', () => {
     expect(await screen.findByText('route:home')).toBeOnTheScreen();
   });
 
-  it('AC-13.6 an address taken meanwhile: nothing changes, the API explains', async () => {
-    mockAuth.confirmEmail.mockRejectedValue(
-      apiError(
-        409,
-        'email_taken',
-        "Cet e-mail ne peut pas être utilisé. Ton e-mail n'a pas changé.",
-      ),
-    );
+  it('D-7 AC-13.6 an address taken meanwhile: a full screen that never says it is taken', async () => {
+    mockAuth.confirmEmail.mockRejectedValue(apiError(409, 'email_taken'));
     await renderScreen(ROUTES, {
       url: '/confirm-email?token=change-2',
       token: 'jwt',
@@ -129,8 +123,23 @@ describe('Confirmation link (/confirm-email)', () => {
     });
 
     expect(
-      await screen.findByText("Cet e-mail ne peut pas être utilisé. Ton e-mail n'a pas changé."),
+      await screen.findByRole('header', { name: "Nous n'avons pas pu changer ton e-mail" }),
     ).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        "Cette adresse ne peut pas être utilisée pour ton compte. Ton e-mail n'a pas changé : tu te connectes toujours avec ton adresse actuelle.",
+      ),
+    ).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'OK' }));
+    expect(await screen.findByText('route:home')).toBeOnTheScreen();
+  });
+
+  it('D-7 OK leads to Welcome on a device without a session', async () => {
+    mockAuth.confirmEmail.mockRejectedValue(apiError(409, 'email_taken'));
+    await renderScreen(ROUTES, { url: '/confirm-email?token=change-2' });
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'OK' }));
+    expect(await screen.findByText('route:welcome')).toBeOnTheScreen();
   });
 
   it('shows a skeleton while confirming, and the error notification when offline', async () => {
@@ -161,6 +170,26 @@ describe('Confirmation link (/confirm-email)', () => {
     expect(mockAuth.resendConfirmation).toHaveBeenCalledWith(undefined);
   });
 
+  it('D-6 a rate-limited resend from S4 disables the button with a caption', async () => {
+    mockAuth.confirmEmail.mockRejectedValue(apiError(422, 'invalid_or_expired_token'));
+    mockAuth.resendConfirmation.mockRejectedValue(apiError(429, 'rate_limited'));
+    await renderScreen(ROUTES, {
+      url: '/confirm-email?token=old',
+      token: 'jwt',
+      gate: 'unconfirmed',
+    });
+
+    await fireEvent.press(await screen.findByRole('button', { name: "M'envoyer un nouveau lien" }));
+
+    expect(
+      await screen.findByText(
+        "Tu as demandé plusieurs liens. Attends quelques minutes avant d'en redemander un, et regarde dans tes spams.",
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: "M'envoyer un nouveau lien" })).toBeDisabled();
+    expect(screen.queryByText('Impossible de joindre SparkCircles')).toBeNull();
+  });
+
   it('AC-2.2 an expired sign-up link on a device without a session leads to Log in', async () => {
     mockAuth.confirmEmail.mockRejectedValue(apiError(422, 'invalid_or_expired_token'));
     await renderScreen(ROUTES, { url: '/confirm-email?token=old' });
@@ -184,7 +213,30 @@ describe('"This wasn\'t me" link (/this-wasnt-me)', () => {
     expect(
       await screen.findByRole('header', { name: 'Ton compte est sécurisé' }),
     ).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        "Nous avons déconnecté tous tes appareils et bloqué ton compte. Notre équipe va vérifier le changement d'e-mail, puis nous t'enverrons un lien par e-mail pour choisir un nouveau mot de passe.",
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.getByText("Tu n'as rien d'autre à faire pour l'instant.")).toBeOnTheScreen();
     expect(mockAuth.reportEmailChange).toHaveBeenCalledWith('report-1');
+    await fireEvent.press(screen.getByRole('button', { name: 'OK' }));
+    expect(await screen.findByText('route:home')).toBeOnTheScreen();
+  });
+
+  it('D-4 a link opened a second time says the report is already being handled', async () => {
+    mockAuth.reportEmailChange.mockResolvedValue({ status: 'already_reported' });
+    await renderScreen(ROUTES, { url: '/this-wasnt-me?token=report-1' });
+
+    expect(
+      await screen.findByRole('header', { name: "C'est déjà pris en charge" }),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        "Ce signalement est enregistré et ton compte est bloqué. Notre équipe t'enverra un lien par e-mail pour choisir un nouveau mot de passe dès que ce sera vérifié.",
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'OK' })).toBeOnTheScreen();
   });
 
   it("AC-13.8 forgets this device's token too: every device is logged out", async () => {
@@ -199,14 +251,33 @@ describe('"This wasn\'t me" link (/this-wasnt-me)', () => {
     expect(tokenStore.value).toBeNull();
   });
 
-  it('explains an expired report link (it cannot be sent again)', async () => {
+  it('D-4 explains an expired report link: 30 days, cannot be sent again, contact the team', async () => {
     mockAuth.reportEmailChange.mockRejectedValue(apiError(422, 'invalid_or_expired_token'));
     await renderScreen(ROUTES, { url: '/this-wasnt-me?token=old' });
 
     expect(await screen.findByRole('header', { name: 'Ce lien a expiré' })).toBeOnTheScreen();
     expect(
-      screen.getByText('Les liens fonctionnent pendant une durée limitée et une seule fois.'),
+      screen.getByText(
+        "Pour ta sécurité, ce lien ne fonctionne que pendant 30 jours après un changement d'e-mail et ne peut pas être renvoyé.",
+      ),
     ).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        "Si tu penses que quelqu'un d'autre a changé ton e-mail, contacte l'équipe SparkCircles.",
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.getByTestId('support-contact')).toHaveTextContent('[SUPPORT CONTACT]');
     expect(screen.queryByRole('button', { name: "M'envoyer un nouveau lien" })).toBeNull();
+  });
+
+  it('D-4 shows the English secured screen', async () => {
+    await i18n.changeLanguage('en');
+    mockAuth.reportEmailChange.mockResolvedValue({ status: 'account_secured' });
+    await renderScreen(ROUTES, { url: '/this-wasnt-me?token=report-1' });
+
+    expect(
+      await screen.findByRole('header', { name: 'Your account is secured' }),
+    ).toBeOnTheScreen();
+    expect(screen.getByText("You don't need to do anything else for now.")).toBeOnTheScreen();
   });
 });

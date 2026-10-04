@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { CircleAlert } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -11,7 +12,9 @@ import { ME_KEY } from '../../auth/useMe';
 import { useAfterMount } from '../../auth/useAfterMount';
 import { useLeaveWhenGateMoves } from '../../auth/useLeaveWhenGateMoves';
 import { useSession } from '../../auth/useSession';
+import { Button } from '../../components/Button';
 import { useToast } from '../../components/ToastProvider';
+import { MessageScreen } from './layouts';
 import { LinkPending } from './LinkPending';
 import { UnreachableNotification } from './UnreachableNotification';
 import { useSubmitOnce } from './useSubmitOnce';
@@ -22,14 +25,15 @@ import { useLinkToken } from './useLinkToken';
  * - Sign-up link: the device is logged in and lands on Today with the success checkmark and
  *   the toast "Email confirmed. Welcome to SparkCircles!" (design P1).
  * - Email-change link: the toast "Email changed" (My account comes with the next PR).
- * - Expired or used link: S4. Address taken meanwhile (409): the API's message as a toast.
+ * - Expired or used link: S4. Address taken meanwhile (409, AC-13.6): a full screen (D-7) that
+ *   never says another account uses the address (AC-13.5).
  */
 export function ConfirmEmailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const token = useLinkToken();
   const queryClient = useQueryClient();
-  const { signIn } = useSession();
+  const { signIn, status } = useSession();
   const { showToast, celebrate } = useToast();
   const [done, setDone] = useState(false);
   useLeaveWhenGateMoves(done);
@@ -53,9 +57,6 @@ export function ConfirmEmailScreen() {
       if (!(error instanceof ApiError)) return;
       if (error.code === 'invalid_or_expired_token' || error.code === 'bad_request') {
         router.replace('/link-expired?kind=confirm');
-      } else if (error.code === 'email_taken') {
-        showToast(error.message, 'error');
-        setDone(true);
       }
     },
   });
@@ -70,6 +71,26 @@ export function ConfirmEmailScreen() {
   const error = confirm.error instanceof ApiError ? confirm.error : null;
   const offline =
     error && !['invalid_or_expired_token', 'bad_request', 'email_taken'].includes(error.code);
+
+  if (error?.code === 'email_taken') {
+    // D-7: OK → My account when logged in (it comes with a later PR, so the home tab for now),
+    // Welcome otherwise.
+    return (
+      <MessageScreen
+        testID="email-change-failed-screen"
+        icon={CircleAlert}
+        title={t('emailChange.takenTitle')}
+        body={t('emailChange.takenBody')}
+      >
+        <Button
+          size="large"
+          label={t('common.ok')}
+          onPress={() => router.replace(status === 'signedIn' ? '/' : '/welcome')}
+          testID="ok"
+        />
+      </MessageScreen>
+    );
+  }
 
   return (
     <LinkPending>
