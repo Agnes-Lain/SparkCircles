@@ -15,13 +15,20 @@ module Api
           User.spend_password_check_time(password)
           return render_error(:unauthorized, :invalid_credentials)
         end
+        # Security fix (PM, 2026-10-04): a lock is only revealed to someone who knows the
+        # password. With a wrong password a locked account answers like any wrong password,
+        # after the same single bcrypt check as the unknown-email path, and counts nothing.
         # D-8: a "This wasn't me" report lock (AC-13.8) only ends when the team acts, so it has
         # its own code; account_locked stays for too many attempts (AC-3.3), which ends by waiting.
-        return render_error(:locked, :account_secured) if user.security_locked?
-
-        authenticated = user.valid_for_authentication? { user.valid_password?(password) }
-        return render_error(:locked, :account_locked) if user.access_locked?
-        return render_error(:unauthorized, :invalid_credentials) unless authenticated
+        if user.security_locked? || user.access_locked?
+          return render_error(:unauthorized, :invalid_credentials) unless user.valid_password?(password)
+          return render_error(:locked, user.security_locked? ? :account_secured : :account_locked)
+        end
+        # The failure that locks the account (AC-3.3) still answers as a wrong password; the
+        # owner gets the email, and the next attempt with the right password sees the lock.
+        unless user.valid_for_authentication? { user.valid_password?(password) }
+          return render_error(:unauthorized, :invalid_credentials)
+        end
 
         render_me(user, status: :created, token: user.issue_token!(device_name: params[:device_name]))
       end

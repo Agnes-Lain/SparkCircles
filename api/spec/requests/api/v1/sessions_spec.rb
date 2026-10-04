@@ -37,12 +37,12 @@ RSpec.describe "Sessions", type: :request do
     it "AC-3.3 blocks the account for 15 minutes after 5 failures in 15 minutes and emails the owner" do
       expect { 5.times { log_in(password: wrong_test_password) } }
         .to have_enqueued_mail(AccountMailer, :account_locked).with(user)
-
-      expect(response).to have_http_status(:locked)
-      expect(error_code).to eq("account_locked")
+      # The failure that locks the account still answers as a wrong password (security fix).
+      expect(error_code).to eq("invalid_credentials")
 
       log_in
       expect(response).to have_http_status(:locked)
+      expect(error_code).to eq("account_locked")
 
       travel 16.minutes do
         log_in
@@ -81,19 +81,48 @@ RSpec.describe "Sessions", type: :request do
       expect(json.dig("error", "message")).to eq(I18n.t("api.errors.account_secured"))
     end
 
-    it "AC-13.8 D-8 answers account_secured even with a wrong password, without counting a failure" do
-      user.update!(security_locked_at: Time.current)
-
-      log_in(password: wrong_test_password)
-      expect(error_code).to eq("account_secured")
-      expect(user.reload.failed_attempts).to eq(0)
-    end
-
     it "D-8 keeps account_locked for too many attempts, distinct from account_secured" do
       5.times { log_in(password: wrong_test_password) }
 
+      log_in
       expect(response).to have_http_status(:locked)
       expect(error_code).to eq("account_locked")
+    end
+
+    describe "security fix: the password is checked before a lock is revealed" do
+      def unknown_email_answer
+        log_in(email: "nobody@example.com", password: wrong_test_password)
+        [ response.status, json ]
+      end
+
+      it "AC-3.2 AC-13.8 answers a wrong password on a report-locked account like any wrong password" do
+        expected = unknown_email_answer
+        user.update!(security_locked_at: Time.current)
+        expect(Devise::Encryptor).to receive(:compare).once.and_call_original
+
+        log_in(password: wrong_test_password)
+        expect([ response.status, json ]).to eq(expected)
+        expect(error_code).to eq("invalid_credentials")
+        expect(user.reload.failed_attempts).to eq(0)
+      end
+
+      it "AC-3.2 AC-3.3 answers a wrong password on an attempts-locked account like any wrong password" do
+        expected = unknown_email_answer
+        user.lock_access!
+        expect(Devise::Encryptor).to receive(:compare).once.and_call_original
+
+        expect { log_in(password: wrong_test_password) }.not_to change { user.reload.failed_attempts }
+        expect([ response.status, json ]).to eq(expected)
+        expect(error_code).to eq("invalid_credentials")
+      end
+
+      it "AC-3.3 reveals account_locked only with the right password" do
+        user.lock_access!
+
+        log_in
+        expect(response).to have_http_status(:locked)
+        expect(error_code).to eq("account_locked")
+      end
     end
   end
 
