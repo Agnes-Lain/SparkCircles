@@ -5,8 +5,15 @@ import { Text, TextInput, type TextInputProps, View } from 'react-native';
 
 import { MIN_TOUCH_TARGET } from '../theme/a11y';
 import { colorValue } from '../theme/colors';
+import { fontSize } from '../theme/tokens';
 import { Icon } from './Icon';
 import { IconButton } from './IconButton';
+
+const INPUT_TEXT = {
+  fontSize: parseFloat(fontSize.body[0]),
+  textAlignVertical: 'center' as const,
+  paddingVertical: 0,
+};
 
 export type TextFieldKind =
   'text' | 'name' | 'givenName' | 'familyName' | 'email' | 'password' | 'newPassword';
@@ -113,7 +120,10 @@ export function TextField({
           submitBehavior={onSubmitEditing ? 'submit' : undefined}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          className="flex-1 px-3.5 py-2.5 text-body text-ink"
+          className="flex-1 self-stretch px-3.5 text-ink"
+          // Body size without its line height: on iOS a lineHeight on a TextInput pushes the
+          // text down and crowds descenders (PM report). The box centres the text instead.
+          style={INPUT_TEXT}
           {...KIND[kind]}
         />
         {isPassword ? (
