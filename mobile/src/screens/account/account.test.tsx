@@ -472,6 +472,22 @@ describe('A06 expired email-change link on a logged-in phone', () => {
     expect(screen.getByLabelText(/^Nouvel e-mail/).props.value).toBe('nouvelle@mail.fr');
     expect(mockAuth.resendConfirmation).not.toHaveBeenCalled();
   });
+
+  it('M-4 waits for the account (skeleton) before showing the waiting address', async () => {
+    let answer: (me: Me) => void = () => {};
+    mockAuth.me.mockReturnValue(new Promise<Me>((resolve) => (answer = resolve)));
+    const { app } = await open('/link-expired?kind=confirm', null);
+
+    await fireEvent.press(screen.getByRole('button', { name: "M'envoyer un nouveau lien" }));
+
+    await waitFor(() => expect(app.getPathname()).toBe('/account/change-email'));
+    expect(screen.getByTestId('change-email-loading')).toBeOnTheScreen();
+    expect(screen.queryByLabelText(/^Nouvel e-mail/)).toBeNull();
+
+    await act(async () => answer({ ...meFixture, pending_email: 'nouvelle@mail.fr' }));
+
+    expect((await screen.findByLabelText(/^Nouvel e-mail/)).props.value).toBe('nouvelle@mail.fr');
+  });
 });
 
 describe('A4 Privacy and messages', () => {

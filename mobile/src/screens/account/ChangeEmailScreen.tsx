@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Mail } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -12,6 +12,7 @@ import { ME_KEY, useMe } from '../../auth/useMe';
 import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
 import { Notification } from '../../components/Notification';
+import { Skeleton } from '../../components/Skeleton';
 import { TextField } from '../../components/TextField';
 import { openMailApp } from '../auth/external';
 import { type FieldErrors, looksLikeEmail, useFocusFirstError } from '../auth/formErrors';
@@ -27,16 +28,47 @@ const ORDER = ['email', 'password'] as const;
  * A3b Change my email (AC-13.1, 13.2, 13.4, 13.5). The success screen is the same whether or
  * not the new address belongs to another account. "Send the link again" (A3, `?resend=1`) and
  * an expired email-change link on a logged-in phone (A06) open it with the waiting address
- * filled in: sending a new link needs the password again (POST /me/email_change).
+ * filled in: sending a new link needs the password again (POST /me/email_change). Until the
+ * account (`me`) has loaded, they show a skeleton, so the address is never empty (M-4).
  */
 export function ChangeEmailScreen() {
+  const { t } = useTranslation();
+  const back = useBack('/account/edit-profile');
+  const me = useMe();
+  const { resend } = useLocalSearchParams<{ resend?: string }>();
+
+  if (!resend) return <ChangeEmailForm initialEmail="" />;
+  if (me.data) {
+    if (!me.data.pending_email) return <Redirect href="/account" />;
+    return <ChangeEmailForm initialEmail={me.data.pending_email} />;
+  }
+  return (
+    <FormScreen testID="change-email-screen">
+      <Header title={t('changeEmail.title')} onBack={back} intro={t('changeEmail.intro')} />
+      {me.isError ? (
+        <UnreachableNotification onRetry={() => void me.refetch()} retrying={me.isFetching} />
+      ) : (
+        <View
+          accessible
+          accessibilityLabel={t('common.oneMoment')}
+          className="gap-lg"
+          testID="change-email-loading"
+        >
+          <Skeleton width="100%" height={48} />
+          <Skeleton width="100%" height={48} />
+        </View>
+      )}
+    </FormScreen>
+  );
+}
+
+function ChangeEmailForm({ initialEmail }: { initialEmail: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const back = useBack('/account/edit-profile');
   const queryClient = useQueryClient();
   const me = useMe();
-  const { resend } = useLocalSearchParams<{ resend?: string }>();
-  const [email, setEmail] = useState(() => (resend ? (me.data?.pending_email ?? '') : ''));
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FieldErrors<Field>>({});
   const [sentTo, setSentTo] = useState<string | null>(null);

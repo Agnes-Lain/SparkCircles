@@ -54,9 +54,10 @@ export function LinkExpiredScreen() {
     if (kind === 'reset') return router.replace('/forgot-password');
     if (gate === 'ready') {
       // A06: an expired email-change link on a logged-in phone. A new link needs the password
-      // again (POST /me/email_change), so Change my email opens with the waiting address.
-      if (me.data?.pending_email) return router.replace('/account/change-email?resend=1');
-      return router.replace('/account');
+      // again (POST /me/email_change), so Change my email opens with the waiting address
+      // (it waits for `me` if it hasn't loaded yet: M-4).
+      if (me.data && !me.data.pending_email) return router.replace('/account');
+      return router.replace('/account/change-email?resend=1');
     }
     if (status === 'signedIn' || pendingEmail) return sendResend();
     return router.replace('/log-in');
