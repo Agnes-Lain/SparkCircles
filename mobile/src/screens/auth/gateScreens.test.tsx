@@ -7,13 +7,14 @@ import i18n from '../../i18n';
 import { setPendingEmail } from '../../auth/pendingEmail';
 import { ME_KEY } from '../../auth/useMe';
 import { LOCALE_KEY } from '../../i18n/localeStore';
-import { mockAuth, offlineError, resetApiMock } from '../../test/apiMock';
+import { apiError, mockAuth, offlineError, resetApiMock } from '../../test/apiMock';
 import { closingMe, legalFixture, meFixture, termsMe, unconfirmedMe } from '../../test/fixtures';
 import { createTestQueryClient } from '../../test/render';
 import { renderScreen, routeStub } from '../../test/renderScreen';
 import { CheckInboxScreen, RESEND_COOLDOWN_MS } from './CheckInboxScreen';
 import { ClosureScreen } from './ClosureScreen';
 import { TermsUpdatedScreen } from './TermsUpdatedScreen';
+import { RATE_LIMIT_PAUSE_MS } from './rateLimit';
 import { WelcomeScreen } from './WelcomeScreen';
 
 jest.mock('../../api', () => jest.requireActual('../../test/apiMock').apiModule);
@@ -97,6 +98,27 @@ describe('S3 Check your inbox', () => {
     expect(screen.getByRole('button', { name: 'Renvoyer le lien' })).toBeDisabled();
 
     await act(() => jest.advanceTimersByTime(RESEND_COOLDOWN_MS));
+    expect(screen.getByRole('button', { name: 'Renvoyer le lien' })).toBeEnabled();
+    jest.useRealTimers();
+  });
+
+  it('D-6 rate limited: the resend button turns Disabled with a caption, no notification', async () => {
+    jest.useFakeTimers();
+    mockAuth.resendConfirmation.mockRejectedValue(apiError(429, 'rate_limited'));
+    setPendingEmail('claire@gmail.com');
+    await renderScreen({ 'check-inbox': CheckInboxScreen }, { url: '/check-inbox' });
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Renvoyer le lien' }));
+
+    expect(
+      await screen.findByText(
+        "Tu as demandé plusieurs liens. Attends quelques minutes avant d'en redemander un, et regarde dans tes spams.",
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Renvoyer le lien' })).toBeDisabled();
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    await act(() => jest.advanceTimersByTime(RATE_LIMIT_PAUSE_MS));
     expect(screen.getByRole('button', { name: 'Renvoyer le lien' })).toBeEnabled();
     jest.useRealTimers();
   });

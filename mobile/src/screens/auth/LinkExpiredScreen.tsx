@@ -2,15 +2,17 @@ import { useMutation } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Clock } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { auth } from '../../api';
+import { ApiError } from '../../api/errors';
 import { homeFor } from '../../auth/gate';
 import { useGate } from '../../auth/GateContext';
 import { usePendingEmail } from '../../auth/pendingEmail';
 import { useSession } from '../../auth/useSession';
 import { Button } from '../../components/Button';
 import { MessageScreen } from './layouts';
+import { useClearAfterPause } from './rateLimit';
 import { UnreachableNotification } from './UnreachableNotification';
 import { useSubmitOnce } from './useSubmitOnce';
 
@@ -40,6 +42,10 @@ export function LinkExpiredScreen() {
   });
   const sendResend = useSubmitOnce(resend);
 
+  // D-6: a 429 disables the button for a while, with a caption under it (no notification).
+  const rateLimited = resend.error instanceof ApiError && resend.error.code === 'rate_limited';
+  useClearAfterPause(rateLimited, resend.reset);
+
   const sendNewLink = () => {
     if (kind === 'reset') return router.replace('/forgot-password');
     if (gate === 'ready') return router.replace('/'); // already confirmed: nothing to resend
@@ -55,7 +61,7 @@ export function LinkExpiredScreen() {
       body={t('linkExpired.body')}
       onBack={() => router.replace(home)}
     >
-      {resend.isError ? (
+      {resend.isError && !rateLimited ? (
         <UnreachableNotification onRetry={() => sendResend()} retrying={resend.isPending} />
       ) : null}
       <View className="gap-md">
@@ -63,9 +69,19 @@ export function LinkExpiredScreen() {
           size="large"
           label={t('linkExpired.action')}
           loading={resend.isPending}
+          disabled={rateLimited}
           onPress={sendNewLink}
           testID="new-link"
         />
+        {rateLimited ? (
+          <Text
+            accessibilityLiveRegion="polite"
+            className="text-center text-caption text-ink-3"
+            testID="rate-limited"
+          >
+            {t('rateLimited.resend')}
+          </Text>
+        ) : null}
       </View>
     </MessageScreen>
   );

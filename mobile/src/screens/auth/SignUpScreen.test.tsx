@@ -190,17 +190,19 @@ describe('S2 Sign up', () => {
     expect(await screen.findByRole('header', { name: 'Consulte ta boîte mail' })).toBeOnTheScreen();
   });
 
-  it('shows the API message when sign-ups are rate limited', async () => {
-    mockAuth.register.mockRejectedValue(
-      apiError(429, 'rate_limited', 'Trop de demandes. Réessaie dans un instant.'),
-    );
+  it('D-6 rate limited: the error notification, what was typed is kept', async () => {
+    mockAuth.register.mockRejectedValue(apiError(429, 'rate_limited'));
     await open();
     await fillValidForm();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
 
+    expect(await screen.findByText("Trop d'essais pour le moment")).toBeOnTheScreen();
     expect(
-      await screen.findByText('Trop de demandes. Réessaie dans un instant.'),
+      screen.getByText('Attends quelques minutes, puis réessaie. Ce que tu as saisi est conservé.'),
     ).toBeOnTheScreen();
+    expect(screen.getByLabelText('Prénom')).toHaveProp('value', 'Claire');
+    expect(screen.getByLabelText('Mot de passe')).toHaveProp('value', PASSWORD);
+    expect(screen.getByRole('button', { name: 'Créer mon compte' })).toBeEnabled();
   });
 });

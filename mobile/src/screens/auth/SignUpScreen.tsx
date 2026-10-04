@@ -174,7 +174,13 @@ export function SignUpScreen() {
       <Header title={t('signUp.title')} onBack={back} intro={t('signUp.intro')} />
 
       {error && error.code === 'rate_limited' ? (
-        <Notification level="error" title={error.message} />
+        // D-6: the form keeps what was typed and the button stays enabled.
+        <Notification
+          level="error"
+          title={t('rateLimited.title')}
+          caption={t('rateLimited.signUp')}
+          testID="rate-limited"
+        />
       ) : error && error.code !== 'validation_failed' ? (
         <UnreachableNotification onRetry={submit} retrying={register.isPending} />
       ) : null}

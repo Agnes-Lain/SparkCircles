@@ -47,7 +47,13 @@ export function ForgotPasswordScreen() {
     <FormScreen testID="forgot-password-screen">
       <Header title={t('forgotPassword.title')} onBack={back} intro={t('forgotPassword.intro')} />
       {error?.code === 'rate_limited' ? (
-        <Notification level="error" title={error.message} />
+        // D-6: same words whether or not the account exists (AC-4.1).
+        <Notification
+          level="error"
+          title={t('rateLimited.title')}
+          caption={t('rateLimited.forgotPassword')}
+          testID="rate-limited"
+        />
       ) : error ? (
         <UnreachableNotification onRetry={submit} retrying={request.isPending} />
       ) : null}

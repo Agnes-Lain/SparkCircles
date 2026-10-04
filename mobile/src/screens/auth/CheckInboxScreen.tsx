@@ -13,10 +13,10 @@ import { useMe } from '../../auth/useMe';
 import { useSession } from '../../auth/useSession';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
-import { Notification } from '../../components/Notification';
 import { TextLink } from '../../components/TextLink';
 import { openMailApp } from './external';
 import { MessageScreen } from './layouts';
+import { useClearAfterPause } from './rateLimit';
 import { UnreachableNotification } from './UnreachableNotification';
 import { useSubmitOnce } from './useSubmitOnce';
 
@@ -65,6 +65,9 @@ export function CheckInboxScreen() {
   };
 
   const error = resend.error instanceof ApiError ? resend.error : null;
+  // D-6: no notification; the button turns Disabled with a caption under it for a while.
+  const rateLimited = error?.code === 'rate_limited';
+  useClearAfterPause(rateLimited, resend.reset);
 
   return (
     <MessageScreen
@@ -86,9 +89,7 @@ export function CheckInboxScreen() {
       }
       footer={<TextLink quiet label={t('common.logOut')} onPress={leave} testID="log-out" />}
     >
-      {error?.code === 'rate_limited' ? (
-        <Notification level="error" title={error.message} />
-      ) : error ? (
+      {error && !rateLimited ? (
         <UnreachableNotification onRetry={() => sendResend()} retrying={resend.isPending} />
       ) : null}
       <View className="gap-md">
@@ -97,12 +98,20 @@ export function CheckInboxScreen() {
           size="large"
           variant="ghost"
           label={t('checkInbox.resend')}
-          disabled={coolingDown || !email}
+          disabled={coolingDown || rateLimited || !email}
           loading={resend.isPending}
           onPress={() => sendResend()}
           testID="resend"
         />
-        {coolingDown ? (
+        {rateLimited ? (
+          <Text
+            accessibilityLiveRegion="polite"
+            className="text-center text-caption text-ink-3"
+            testID="rate-limited"
+          >
+            {t('rateLimited.resend')}
+          </Text>
+        ) : coolingDown ? (
           <Text
             accessibilityLiveRegion="polite"
             className="text-center text-caption text-ink-3"
