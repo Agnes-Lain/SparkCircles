@@ -71,7 +71,7 @@ export function authApi(client: Client) {
 
     /** §5 POST /email_change_reports: "This wasn't me" (AC-13.8) */
     reportEmailChange: (token: string) =>
-      client.request<{ status: 'account_secured' }>('/email_change_reports', {
+      client.request<{ status: 'account_secured' | 'already_reported' }>('/email_change_reports', {
         method: 'POST',
         auth: false,
         body: { token },

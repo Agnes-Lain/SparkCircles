@@ -93,7 +93,11 @@
     "wrongCaption": "Vérifie les deux et réessaie.",
     "lockedTitle": "Trop de tentatives",
     "lockedCaption": "Réessaie dans 15 minutes ou réinitialise ton mot de passe.",
-    "resetAction": "Réinitialiser mon mot de passe"
+    "resetAction": "Réinitialiser mon mot de passe",
+    "sessionEndedTitle": "Ta session a pris fin",
+    "sessionEndedCaption": "Reconnecte-toi pour continuer.",
+    "securedTitle": "Ton compte est bloqué pour ta sécurité",
+    "securedCaption": "Après le signalement du changement d'e-mail, notre équipe doit vérifier ton compte. Nous t'enverrons un lien par e-mail pour choisir un nouveau mot de passe. Attendre ne le débloquera pas."
   },
   "forgotPassword": {
     "title": "Réinitialise ton mot de passe",
@@ -125,11 +129,27 @@
     "restored": "Bon retour parmi nous. Ton compte est de nouveau actif."
   },
   "emailChange": {
-    "changed": "E-mail modifié"
+    "changed": "E-mail modifié",
+    "takenTitle": "Nous n'avons pas pu changer ton e-mail",
+    "takenBody": "Cette adresse ne peut pas être utilisée pour ton compte. Ton e-mail n'a pas changé : tu te connectes toujours avec ton adresse actuelle."
   },
   "report": {
     "securedTitle": "Ton compte est sécurisé",
-    "securedBody": "Nous avons déconnecté tous tes appareils et bloqué ton compte. Notre équipe va vérifier le changement d'e-mail et t'aider à récupérer ton compte.",
-    "expiredBody": "Les liens fonctionnent pendant une durée limitée et une seule fois."
+    "securedBody": "Nous avons déconnecté tous tes appareils et bloqué ton compte. Notre équipe va vérifier le changement d'e-mail, puis nous t'enverrons un lien par e-mail pour choisir un nouveau mot de passe.",
+    "expiredBody": "Pour ta sécurité, ce lien ne fonctionne que pendant 30 jours après un changement d'e-mail et ne peut pas être renvoyé.",
+    "securedCaption": "Tu n'as rien d'autre à faire pour l'instant.",
+    "alreadyTitle": "C'est déjà pris en charge",
+    "alreadyBody": "Ce signalement est enregistré et ton compte est bloqué. Notre équipe t'enverra un lien par e-mail pour choisir un nouveau mot de passe dès que ce sera vérifié.",
+    "expiredHelp": "Si tu penses que quelqu'un d'autre a changé ton e-mail, contacte l'équipe SparkCircles."
+  },
+  "support": {
+    "contact": "[SUPPORT CONTACT]"
+  },
+  "rateLimited": {
+    "title": "Trop d'essais pour le moment",
+    "logIn": "Attends quelques minutes, puis réessaie.",
+    "signUp": "Attends quelques minutes, puis réessaie. Ce que tu as saisi est conservé.",
+    "forgotPassword": "Attends quelques minutes, puis réessaie. Si tu as déjà fait la demande, regarde dans ta boîte mail et tes spams.",
+    "resend": "Tu as demandé plusieurs liens. Attends quelques minutes avant d'en redemander un, et regarde dans tes spams."
   }
 }

@@ -19,6 +19,8 @@ export type ApiErrorCode =
   | 'invalid_or_expired_token'
   | 'invalid_password'
   | 'account_locked'
+  // D-8: locked by a "This wasn't me" report; only the team unlocks it.
+  | 'account_secured'
   | 'rate_limited'
   // Client side: no answer from the server (offline, DNS, refused) or too slow.
   | 'network_error'

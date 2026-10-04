@@ -93,7 +93,11 @@
     "wrongCaption": "Check both and try again.",
     "lockedTitle": "Too many attempts",
     "lockedCaption": "Try again in 15 minutes, or reset your password.",
-    "resetAction": "Reset my password"
+    "resetAction": "Reset my password",
+    "sessionEndedTitle": "Your session has ended",
+    "sessionEndedCaption": "Log in again to continue.",
+    "securedTitle": "Your account is locked for your security",
+    "securedCaption": "After the email change report, our team needs to check your account. We'll email you a link to choose a new password. Waiting won't unlock it."
   },
   "forgotPassword": {
     "title": "Reset your password",
@@ -125,11 +129,27 @@
     "restored": "Welcome back. Your account is active again."
   },
   "emailChange": {
-    "changed": "Email changed"
+    "changed": "Email changed",
+    "takenTitle": "We couldn't change your email",
+    "takenBody": "This address can't be used for your account. Your email hasn't changed: you still log in with your current address."
   },
   "report": {
     "securedTitle": "Your account is secured",
-    "securedBody": "We've logged you out on every device and locked your account. Our team will check the email change and help you get your account back.",
-    "expiredBody": "Links work for a limited time and only once."
+    "securedBody": "We've logged you out on every device and locked your account. Our team will check the email change. Then we'll email you a link to choose a new password.",
+    "expiredBody": "For your security, this link only works for 30 days after an email change, and it can't be sent again.",
+    "securedCaption": "You don't need to do anything else for now.",
+    "alreadyTitle": "We're already on it",
+    "alreadyBody": "This report is recorded and your account is locked. Our team will email you a link to choose a new password once it's checked.",
+    "expiredHelp": "If you think someone else changed your email, contact the SparkCircles team."
+  },
+  "support": {
+    "contact": "[SUPPORT CONTACT]"
+  },
+  "rateLimited": {
+    "title": "Too many tries for now",
+    "logIn": "Wait a few minutes, then try again.",
+    "signUp": "Wait a few minutes, then try again. What you typed is kept.",
+    "forgotPassword": "Wait a few minutes, then try again. If you've already asked, look in your inbox and spam folder.",
+    "resend": "You've asked for several links. Wait a few minutes before asking again, and look in your spam folder."
   }
 }
