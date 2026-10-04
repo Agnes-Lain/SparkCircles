@@ -12,6 +12,8 @@ export type RequestOptions = {
   /** Send the stored token. Default true; false for sign-up, login, reset… */
   auth?: boolean;
   signal?: AbortSignal;
+  /** Overrides the client's timeout, e.g. for the verification photo upload. */
+  timeoutMs?: number;
 };
 
 export type ApiClientConfig = {
@@ -37,9 +39,14 @@ export function createApiClient(config: ApiClientConfig) {
   const fetchImpl = config.fetchImpl ?? ((...args: Parameters<typeof fetch>) => fetch(...args));
   const timeoutMs = config.timeoutMs ?? 15_000;
 
-  async function send(url: string, init: RequestInit, signal?: AbortSignal): Promise<Response> {
+  async function send(
+    url: string,
+    init: RequestInit,
+    signal?: AbortSignal,
+    timeout: number = timeoutMs,
+  ): Promise<Response> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeout);
     const onAbort = () => controller.abort();
     signal?.addEventListener('abort', onAbort);
     try {
@@ -56,7 +63,7 @@ export function createApiClient(config: ApiClientConfig) {
   }
 
   async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const { method = 'GET', body, formData, auth = true, signal } = options;
+    const { method = 'GET', body, formData, auth = true, signal, timeoutMs: timeout } = options;
     const headers: Record<string, string> = {
       Accept: 'application/json',
       'Accept-Language': config.getLocale(),
@@ -76,6 +83,7 @@ export function createApiClient(config: ApiClientConfig) {
       `${baseUrl}/api/v1${path}`,
       { method, headers, body: payload },
       signal,
+      timeout,
     );
 
     // Token renewal (contract §1, AC-3.4): a response to an authenticated request may carry

@@ -5,6 +5,7 @@ import { accountApi } from './account';
 import { authApi } from './auth';
 import { createApiClient } from './client';
 import { apiBaseUrl } from './config';
+import { verificationApi } from './verification';
 
 export { ApiError } from './errors';
 export type * from './types';
@@ -30,4 +31,9 @@ export function auth() {
 /** The My account endpoints (profile, privacy, password, data copy, closure). */
 export function account() {
   return accountApi(api());
+}
+
+/** Identity verification (status, photo upload). */
+export function verification() {
+  return verificationApi(api());
 }
