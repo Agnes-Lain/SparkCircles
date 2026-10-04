@@ -10,6 +10,9 @@ Rails.application.routes.draw do
   # Gemfile's development group only, so test and production never load or mount it.
   mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
 
+  # Development email links land here and redirect to Expo Go (Dev::OpenAppController).
+  get "dev/open-app/*path", to: "dev/open_app#show", format: false if Rails.env.development?
+
   # JSON API for the mobile app (docs/api/accounts-and-verification.md).
   namespace :api, defaults: { format: :json } do
     namespace :v1 do

@@ -35,14 +35,15 @@ Rails.application.configure do
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
-  # Links in development emails open the app in Expo Go on the phone:
-  # exp://<Mac Wi-Fi address>:8081/-- (Metro's address) followed by the route path, e.g.
-  # exp://192.168.1.77:8081/--/confirm-email?token=... Set APP_LINK_BASE to override it
+  # Links in development emails are normal http links to the API on the Mac's Wi-Fi address,
+  # e.g. http://192.168.1.77:3000/dev/open-app/confirm-email?token=... That page (development
+  # only, Dev::OpenAppController) then opens the app in Expo Go at Metro's address:
+  # exp://192.168.1.77:8081/--/confirm-email?token=... (iOS ignores exp:// links inside
+  # letter_opener_web's iframes). Set APP_LINK_BASE to override the email link base
   # (Android emulator, another port, or `expo start --tunnel`). See mobile/README.md.
-  config.x.app_link_base = ENV.fetch("APP_LINK_BASE") do
-    lan_ip = Socket.ip_address_list.find { |address| address.ipv4_private? }&.ip_address
-    "exp://#{lan_ip || "127.0.0.1"}:8081/--"
-  end.chomp("/")
+  lan_ip = Socket.ip_address_list.find { |address| address.ipv4_private? }&.ip_address || "127.0.0.1"
+  config.x.expo_go_link_base = "exp://#{lan_ip}:8081/--"
+  config.x.app_link_base = ENV.fetch("APP_LINK_BASE", "http://#{lan_ip}:3000/dev/open-app").chomp("/")
 
   # Set localhost to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }

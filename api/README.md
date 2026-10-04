@@ -36,7 +36,12 @@ Emails are not sent in development: they are kept in `tmp/letter_opener` and lis
 http://localhost:3000/letter_opener (gem `letter_opener_web`, development group only, never mounted in test or
 production). From the iPhone, use `http://<Mac Wi-Fi address>:3000/letter_opener` with the server started on
 `-b 0.0.0.0`: anyone on your Wi-Fi can read them while it runs, like the rest of the development API. Links in
-them open the app in Expo Go (`exp://<Mac LAN IP>:8081/--/…`); set `APP_LINK_BASE` to change that (see
+them are normal http links, `http://<Mac LAN IP>:3000/dev/open-app/<path>?token=…`: that development-only page
+(`Dev::OpenAppController`, never drawn in test or production) redirects to Expo Go at
+`exp://<Mac LAN IP>:8081/--/<path>?token=…`, with an "Ouvrir dans Expo Go / Open in Expo Go" link as a fallback.
+It only accepts the paths the app opens from emails (`confirm-email`, `reset-password`, `this-wasnt-me`,
+`forgot-password`), otherwise 404. iOS ignores taps on `exp://` links inside letter_opener's frames, hence this
+hop. Set `APP_LINK_BASE` to change the email link base (see
 [`mobile/README.md`](../mobile/README.md), "Try the account screens on the iPhone"). Templates can also be
 previewed at http://localhost:3000/rails/mailers (`?locale=en` or `?locale=fr`).
 
