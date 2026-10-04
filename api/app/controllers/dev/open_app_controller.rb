@@ -6,7 +6,7 @@ module Dev
   class OpenAppController < ActionController::Base
     # The routes the app opens from an email link (mobile/src/auth/gate.ts, LINK_ROUTES).
     # The email-change confirmation uses confirm-email too.
-    PATHS = %w[confirm-email reset-password this-wasnt-me forgot-password].freeze
+    PATHS = %w[confirm-email reset-password this-wasnt-me forgot-password my-data].freeze
 
     before_action { head :not_found unless Rails.env.development? && PATHS.include?(params[:path]) }
 
