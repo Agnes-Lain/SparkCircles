@@ -11,14 +11,15 @@ import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
 import { IconSquare } from '../../components/IconSquare';
 import { TextField } from '../../components/TextField';
-import { currentLocale } from '../../i18n';
-import { formatDate, isoDateInDays } from '../../i18n/format';
 import { FormScreen } from '../auth/layouts';
 import { UnreachableNotification } from '../auth/UnreachableNotification';
 import { useBack } from '../auth/useBack';
 import { useSubmitOnce } from '../auth/useSubmitOnce';
 
-/** Days between closing and erasure (AC-11.1, contract §7). */
+/**
+ * Days between closing and erasure (AC-11.1, contract §7). A7 says "in 30 days" rather than a
+ * date computed on the phone; A8 shows the server's `erasure_on` (M-6).
+ */
 export const CLOSURE_GRACE_DAYS = 30;
 
 /**
@@ -33,8 +34,6 @@ export function CloseAccountScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const passwordRef = useRef<TextInput>(null);
-  const locale = currentLocale();
-  const erasureOn = isoDateInDays(CLOSURE_GRACE_DAYS);
 
   const close = useMutation({
     mutationFn: (value: string) => account().closeAccount(value),
@@ -70,7 +69,7 @@ export function CloseAccountScreen() {
               <Trans
                 key="erased"
                 i18nKey="closeAccount.erased"
-                values={{ date: formatDate(erasureOn, locale) }}
+                values={{ days: CLOSURE_GRACE_DAYS }}
                 components={{ b: <Text className="font-medium" /> }}
               />,
             ],

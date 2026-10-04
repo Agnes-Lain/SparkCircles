@@ -273,7 +273,7 @@
     "intro": "Here's what happens:",
     "hidden": "Your profile disappears for others right away.",
     "loggedOut": "You're logged out on all your devices.",
-    "erased": "Your personal data is erased on <b>{{date}}</b>.",
+    "erased": "Your personal data is erased <b>in {{days}} days</b>.",
     "recover": "Until then, log in to keep your account. After that, nothing can be recovered.",
     "password": "Your password",
     "placeholder": "Enter your password to confirm",

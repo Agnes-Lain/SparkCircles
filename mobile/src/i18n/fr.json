@@ -273,7 +273,7 @@
     "intro": "Voici ce qui se passe :",
     "hidden": "Ton profil disparaît immédiatement pour les autres.",
     "loggedOut": "Tous tes appareils sont déconnectés.",
-    "erased": "Tes données personnelles sont supprimées le <b>{{date}}</b>.",
+    "erased": "Tes données personnelles sont supprimées <b>dans {{days}} jours</b>.",
     "recover": "D'ici là, connecte-toi pour garder ton compte. Ensuite, rien ne pourra être récupéré.",
     "password": "Ton mot de passe",
     "placeholder": "Saisis ton mot de passe pour confirmer",
