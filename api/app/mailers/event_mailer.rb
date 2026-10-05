@@ -144,9 +144,10 @@ class EventMailer < ApplicationMailer
     labels = "event_mailer.event_changed.labels"
     lines = []
     lines << change(t("#{labels}.title"), before["title"], after["title"]) if before["title"] != after["title"]
-    if before["starts_at"] != after["starts_at"] || before["ends_at"] != after["ends_at"]
-      with_end = before["starts_at"] == after["starts_at"]
-      lines << change(t("#{labels}.date"), snapshot_time(before, with_end, zone), snapshot_time(after, with_end, zone))
+    if before["starts_at"] != after["starts_at"]
+      lines << change(t("#{labels}.date"), snapshot_start(before, zone), snapshot_start(after, zone))
+    elsif before["ends_at"] != after["ends_at"]
+      lines << change(t("#{labels}.end_time"), snapshot_end(before, zone), snapshot_end(after, zone))
     end
     if before["area"] != after["area"]
       lines << change(t("#{labels}.place"), area_label(before["area"]), area_label(after["area"]),
@@ -162,10 +163,13 @@ class EventMailer < ApplicationMailer
 
   def change(label, before, after, suffix: nil) = { label: label, before: before.to_s, after: after.to_s, suffix: suffix }
 
-  def snapshot_time(snapshot, with_end, zone)
+  def snapshot_start(snapshot, zone) = format_time(Time.iso8601(snapshot["starts_at"]).in_time_zone(zone))
+
+  # BUG-12: only the end time when only it changed; the full date if it ends another day.
+  def snapshot_end(snapshot, zone)
     starts = Time.iso8601(snapshot["starts_at"]).in_time_zone(zone)
-    text = format_time(starts)
-    with_end ? "#{text} – #{clock(Time.iso8601(snapshot['ends_at']).in_time_zone(zone))}" : text
+    ends = Time.iso8601(snapshot["ends_at"]).in_time_zone(zone)
+    ends.to_date == starts.to_date ? clock(ends) : format_time(ends)
   end
 
   def event_time(time, event) = format_time(time.in_time_zone(event.time_zone))

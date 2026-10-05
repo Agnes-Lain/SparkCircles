@@ -302,6 +302,7 @@ fr:
         date: "Date :"
         place: "Lieu :"
         places: "Places :"
+        end_time: "Heure de fin :"
       place_hint: "Ouvre l'app pour voir l'adresse."
       address_changed: "l'adresse a changé. Ouvre l'app pour la voir."
       outro: "Ça ne te convient plus ? Tu peux quitter la sortie en un geste dans l'app."

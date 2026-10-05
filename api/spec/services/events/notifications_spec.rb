@@ -105,6 +105,15 @@ RSpec.describe Events::Notifications do
       expect(all_bodies).not_to include("rue de Lyon", "75012", "Oberkampf")
     end
 
+    it "BUG-12 shows only the end time when only the end time changed" do
+      travel_to(paris("10:20"))
+      edit(ends_at: event.starts_at + 3.hours)
+      run_until(paris("10:30"))
+      expect(mails_to(lea).sole.text_part.body.to_s).to include("Heure de fin : 16 h -> 17 h")
+      expect(mails_to(lea).sole.text_part.body.to_s).not_to include("Date :")
+      expect(mails_to(karim).sole.text_part.body.to_s).to include("End time: 4 pm -> 5 pm")
+    end
+
     it "sends nothing when the edits are reverted, for a tags-only edit or for a places-only edit" do
       edit(title: "Autre")
       edit(title: "Football au parc")

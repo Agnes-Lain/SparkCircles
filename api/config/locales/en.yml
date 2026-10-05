@@ -292,6 +292,7 @@ en:
         date: "Date:"
         place: "Place:"
         places: "Places:"
+        end_time: "End time:"
       place_hint: "Open the app to see the address."
       address_changed: "the address changed. Open the app to see it."
       outro: "Doesn't work for you anymore? You can leave the event in one tap in the app."
