@@ -1,0 +1,50 @@
+# Events v1 settings (spec events). Areas: coarse search areas with an approximate centre,
+# used for "distance from the chosen area" (AC-3.4) and the search radius. Never an address.
+# Labels live in config/locales (events.areas).
+shared:
+  areas:
+    paris-01: { city: Paris, lat: 48.8625, lng: 2.3364 }
+    paris-02: { city: Paris, lat: 48.8683, lng: 2.3428 }
+    paris-03: { city: Paris, lat: 48.8630, lng: 2.3601 }
+    paris-04: { city: Paris, lat: 48.8543, lng: 2.3576 }
+    paris-05: { city: Paris, lat: 48.8445, lng: 2.3497 }
+    paris-06: { city: Paris, lat: 48.8491, lng: 2.3328 }
+    paris-07: { city: Paris, lat: 48.8562, lng: 2.3122 }
+    paris-08: { city: Paris, lat: 48.8727, lng: 2.3125 }
+    paris-09: { city: Paris, lat: 48.8770, lng: 2.3375 }
+    paris-10: { city: Paris, lat: 48.8761, lng: 2.3608 }
+    paris-11: { city: Paris, lat: 48.8590, lng: 2.3800 }
+    paris-12: { city: Paris, lat: 48.8400, lng: 2.3880 }
+    paris-13: { city: Paris, lat: 48.8283, lng: 2.3622 }
+    paris-14: { city: Paris, lat: 48.8292, lng: 2.3266 }
+    paris-15: { city: Paris, lat: 48.8401, lng: 2.2934 }
+    paris-16: { city: Paris, lat: 48.8637, lng: 2.2769 }
+    paris-17: { city: Paris, lat: 48.8873, lng: 2.3067 }
+    paris-18: { city: Paris, lat: 48.8925, lng: 2.3484 }
+    paris-19: { city: Paris, lat: 48.8871, lng: 2.3848 }
+    paris-20: { city: Paris, lat: 48.8634, lng: 2.4012 }
+  # AC-3.9: a tag equal to one of these words, or containing one as a hyphen-separated
+  # part, is refused. v1 list kept in code review; an admin-managed list comes later.
+  banned_tag_words:
+    - sex
+    - sexe
+    - sexy
+    - porn
+    - porno
+    - nude
+    - drogue
+    - drugs
+    - weed
+    - cannabis
+    - alcool
+    - nazi
+    - fuck
+    - shit
+    - bitch
+    - merde
+    - pute
+    - salope
+    - connard
+    - connasse
+    - encule
+    - enculé
