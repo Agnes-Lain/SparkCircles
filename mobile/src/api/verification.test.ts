@@ -3,6 +3,16 @@ import { meFixture } from '../test/fixtures';
 import { createApiClient } from './client';
 import { verificationApi } from './verification';
 
+// expo-file-system's File implements Blob; the upload sends it as the file part.
+jest.mock('expo-file-system', () => ({
+  File: class MockFile {
+    uri: string;
+    constructor(mockUri: string) {
+      this.uri = mockUri;
+    }
+  },
+}));
+
 function setup() {
   const fetchImpl = jest.fn<Promise<Response>, Parameters<typeof fetch>>();
   const client = createApiClient({
@@ -63,11 +73,9 @@ describe('verification API (contract §6)', () => {
       'selfie',
       'date_of_birth',
     ]);
-    expect(parts[1]?.[1]).toEqual({
-      uri: 'file:///cache/front.jpg',
-      name: 'document_front.jpg',
-      type: 'image/jpeg',
-    });
+    // Expo's fetch needs real Blob parts (an expo-file-system File), not { uri, name, type }.
+    expect(parts[1]?.[1]).toMatchObject({ uri: 'file:///cache/front.jpg' });
+    expect(parts[1]?.[1]).not.toHaveProperty('type', 'image/jpeg');
     expect(parts[4]).toEqual(['date_of_birth', '1990-05-14']);
   });
 

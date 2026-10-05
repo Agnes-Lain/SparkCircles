@@ -1,3 +1,5 @@
+import { File } from 'expo-file-system';
+
 import type { ApiClient } from './client';
 import type { Verification } from './types';
 
@@ -27,9 +29,11 @@ export type VerificationSubmission = {
 /** Three photos on mobile data can take a while: more time than the usual 15 s. */
 export const UPLOAD_TIMEOUT_MS = 90_000;
 
-// React Native's fetch sends `{ uri, name, type }` parts as files.
-function filePart(photo: PhotoFile, name: string): Blob {
-  return { uri: photo.uri, name: `${name}.jpg`, type: 'image/jpeg' } as unknown as Blob;
+// Expo SDK 57's global fetch (expo/fetch) rejects React Native's `{ uri, name, type }` parts
+// ("Unsupported FormDataPart implementation", PM report): send expo-file-system Files, which
+// implement Blob. The server reads the type from the bytes and re-encodes the image.
+function filePart(photo: PhotoFile): Blob {
+  return new File(photo.uri);
 }
 
 export function verificationApi(client: Client) {
@@ -42,9 +46,10 @@ export function verificationApi(client: Client) {
     submit: (submission: VerificationSubmission) => {
       const form = new FormData();
       form.append('document_type', submission.documentType);
-      form.append('document_front', filePart(submission.front, 'document_front'));
-      if (submission.back) form.append('document_back', filePart(submission.back, 'document_back'));
-      form.append('selfie', filePart(submission.selfie, 'selfie'));
+      form.append('document_front', filePart(submission.front), 'document_front.jpg');
+      if (submission.back)
+        form.append('document_back', filePart(submission.back), 'document_back.jpg');
+      form.append('selfie', filePart(submission.selfie), 'selfie.jpg');
       form.append('date_of_birth', submission.dateOfBirth);
       return client.request<{ verification: Verification }>('/verification', {
         method: 'POST',
