@@ -10,7 +10,7 @@ import {
 } from 'react';
 
 import type { DocumentType, PhotoFile } from '../../api/verification';
-import { deletePhoto } from './photos';
+import { deletePhoto, sweepLeftoverPhotos } from './photos';
 
 /** The photos the flow asks for: front, back (two-sided documents only) and the selfie. */
 export type PhotoSlot = 'front' | 'back' | 'selfie';
@@ -78,8 +78,12 @@ export function VerificationFlowProvider({ children }: { children: ReactNode }) 
     setPhotos(latest.current);
   }, []);
 
-  // Leaving the flow without sending ("Not now", back to My account) erases the photos.
-  useEffect(() => clear, [clear]);
+  // Opening the flow erases photos a killed app left behind (QA-V6); leaving it without
+  // sending ("Not now", back to My account) erases this run's photos.
+  useEffect(() => {
+    sweepLeftoverPhotos();
+    return clear;
+  }, [clear]);
 
   const value = useMemo(
     () => ({ documentType, photos, chooseDocument, setPhoto, clear }),

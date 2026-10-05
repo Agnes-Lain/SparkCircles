@@ -1,4 +1,4 @@
-import { File, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import type { PhotoFile } from '../../api/verification';
@@ -40,8 +40,39 @@ export function deletePhoto(uri: string | undefined): void {
   }
 }
 
+/** Our own folder in the app's cache: every photo the flow keeps lives here (M-25). */
+export const PHOTO_FOLDER = 'verification-photos';
+const photoFolder = () => new Directory(Paths.cache, PHOTO_FOLDER);
+
 /**
- * Shrinks a photo to about 2,000 px on the long side as JPEG, in the app's cache, then erases
+ * QA-V6: erases the photos a previous run left behind (the app was killed mid-flow). Called
+ * when the flow opens, before any new photo is taken. Only our own folder, never throws.
+ */
+export function sweepLeftoverPhotos(): void {
+  try {
+    const folder = photoFolder();
+    if (folder.exists) folder.delete();
+  } catch {
+    // Nothing left, or the OS cleared the cache already.
+  }
+}
+
+/** Moves a resized photo into our folder so the next sweep can find it. */
+function moveToPhotoFolder(uri: string): string {
+  const folder = photoFolder();
+  folder.create({ idempotent: true, intermediates: true });
+  const file = new File(uri);
+  try {
+    file.moveSync(folder);
+  } catch (error) {
+    deletePhoto(uri);
+    throw error;
+  }
+  return file.uri;
+}
+
+/**
+ * Shrinks a photo to about 2,000 px on the long side as JPEG, in our cache folder, then erases
  * the original copy (M-25). The server strips metadata again on its side.
  */
 export async function preparePhoto(raw: RawPhoto): Promise<PhotoFile> {
@@ -51,7 +82,7 @@ export async function preparePhoto(raw: RawPhoto): Promise<PhotoFile> {
     if (size) context.resize(size);
     const image = await context.renderAsync();
     const result = await image.saveAsync({ format: SaveFormat.JPEG, compress: JPEG_QUALITY });
-    return { uri: result.uri };
+    return { uri: moveToPhotoFolder(result.uri) };
   } finally {
     context.release();
     deletePhoto(raw.uri);

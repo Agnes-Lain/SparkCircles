@@ -40,10 +40,16 @@ jest.mock('expo-image-manipulator', () => ({
 const mockDeleted: string[] = [];
 jest.mock('expo-file-system', () => ({
   Paths: { cache: { uri: 'file:///cache/' } },
+  Directory: jest.fn().mockImplementation(() => ({
+    exists: false,
+    create: () => undefined,
+    delete: () => undefined,
+  })),
   File: jest.fn().mockImplementation((uri: string) => ({
     uri,
     exists: true,
     delete: () => mockDeleted.push(uri),
+    moveSync: () => undefined,
   })),
 }));
 
