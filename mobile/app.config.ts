@@ -52,6 +52,8 @@ const config: ExpoConfig = {
       monochromeImage: './assets/brand/adaptive-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
+    // No microphone, even if a future package asks for it (M-25, QA-V7).
+    blockedPermissions: ['android.permission.RECORD_AUDIO'],
   },
   plugins: [
     'expo-router',
