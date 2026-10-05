@@ -125,7 +125,11 @@ export function ReviewScreen() {
         void queryClient.invalidateQueries({ queryKey: VERIFICATION_KEY });
         showStatus(false);
       } else if (error.code === 'validation_failed' && error.details?.date_of_birth) {
-        setDobError('dobInvalid');
+        // The date we sent is a real past date, so the server's `invalid` means under 18
+        // (contract §6, e.g. the phone's clock is ahead of the server's).
+        const dobError = error.details.date_of_birth.includes('blank') ? 'dobBlank' : 'dobUnderage';
+        setDobError(dobError);
+        AccessibilityInfo.announceForAccessibility(t(`verify.review.${dobError}`));
       }
     },
   });
@@ -190,7 +194,13 @@ export function ReviewScreen() {
 
       <View className="gap-xs">
         <Text className="text-body text-ink-2">{t('verify.review.dateOfBirth')}</Text>
-        <View className="flex-row gap-sm">
+        {/* QA-V3: the three fields form one "Date of birth" group for screen readers. */}
+        <View
+          role="group"
+          accessibilityLabel={t('verify.review.dateOfBirth')}
+          className="flex-row gap-sm"
+          testID="dob-group"
+        >
           <View className="flex-1">
             <TextField
               ref={dayRef}

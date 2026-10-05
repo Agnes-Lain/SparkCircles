@@ -465,14 +465,30 @@ describe('V4 Date of birth and check', () => {
     expect(screen.getAllByText('Reprends cette photo.')).toHaveLength(1);
   });
 
-  it('422 date of birth: marks the date field', async () => {
+  it('QA-V3 the three date fields form one "Date de naissance" group', async () => {
+    await reachReview('Passeport', false);
+    const group = screen.getByTestId('dob-group');
+    expect(group.props.role).toBe('group');
+    expect(group.props.accessibilityLabel).toBe('Date de naissance');
+    for (const [id, label] of [
+      ['dob-day', 'Jour'],
+      ['dob-month', 'Mois'],
+      ['dob-year', 'Année'],
+    ] as const) {
+      expect(screen.getByTestId(id).props.accessibilityLabel).toBe(label);
+    }
+  });
+
+  it('QA-V4 422 date of birth (under 18 for the server): shows the 18+ message', async () => {
     mockVerification.submit.mockRejectedValueOnce(
       apiError(422, 'validation_failed', 'Check', { date_of_birth: ['invalid'] }),
     );
     await reachReview('Passeport', false);
     await fillDateOfBirth('14', '05', '1990');
     await press(screen.getByText('Envoyer pour vérification'));
-    expect(await screen.findByText('Vérifie ta date de naissance.')).toBeOnTheScreen();
+    expect(
+      await screen.findByText('Tu dois avoir 18 ans ou plus pour vérifier ton identité.'),
+    ).toBeOnTheScreen();
   });
 
   it('AC-7.4 an expired document: says so and offers another document', async () => {
