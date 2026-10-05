@@ -1,6 +1,10 @@
 module Accounts
   # Permanently erases an account and all its personal data (AC-2.4, AC-11.4 to AC-11.8).
   #
+  # Hosted events and their participations, and the user's participations elsewhere, go
+  # with the account (on delete cascade). Reports the user sent stay, unlinked and without
+  # their free text (AC-11.6).
+  #
   # Kept afterwards: a non-identifying statistics row for closed accounts (months only,
   # no ID, AC-11.6) and audit entries, which only hold the internal ID of a user that
   # no longer exists (AC-10.5). Database backups keep the data at most 7 days more
@@ -15,6 +19,8 @@ module Accounts
         record_statistic if record_statistics
         @user.verifications.each(&:purge_files!)
         @user.data_exports.each { |export| export.file.purge if export.file.attached? }
+        # Reports stay for moderation, unlinked (reporter_id NULL, FK), without the free text.
+        @user.event_reports.update_all(details: nil, updated_at: Time.current)
         @user.destroy!
       end
     end

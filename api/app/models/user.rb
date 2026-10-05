@@ -26,6 +26,8 @@ class User < ApplicationRecord
   # Deleted by the database (on delete cascade) when the account is erased.
   has_many :hosted_events, class_name: "Event", foreign_key: :host_id, inverse_of: :host, dependent: nil
   has_many :event_participations, dependent: nil
+  # Unlinked by the database (reporter_id set to NULL) on erasure; Accounts::Eraser wipes the text first.
+  has_many :event_reports, foreign_key: :reporter_id, dependent: nil, inverse_of: false
 
   attribute :adult_confirmed, :boolean
   attribute :terms_accepted, :boolean
