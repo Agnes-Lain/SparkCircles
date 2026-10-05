@@ -8,6 +8,7 @@ module Api
       GATES = %i[email_not_confirmed closure_pending terms_acceptance_required].freeze
 
       class_attribute :gate_exemptions, default: {}
+      class_attribute :guest_actions, default: []
 
       # Lets an action run despite an account gate (see docs/api, "Account gates").
       def self.exempt_from_gates(*gates, only:)
@@ -28,7 +29,11 @@ module Api
 
       attr_reader :current_user, :current_jti
 
+      # Actions listed in `guest_actions` (GuestAccess) also answer without a token. A token
+      # that is sent must be valid: it never silently falls back to the guest view.
       def authenticate_user!
+        return if guest_actions.include?(action_name) && bearer_token.blank?
+
         authenticate_from_token || render_error(:unauthorized, :unauthorized)
       end
 
@@ -62,6 +67,8 @@ module Api
       end
 
       def enforce_account_gates!
+        return if current_user.nil? # guest action (authenticate_user! stops everyone else)
+
         gate = GATES.find { |name| gate_applies?(name) && !gate_exemptions.fetch(name, []).include?(action_name) }
         render_error(:forbidden, gate) if gate
       end
@@ -84,9 +91,11 @@ module Api
         I18n.locale = User::LOCALES.include?(requested) ? requested : I18n.default_locale
       end
 
-      def render_error(status, code, details: nil)
-        error = { code: code.to_s, message: I18n.t("api.errors.#{code}") }
+      # `i18n:` interpolates the message; other keywords are added to the error object.
+      def render_error(status, code, details: nil, i18n: {}, **extra)
+        error = { code: code.to_s, message: I18n.t("api.errors.#{code}", **i18n) }
         error[:details] = details if details
+        error.merge!(extra)
         render json: { error: error }, status: status
       end
 

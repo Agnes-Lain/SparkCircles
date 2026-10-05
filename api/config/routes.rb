@@ -36,6 +36,7 @@ Rails.application.routes.draw do
           resource :marketing, only: :update, controller: "marketing"
           resource :terms_acceptance, only: :create
           resource :public_profile, only: :show
+          resources :events, only: :index
         end
       end
 
@@ -44,6 +45,19 @@ Rails.application.routes.draw do
       resource :closure, only: %i[create destroy]
       resource :data_export, only: %i[show create] do
         get :download
+      end
+
+      # Events (docs/api/events.md).
+      resource :event_options, only: :show
+      resources :events, only: %i[index show create update destroy] do
+        member do
+          post :publish
+          post :cancel
+        end
+        scope module: :events do
+          resource :participation, only: %i[create update destroy]
+          resources :reports, only: :create
+        end
       end
     end
   end
