@@ -57,6 +57,8 @@ module Verifications
         audit("revoked_verification", user, verification, reason: reason)
       end
       AccountMailer.verification_revoked(user, verification).deliver_later if verification
+      # Events AC-8.6: removed from upcoming events they joined; hosts aren't told why.
+      Events::Participations.remove_from_upcoming!(user)
     end
 
     private

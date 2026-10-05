@@ -23,6 +23,9 @@ class User < ApplicationRecord
   has_many :verifications, -> { order(:submitted_at) }, dependent: :destroy
   has_many :email_changes, dependent: :delete_all
   has_many :data_exports, dependent: :destroy
+  # Deleted by the database (on delete cascade) when the account is erased.
+  has_many :hosted_events, class_name: "Event", foreign_key: :host_id, inverse_of: :host, dependent: nil
+  has_many :event_participations, dependent: nil
 
   attribute :adult_confirmed, :boolean
   attribute :terms_accepted, :boolean
@@ -42,6 +45,8 @@ class User < ApplicationRecord
   validate :required_consents_given, on: :registration
 
   after_create :grant_parent_role
+  # Events US-8: hosts losing or regaining verification, and account closure.
+  after_update_commit :sync_events, if: :event_rights_changed?
 
   scope :closed, -> { where.not(closed_at: nil) }
   scope :due_for_erasure, -> { closed.where(closed_at: ...CLOSURE_GRACE_PERIOD.ago) }
@@ -245,6 +250,12 @@ class User < ApplicationRecord
   def erasure_on = closed? ? (closed_at + CLOSURE_GRACE_PERIOD).to_date : nil
 
   private
+
+  def event_rights_changed?
+    saved_change_to_verification_status? || saved_change_to_verification_expires_on? || saved_change_to_closed_at?
+  end
+
+  def sync_events = Events::HostStatusSync.new(self).call
 
   # AC-1.2: both boxes must be ticked; each missing one is reported.
   def required_consents_given

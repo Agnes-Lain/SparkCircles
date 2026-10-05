@@ -35,3 +35,13 @@ production:
   purge_old_audit_events:
     class: PurgeOldAuditEventsJob
     schedule: "0 4 1 * *"
+  # Events (spec events)
+  event_status:
+    class: EventStatusJob
+    schedule: every hour at minute 5
+  purge_past_events:
+    class: PurgePastEventsJob
+    schedule: every day at 4:15am
+  purge_guest_access_events:
+    class: PurgeGuestAccessEventsJob
+    schedule: every day at 4:30am
