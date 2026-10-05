@@ -1,5 +1,5 @@
 import { ChevronLeft } from 'lucide-react-native';
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
@@ -15,10 +15,12 @@ export type HeaderProps = {
   intro?: ReactNode;
   /** H2 title instead of H1 (the verification capture steps, design V2–V4). */
   small?: boolean;
+  /** Ref to the title, to move the screen reader's focus to it when the step changes. */
+  titleRef?: Ref<Text>;
 };
 
 /** Header of pushed screens (design system section 10): back button, then the H1 title. */
-export function Header({ title, onBack, step, intro, small = false }: HeaderProps) {
+export function Header({ title, onBack, step, intro, small = false, titleRef }: HeaderProps) {
   const { t } = useTranslation();
   return (
     <View className="gap-sm">
@@ -36,7 +38,11 @@ export function Header({ title, onBack, step, intro, small = false }: HeaderProp
           ) : null}
         </View>
       ) : null}
-      <Text accessibilityRole="header" className={`${small ? 'text-h2' : 'text-h1'} text-ink`}>
+      <Text
+        ref={titleRef}
+        accessibilityRole="header"
+        className={`${small ? 'text-h2' : 'text-h1'} text-ink`}
+      >
         {title}
       </Text>
       {typeof intro === 'string' ? <Text className="text-body text-ink-2">{intro}</Text> : intro}

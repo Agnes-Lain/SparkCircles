@@ -8,6 +8,7 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   AppState,
+  findNodeHandle,
   Image,
   Linking,
   Pressable,
@@ -61,6 +62,7 @@ export function CaptureScreen({ slot, retake = false }: { slot: PhotoSlot; retak
   const [failed, setFailed] = useState(false);
   const [preview, setPreview] = useState<PhotoFile | null>(null);
   const unused = useRef<PhotoFile | null>(null);
+  const heading = useRef<Text>(null);
 
   const selfie = slot === 'selfie';
   const documentType = flow.documentType;
@@ -86,6 +88,13 @@ export function CaptureScreen({ slot, retake = false }: { slot: PhotoSlot; retak
   // A photo taken but not used (back button, leaving the flow) is erased.
   useEffect(() => () => deletePhoto(unused.current?.uri), []);
 
+  // QA-V8: the check step's heading ("Is everything readable?") takes the screen reader's focus.
+  useEffect(() => {
+    if (!preview) return;
+    const tag = heading.current ? findNodeHandle(heading.current) : null;
+    if (tag) AccessibilityInfo.setAccessibilityFocus(tag);
+  }, [preview]);
+
   if (!documentType) return <Redirect href="/verify/document" />;
 
   const title = selfie
@@ -101,9 +110,8 @@ export function CaptureScreen({ slot, retake = false }: { slot: PhotoSlot; retak
     const photo = await preparePhoto(raw);
     unused.current = photo;
     setPreview(photo);
-    AccessibilityInfo.announceForAccessibility(
-      `${t('verify.capture.taken')} ${t('verify.capture.checkTitle')}`,
-    );
+    // The heading is read when it takes the focus: only confirm the shot here.
+    AccessibilityInfo.announceForAccessibility(t('verify.capture.taken'));
   };
 
   const run = async (capture: () => Promise<RawPhoto | null>) => {
@@ -169,6 +177,7 @@ export function CaptureScreen({ slot, retake = false }: { slot: PhotoSlot; retak
       <Header
         small
         title={preview ? t('verify.capture.checkTitle') : title}
+        titleRef={heading}
         onBack={back}
         step={t('verify.step', { step: selfie ? 3 : 2 })}
         intro={preview || selfie ? undefined : t('verify.capture.intro')}

@@ -26,6 +26,12 @@ import { VerifyGateScreen } from './VerifyGateScreen';
 
 jest.mock('../../api', () => jest.requireActual('../../test/apiMock').apiModule);
 
+// The test renderer has no native tags: give the focused element one (QA-V8).
+jest.mock('react-native/Libraries/ReactNative/RendererProxy', () => ({
+  ...jest.requireActual('react-native/Libraries/ReactNative/RendererProxy'),
+  findNodeHandle: (instance: unknown) => (instance ? 42 : null),
+}));
+
 jest.mock('expo-camera', () => jest.requireActual('../../test/cameraMock').cameraModule);
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
 let mockSaved = 0;
@@ -284,11 +290,14 @@ describe('V2 / V3 capture', () => {
 
   it('announces the check step, and "La reprendre" erases the photo and reopens the camera', async () => {
     const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
+    const focus = jest.spyOn(AccessibilityInfo, 'setAccessibilityFocus').mockImplementation();
     await open('/verify/document');
     await press(screen.getByText('Passeport'));
     await press(await screen.findByLabelText('Prendre la photo'));
     expect(await screen.findByRole('header', { name: 'Tout est lisible ?' })).toBeOnTheScreen();
-    expect(announce).toHaveBeenCalledWith('Photo prise. Tout est lisible ?');
+    expect(announce).toHaveBeenCalledWith('Photo prise.');
+    // QA-V8: the screen reader's focus moves to the check step's heading.
+    expect(focus).toHaveBeenCalledWith(42);
     expect(screen.getByLabelText('La photo que tu as prise')).toBeOnTheScreen();
     // The camera's own file is erased once the shrunk copy exists.
     expect(mockDeleted).toContain('file:///cache/Camera/shot-' + shot + '.jpg');
