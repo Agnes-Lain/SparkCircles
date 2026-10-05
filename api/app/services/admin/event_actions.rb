@@ -15,7 +15,7 @@ module Admin
     end
 
     # Admin suspensions never resume on their own (Events::HostStatusSync only resumes
-    # "host_unverified" ones). Participant emails: not built yet.
+    # "host_unverified" ones). No participant email: events-emails E4 covers AC-8.2 only.
     def suspend!(event)
       Event.transaction do
         event.suspend!("admin")
@@ -30,6 +30,8 @@ module Admin
         resolve!(event)
         audit("cancelled_event", event)
       end
+      # Neutral cancellation email (E3b): no host name, no reason.
+      Events::Notifications.event_cancelled(event, neutral: true)
     end
 
     def resolve_reports!(event)

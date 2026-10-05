@@ -47,17 +47,22 @@ module Api
         render_event(status: :created)
       end
 
-      # AC-1.7, AC-2.5, AC-7.2, AC-8.7. Participant emails on change: not built yet.
+      # AC-1.7, AC-2.5, AC-7.2, AC-8.7. Participants get one email with the net changes 10
+      # minutes after the first edit (E2).
       # AC-5.8: under the event row lock, like joins, so "below_taken" is checked against the
       # places actually taken. The database check stays the last guard against a race.
       def update
+        before = nil
         updated = Event.transaction do
           @event.lock!
           raise ::Events::Error.new(:event_not_editable) unless @event.editable?
 
+          before = ::Events::Notifications.snapshot(@event)
           @event.update(event_params)
         end
         return render_validation_errors(@event) unless updated
+
+        ::Events::Notifications.event_edited(@event, before)
 
         render_event
       rescue ActiveRecord::CheckViolation => e
@@ -82,11 +87,12 @@ module Api
         render_event
       end
 
-      # AC-7.3. Participant emails: not built yet.
+      # AC-7.3: participants are emailed at once (E3).
       def cancel
         raise ::Events::Error.new(:event_not_editable) unless (@event.published? || @event.suspended?) && !@event.ended?
 
         @event.cancel!
+        ::Events::Notifications.event_cancelled(@event, neutral: false)
         render_event
       end
 

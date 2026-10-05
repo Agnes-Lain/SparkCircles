@@ -26,7 +26,7 @@ module Events
 
     # AC-2.4, AC-5.1 to AC-5.3, AC-5.5, AC-5.6, AC-5.8
     def join!(adults:, children:)
-      Event.transaction do
+      participation = Event.transaction do
         @event.lock!
         raise Error.new(:own_event) if @event.hosted_by?(@user)
         raise Error.new(:event_not_joinable) unless @event.joinable?
@@ -38,14 +38,17 @@ module Events
 
         take_places!(participation.requested_places)
         participation.save!
-        # Host notification email (AC-5.1): not built yet, copy pending.
         participation
       end
+      # AC-5.1: the host hears about it in the 15-minute digest (E1).
+      Notifications.participation_changed(@event, @user, from: 0, to: participation.requested_places)
+      participation
     end
 
     # AC-5.2: change the number of places within what is left, before the start.
     def change!(adults:, children:)
-      Event.transaction do
+      previous = nil
+      participation = Event.transaction do
         @event.lock!
         participation = find_participation!
         raise Error.new(:event_started) if @event.started?
@@ -59,20 +62,26 @@ module Events
         participation.save!
         participation
       end
+      Notifications.participation_changed(@event, @user, from: previous, to: participation.requested_places)
+      participation
     end
 
     # AC-5.4, AC-6.3: the places are freed at once and the address is no longer returned.
     def leave!
-      Event.transaction do
+      participation = Event.transaction do
         @event.lock!
         participation = find_participation!
         raise Error.new(:event_started) if @event.started?
 
         release!(participation)
+        participation
       end
+      # AC-5.4: no reason is asked or shown.
+      Notifications.participation_changed(@event, @user, from: participation.requested_places, to: 0)
     end
 
-    # AC-8.5, AC-8.6: removal by the system (closure, revoked verification), no reason given.
+    # AC-8.5, AC-8.6: removal by the system (closure, revoked verification), no reason given
+    # and no email to the host (events-emails: hosts are not told why).
     def remove!
       Event.transaction do
         @event.lock!
