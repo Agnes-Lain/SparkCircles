@@ -32,6 +32,11 @@ module AdminHelper
     user.verified? && user.renewal_pending? ? safe_join([ badge, " ", tag.span("Renewal pending", class: "badge badge-yellow") ]) : badge
   end
 
+  def event_status_label(event)
+    { "draft" => "Draft", "published" => "Published", "suspended" => "Suspended", "cancelled" => "Cancelled",
+      "past" => "Past" }.fetch(event.display_status)
+  end
+
   def document_type_label(type) = t("verification.document_types.#{type}", locale: :en)
   def admin_date(date) = date && l(date.to_date, format: :long, locale: :en)
   def admin_datetime(time) = time && l(time, format: "%-d %b %Y, %H:%M", locale: :en)

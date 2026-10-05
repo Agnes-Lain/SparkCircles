@@ -1,0 +1,88 @@
+<p><%= target_link "← Reported events", admin_events_path %></p>
+<div class="title-row">
+  <h1><%= @event.title %></h1>
+  <span class="badge badge-<%= @event.published? ? 'green' : 'neutral' %>"><%= event_status_label(@event) %></span>
+  <% if @urgent %><span class="badge badge-yellow">Urgent</span><% end %>
+</div>
+<p class="caption"><%= admin_icon(:lock, size: 14) %> Your access is recorded: <%= reason_phrase("safety_report") %>.</p>
+
+<% policy = Admin::EventPolicy.new(current_admin, @event) %>
+<div class="card">
+  <dl>
+    <dt>Host</dt><dd><%= @event.host&.display_name %> <%= verification_badge(@event.host) if @event.host %>
+      <% if @event.host %> · <%= target_link "Member page", admin_member_path(@event.host, reason: "safety_report") %><% end %></dd>
+    <dt>When</dt><dd><%= admin_datetime(@event.starts_at.in_time_zone(@event.time_zone)) %> to <%= admin_datetime(@event.ends_at.in_time_zone(@event.time_zone)) %></dd>
+    <dt>Category</dt><dd><%= t("events.categories.#{@event.category}.label", locale: :en) %></dd>
+    <dt>Area</dt><dd><%= t("events.areas.#{@event.area}", locale: :en) %></dd>
+    <dt>Exact address</dt><dd><%= @event.exact_address %></dd>
+    <dt>Join rule</dt><dd><%= @event.verified_only? ? "Verified members only" : "Anyone" %></dd>
+    <dt>Places</dt><dd><%= @event.places_taken %> taken of <%= @event.places_total %></dd>
+    <dt>Description</dt><dd><%= simple_format(@event.description) %></dd>
+    <dt>Tags</dt>
+    <dd>
+      <% if @event.tags.empty? %>None<% end %>
+      <% @event.tags.each do |tag| %>
+        <span>#<%= tag %>
+          <%= button_to "Remove ##{tag}", remove_tag_admin_event_path(@event), params: { tag: tag }, method: :post, class: "btn-link",
+                        form: { style: "display: inline" } %></span>
+      <% end %>
+    </dd>
+  </dl>
+  <div class="actions">
+    <% if policy.suspend? %>
+      <button type="button" class="btn btn-destructive" data-dialog-open="suspend-dialog">Suspend event</button>
+    <% end %>
+    <% if policy.cancel? %>
+      <button type="button" class="btn btn-ghost" data-dialog-open="cancel-dialog">Cancel event</button>
+    <% end %>
+    <% if @open_reports.any? %>
+      <%= button_to "Mark reports as reviewed", resolve_reports_admin_event_path(@event), method: :post, class: "btn btn-ghost" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Open reports (<%= @open_reports.size %>)</h2>
+  <% if @open_reports.empty? %>
+    <p>No open report.</p>
+  <% else %>
+    <table>
+      <thead><tr><th>Reason</th><th>Details</th><th>Reporter</th><th>Sent</th></tr></thead>
+      <tbody>
+        <% @open_reports.each do |report| %>
+          <tr>
+            <td><%= report.reason_label %></td>
+            <td><%= report.details.presence || "—" %></td>
+            <td><%= report.reporter&.display_name || "Erased account" %></td>
+            <td><%= admin_datetime(report.created_at) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
+
+<% if policy.suspend? %>
+  <dialog class="modal" id="suspend-dialog" aria-labelledby="suspend-title">
+    <div class="card">
+      <h2 id="suspend-title">Suspend this event?</h2>
+      <p>It disappears from search and nobody can join. It stays suspended until the team acts; open reports are marked as reviewed.</p>
+      <div class="actions">
+        <%= button_to "Suspend event", suspend_admin_event_path(@event), method: :post, class: "btn btn-destructive" %>
+        <button type="button" class="btn btn-ghost" data-dialog-close>Keep it</button>
+      </div>
+    </div>
+  </dialog>
+<% end %>
+<% if policy.cancel? %>
+  <dialog class="modal" id="cancel-dialog" aria-labelledby="cancel-title">
+    <div class="card">
+      <h2 id="cancel-title">Cancel this event?</h2>
+      <p>Participants see "Cancelled" and lose the address. This can't be undone.</p>
+      <div class="actions">
+        <%= button_to "Cancel event", cancel_admin_event_path(@event), method: :post, class: "btn btn-destructive" %>
+        <button type="button" class="btn btn-ghost" data-dialog-close>Keep it</button>
+      </div>
+    </div>
+  </dialog>
+<% end %>

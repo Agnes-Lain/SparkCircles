@@ -17,6 +17,9 @@
           <%= nav_link admin_members_path, active: controller_name == "members" do %>
             Members<% if open_reports_count.positive? %><span class="badge badge-yellow nav-count"><span aria-hidden="true"><%= open_reports_count %></span><span class="visually-hidden"><%= t("admin.nav.open_reports", count: open_reports_count) %></span></span><% end %>
           <% end %>
+          <%= nav_link admin_events_path, active: controller_name == "events" do %>
+            Events<% if open_event_reports_count.positive? %><span class="badge badge-yellow nav-count"><span aria-hidden="true"><%= open_event_reports_count %></span><span class="visually-hidden"><%= t("admin.nav.open_event_reports", count: open_event_reports_count) %></span></span><% end %>
+          <% end %>
         </nav>
         <span><%= current_admin.display_name %></span>
         <%= button_to "Log out", admin_logout_path, method: :delete, class: "btn-link" %>

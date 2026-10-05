@@ -4,6 +4,9 @@ en:
       open_reports:
         one: "%{count} open report"
         other: "%{count} open reports"
+      open_event_reports:
+        one: "%{count} reported event"
+        other: "%{count} reported events"
   date:
     formats:
       long: "%-d %b %Y"

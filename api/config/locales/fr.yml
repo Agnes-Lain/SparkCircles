@@ -4,6 +4,9 @@ fr:
       open_reports:
         one: "%{count} signalement ouvert"
         other: "%{count} signalements ouverts"
+      open_event_reports:
+        one: "%{count} sortie signalée"
+        other: "%{count} sorties signalées"
   date:
     formats:
       default: "%d/%m/%Y"

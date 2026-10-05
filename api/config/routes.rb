@@ -82,6 +82,15 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :events, only: %i[index show] do
+      member do
+        post :remove_tag
+        post :suspend
+        post :cancel
+        post :resolve_reports
+      end
+    end
+
     resources :members, only: %i[index show] do
       # POST so the searched email never appears in a URL (AC-10.6).
       post :search, on: :collection

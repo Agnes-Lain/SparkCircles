@@ -1,0 +1,29 @@
+<h1>Reported events</h1>
+<p><%= @events.size %> with open reports · urgent first, then oldest report</p>
+
+<% if @events.empty? %>
+  <div class="card" style="text-align: center">
+    <h3>All caught up</h3>
+    <p>No event report is waiting. New ones appear here.</p>
+  </div>
+<% else %>
+  <div class="card">
+    <table>
+      <thead><tr><th>Event</th><th>Host</th><th>Reasons</th><th>Reports</th><th><span class="visually-hidden">Action</span></th></tr></thead>
+      <tbody>
+        <% @events.each do |event| %>
+          <% open = event.reports.select { |report| report.resolved_at.nil? } %>
+          <tr>
+            <td><%= event.title %>
+              <% if open.map(&:reporter_id).uniq.size >= EventReport::URGENT_THRESHOLD %> <span class="badge badge-yellow">Urgent</span><% end %>
+              <br><span class="caption"><%= event_status_label(event) %> · <%= admin_datetime(event.starts_at.in_time_zone(event.time_zone)) %></span></td>
+            <td><%= event.host&.display_name %></td>
+            <td><%= open.map(&:reason_label).tally.map { |label, count| count > 1 ? "#{label} (#{count})" : label }.join(", ") %></td>
+            <td><%= open.size %></td>
+            <td><%= target_link "Review", admin_event_path(event), "aria-label": "Review #{event.title}" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
