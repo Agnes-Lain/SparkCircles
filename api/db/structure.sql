@@ -273,6 +273,25 @@ CREATE TABLE public.guest_access_events (
 
 
 --
+-- Name: pending_event_notifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.pending_event_notifications (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    kind character varying NOT NULL,
+    event_id uuid,
+    host_id uuid,
+    payload jsonb DEFAULT '{}'::jsonb NOT NULL,
+    deliver_at timestamp(6) without time zone,
+    throttle_until timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT pending_event_notifications_kind_check CHECK (((kind)::text = ANY ((ARRAY['host_activity'::character varying, 'event_changed'::character varying, 'host_status'::character varying])::text[]))),
+    CONSTRAINT pending_event_notifications_subject_check CHECK (((event_id IS NULL) <> (host_id IS NULL)))
+);
+
+
+--
 -- Name: roles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -480,6 +499,14 @@ ALTER TABLE ONLY public.events
 
 ALTER TABLE ONLY public.guest_access_events
     ADD CONSTRAINT guest_access_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: pending_event_notifications pending_event_notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pending_event_notifications
+    ADD CONSTRAINT pending_event_notifications_pkey PRIMARY KEY (id);
 
 
 --
@@ -718,6 +745,20 @@ CREATE INDEX index_guest_access_events_on_created_at ON public.guest_access_even
 
 
 --
+-- Name: index_pending_event_notifications_on_kind_and_event_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_pending_event_notifications_on_kind_and_event_id ON public.pending_event_notifications USING btree (kind, event_id) WHERE (event_id IS NOT NULL);
+
+
+--
+-- Name: index_pending_event_notifications_on_kind_and_host_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_pending_event_notifications_on_kind_and_host_id ON public.pending_event_notifications USING btree (kind, host_id) WHERE (host_id IS NOT NULL);
+
+
+--
 -- Name: index_roles_on_user_id_and_name; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -857,6 +898,14 @@ ALTER TABLE ONLY public.roles
 
 
 --
+-- Name: pending_event_notifications fk_rails_b090365f71; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pending_event_notifications
+    ADD CONSTRAINT fk_rails_b090365f71 FOREIGN KEY (host_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: event_participations fk_rails_b0b78337cd; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -878,6 +927,14 @@ ALTER TABLE ONLY public.active_storage_attachments
 
 ALTER TABLE ONLY public.events
     ADD CONSTRAINT fk_rails_d56a268962 FOREIGN KEY (host_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: pending_event_notifications fk_rails_e3b0d44c91; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pending_event_notifications
+    ADD CONSTRAINT fk_rails_e3b0d44c91 FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
 
 
 --
@@ -911,6 +968,7 @@ ALTER TABLE ONLY public.event_reports
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261006120000'),
 ('20261006090300'),
 ('20261006090200'),
 ('20261006090100'),
