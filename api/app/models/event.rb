@@ -43,6 +43,8 @@ class Event < ApplicationRecord
   validates :starts_at, :ends_at, presence: true
   validates :exact_address, presence: true, length: { maximum: ADDRESS_MAX }, if: :hosted?
   validates :places_total, presence: true, if: :hosted?
+  # Checked on the value as sent: 1.5 is refused (not_an_integer), never truncated to 1.
+  validates :places_total, :age_min, :age_max, numericality: { only_integer: true }, allow_nil: true
   validate :places_within_range
   validate :ages_within_range
   validate :times_in_order
@@ -72,8 +74,12 @@ class Event < ApplicationRecord
   # "past" as soon as it ends, even before the hourly job updates the column.
   def display_status = published? && ended? ? "past" : status
 
-  def listed? = hosted? && published? && !ended?
+  # AC-8.2: a host's events disappear the moment their verification stops (expiry at
+  # midnight, closure), not only when the daily job suspends them. The expiry date is
+  # encrypted, so this is checked in Ruby (Events::Search filters each page with it).
+  def listed? = hosted? && published? && !ended? && host_in_good_standing?
   def joinable? = listed?
+  def host_in_good_standing? = host.present? && host.verified? && !host.closed?
   def places_left = [ places_total.to_i - places_taken, 0 ].max
   def full? = hosted? && places_left.zero?
   def verified_only? = join_rule == "verified_only"

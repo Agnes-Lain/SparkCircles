@@ -8,11 +8,13 @@ module Api
         WHENS = %w[upcoming past].freeze
 
         def index
-          role = params.require(:role).to_s
-          time = (params[:when].presence || "upcoming").to_s
+          role = params.require(:role)
+          time = params[:when].presence || "upcoming"
           return render_error(:bad_request, :bad_request) unless ROLES.include?(role) && WHENS.include?(time)
 
-          page = [ params[:page].to_i, 1 ].max
+          page = page_number
+          return if performed?
+
           per_page = ::Events::Search::PER_PAGE
           scope = role == "host" ? current_user.hosted_events : participated_events
           scope = time == "upcoming" ? scope.not_ended.order(:starts_at, :id) : scope.ended.order(starts_at: :desc, id: :desc)
@@ -25,6 +27,14 @@ module Api
         end
 
         private
+
+        def page_number
+          raw = params[:page]
+          return render_error(:unprocessable_content, :validation_failed, details: { page: [ "invalid" ] }) unless raw.nil? || raw.is_a?(String)
+
+          ::Events::Search.page_number(raw) ||
+            render_error(:unprocessable_content, :validation_failed, details: { page: [ "out_of_range" ] })
+        end
 
         def participated_events
           Event.hosted.where.not(status: "draft").where(id: current_user.event_participations.select(:event_id))

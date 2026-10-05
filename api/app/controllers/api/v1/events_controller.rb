@@ -34,7 +34,7 @@ module Api
       # AC-1.4, AC-6.1 to AC-6.4, AC-15.2, AC-15.11
       def show
         @event = Event.hosted.includes(:host).find(params[:id])
-        @viewer = ::Events::Viewer.new(current_user, area: params[:area].presence)
+        @viewer = ::Events::Viewer.new(current_user, area: ::Events::Search.scalar(params, :area).presence)
         raise ActiveRecord::RecordNotFound unless @viewer.can_see?(@event)
       end
 
@@ -48,11 +48,22 @@ module Api
       end
 
       # AC-1.7, AC-2.5, AC-7.2, AC-8.7. Participant emails on change: not built yet.
+      # AC-5.8: under the event row lock, like joins, so "below_taken" is checked against the
+      # places actually taken. The database check stays the last guard against a race.
       def update
-        raise ::Events::Error.new(:event_not_editable) unless @event.editable?
-        return render_validation_errors(@event) unless @event.update(event_params)
+        updated = Event.transaction do
+          @event.lock!
+          raise ::Events::Error.new(:event_not_editable) unless @event.editable?
+
+          @event.update(event_params)
+        end
+        return render_validation_errors(@event) unless updated
 
         render_event
+      rescue ActiveRecord::CheckViolation => e
+        raise unless e.message.include?("events_places_taken_check")
+
+        render_error(:unprocessable_content, :validation_failed, details: { places_total: [ "below_taken" ] })
       end
 
       # AC-1.7: drafts only, permanent.

@@ -26,6 +26,7 @@ fr:
     pm: pm
   api:
     errors:
+      server_error: "Un problème est survenu de notre côté. Réessayez dans un instant."
       bad_request: "Il manque quelque chose dans la demande."
       unauthorized: "Connecte-toi pour continuer."
       invalid_credentials: "L'e-mail et le mot de passe ne correspondent pas"

@@ -14,7 +14,12 @@ module Api
           raise ::Events::Error.new(:own_event) if event.hosted_by?(current_user)
           raise ::Events::Error.new(:already_reported) if event.reports.exists?(reporter_id: current_user.id)
 
-          report = event.reports.build(reporter: current_user, reason: params[:reason], details: params[:details])
+          unless params[:details].nil? || params[:details].is_a?(String)
+            return render_error(:unprocessable_content, :validation_failed, details: { details: [ "invalid" ] })
+          end
+
+          reason = params[:reason].is_a?(String) ? params[:reason] : nil
+          report = event.reports.build(reporter: current_user, reason: reason, details: params[:details])
           return render_validation_errors(report) unless report.save
 
           render json: { report: { id: report.id, reason: report.reason, created_at: report.created_at.utc.iso8601 } },

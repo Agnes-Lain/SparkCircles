@@ -26,7 +26,7 @@ module SparkCircles
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    config.autoload_lib(ignore: %w[assets tasks middleware])
 
     # Configuration for the application, engines, and railties goes here.
     #
@@ -69,6 +69,10 @@ module SparkCircles
     config.middleware.use config.session_store, config.session_options
     config.middleware.use ActionDispatch::Flash
     config.middleware.use Rack::MethodOverride
+
+    # JSON errors on /api even when the failure happens outside a controller.
+    require_relative "../lib/middleware/api_exceptions_app"
+    config.exceptions_app = ApiExceptionsApp.new(ActionDispatch::PublicExceptions.new(Rails.public_path))
 
     # The audit log is protected by a PostgreSQL trigger, which schema.rb can't express.
     config.active_record.schema_format = :sql

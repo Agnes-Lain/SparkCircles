@@ -12,6 +12,7 @@ en:
       long: "%-d %b %Y"
   api:
     errors:
+      server_error: "Something went wrong on our side. Try again in a moment."
       bad_request: "Something is missing in the request."
       unauthorized: "Log in to continue."
       invalid_credentials: "Email or password doesn't match"
