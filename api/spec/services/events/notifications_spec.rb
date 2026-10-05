@@ -72,13 +72,56 @@ RSpec.describe Events::Notifications do
       expect(mails).to be_empty
     end
 
-    it "AC-8.6 never tells the host about a removal by the system" do
+    it "AC-8.6 a removal by the system shows as an anonymous \"left\", without name or reason" do
       join(lea)
       run_until(paris("10:15"))
       mails.clear
       Events::Participations.remove_from_upcoming!(lea)
-      run_until(paris("12:00"))
+      expect(PendingEventNotification.find_by(kind: "host_activity", event: event).payload.to_json).not_to include(lea.id)
+      run_until(paris("11:15"))
+      mail = mails_to(host).sole
+      expect(mail.subject).to eq("1 nouveauté pour « Football au parc »")
+      expect(mail.text_part.body.to_s).to include("1 personne s'est désinscrite", "Il reste 10 places sur 10.")
+      expect(all_bodies).not_to include("Léa", "vérif", "ferm")
+    end
+
+    it "AC-8.5 lists a closure next to named actions in the digest, in English too" do
+      host.update!(locale: "en")
+      join(lea)
+      run_until(paris("10:15"))
+      mails.clear
+      travel_to(paris("11:20"))
+      join(karim)
+      Accounts::Closure.new(lea).close!
+      run_until(paris("11:35"))
+      body = mails_to(host).sole.text_part.body.to_s
+      expect(mails_to(host).sole.subject).to eq("2 updates for “Football au parc”")
+      expect(body).to include("Karim R. joined (2 places)", "1 person left")
+      expect(body).not_to include("Léa")
+    end
+
+    it "drops a parent who joined then was removed by the system inside the window" do
+      join(lea)
+      travel_to(paris("10:05"))
+      Events::Participations.remove_from_upcoming!(lea)
+      run_until(paris("10:30"))
       expect(mails).to be_empty
+    end
+
+    it "BUG-11 erasure strips the person's id from a pending digest; the leave stays anonymous" do
+      join(lea)
+      run_until(paris("10:15"))
+      mails.clear
+      travel_to(paris("11:20"))
+      leave(lea)
+      Accounts::Closure.new(lea).close!
+      perform_enqueued_jobs(at: Time.current) # the account emails, before the person is gone
+      mails.clear
+      Accounts::Eraser.new(lea.reload).erase!
+      expect(PendingEventNotification.where(kind: "host_activity").map { |batch| batch.payload.to_json }.join).not_to include(lea.id)
+      run_until(paris("11:35"))
+      expect(mails_to(host).sole.text_part.body.to_s).to include("1 personne s'est désinscrite")
+      expect(all_bodies).not_to include("Léa")
     end
   end
 

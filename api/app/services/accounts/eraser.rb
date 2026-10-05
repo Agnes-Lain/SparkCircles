@@ -21,6 +21,8 @@ module Accounts
         @user.data_exports.each { |export| export.file.purge if export.file.attached? }
         # Reports stay for moderation, unlinked (reporter_id NULL, FK), without the free text.
         @user.event_reports.update_all(details: nil, updated_at: Time.current)
+        # Pending host digests keep no id of the erased person (anonymous "left" instead).
+        Events::Notifications.forget_participant(@user)
         @user.destroy!
       end
     end

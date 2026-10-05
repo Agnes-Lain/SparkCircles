@@ -288,12 +288,17 @@ fr:
         subject: "%{guest} ne vient plus à « %{title} »"
         line: "%{guest} a quitté ta sortie. Sa place est libre."
       digest:
-        subject: "%{count} nouveautés pour « %{title} »"
+        subject:
+          one: "%{count} nouveauté pour « %{title} »"
+          other: "%{count} nouveautés pour « %{title} »"
         intro: "Voici ce qui s'est passé sur ta sortie :"
         join: "%{guest} a rejoint (%{places})"
         leave: "%{guest} a quitté (%{places})"
         change: "%{guest} passe de %{from} à %{to} places"
         more: "et %{count} autres"
+        removed:
+          one: "%{count} personne s'est désinscrite"
+          other: "%{count} personnes se sont désinscrites"
     event_changed:
       subject: "« %{title} » a changé"
       intro: "%{host} a modifié cette sortie. Voici ce qui change :"

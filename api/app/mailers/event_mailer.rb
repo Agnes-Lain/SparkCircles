@@ -16,18 +16,21 @@ class EventMailer < ApplicationMailer
   SUBJECT_TITLE = 40
 
   # E1. `entries`: [{ "user", "from", "to" }] net places per participant (0 = not joined).
-  def host_activity(event, entries, places_left:, places_total:)
+  # `removed`: people gone for a reason the host is not told (closure, erasure, revoked
+  # verification), shown as an anonymous count only.
+  def host_activity(event, entries, places_left:, places_total:, removed: 0)
     host = event.host
     with_recipient(host, event: event) do
-      lines = entries.size == 1 ? single_activity(entries.first) : digest_activity(entries)
+      single = entries.size == 1 && removed.zero?
+      lines = single ? single_activity(entries.first) : digest_activity(entries, removed)
       lines << (places_left.zero? ? t("event_mailer.full") : t("event_mailer.places_left", count: places_left, total: places_total))
       subject =
-        if entries.size == 1
+        if single
           entry = entries.first
           t("event_mailer.host_activity.#{activity_kind(entry)}.subject", guest: entry["user"].display_name,
                                                                          title: subject_title(event))
         else
-          t("event_mailer.host_activity.digest.subject", count: entries.size, title: subject_title(event))
+          t("event_mailer.host_activity.digest.subject", count: entries.size + removed, title: subject_title(event))
         end
       deliver(host, subject, lines, action: [ "event_mailer.host_activity.action", app_link("events/#{event.id}") ])
     end
@@ -128,7 +131,7 @@ class EventMailer < ApplicationMailer
                                                                      places: places(entry["to"])) ]
   end
 
-  def digest_activity(entries)
+  def digest_activity(entries, removed)
     items = entries.first(MAX_DIGEST_LINES).map do |entry|
       kind = activity_kind(entry)
       count = kind == "leave" ? entry["from"] : entry["to"]
@@ -137,6 +140,7 @@ class EventMailer < ApplicationMailer
     end
     extra = entries.size - MAX_DIGEST_LINES
     items << { item: t("event_mailer.host_activity.digest.more", count: extra) } if extra.positive?
+    items << { item: t("event_mailer.host_activity.digest.removed", count: removed) } if removed.positive?
     [ t("event_mailer.host_activity.digest.intro"), *items ]
   end
 

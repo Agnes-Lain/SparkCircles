@@ -278,12 +278,17 @@ en:
         subject: "%{guest} is no longer coming to “%{title}”"
         line: "%{guest} left your event. Their spot is free."
       digest:
-        subject: "%{count} updates for “%{title}”"
+        subject:
+          one: "%{count} update for “%{title}”"
+          other: "%{count} updates for “%{title}”"
         intro: "Here's what happened on your event:"
         join: "%{guest} joined (%{places})"
         leave: "%{guest} left (%{places})"
         change: "%{guest} went from %{from} to %{to} places"
         more: "and %{count} more"
+        removed:
+          one: "%{count} person left"
+          other: "%{count} people left"
     event_changed:
       subject: "“%{title}” has changed"
       intro: "%{host} changed this event. Here's what's different:"

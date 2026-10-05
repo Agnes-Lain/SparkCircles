@@ -4,11 +4,14 @@ module Events
   #
   # - E1 host activity: joins, place changes and leaves, one email per event 15 minutes
   #   after the first action, net per participant (join then leave shows nothing). After a
-  #   digest, the next one for that event waits at least an hour.
+  #   digest, the next one for that event waits at least an hour. Removals by the system
+  #   (closure, erasure, revoked verification) show as an anonymous count ("1 person
+  #   left"): no name, no id kept in the batch, no reason (PM decision 2026-10-06).
   # - E2 event changed: one email per participant 10 minutes after the first edit, with the
   #   net difference since before that edit (nothing if it was reverted).
   # - E4 to E7 hold and resume: one email per participant for all of a host's events, one
-  #   per host; a hold undone before sending sends nothing.
+  #   per host; a hold undone before sending sends nothing. A back-office suspension sends
+  #   E4 to participants only (the host's E5 is about verification).
   # - E3, E3b cancellations: sent at once, never batched.
   # - Quiet hours 22:00 to 08:00 Paris for everything batched, except E2 for an event
   #   starting within 24 hours and anything about an event starting before 08:00.
@@ -37,6 +40,31 @@ module Events
         entry ? entry["to"] = to : entries << { "user_id" => user.id, "from" => from, "to" => to }
         batch.payload = { "entries" => entries.reject { |item| item["from"] == item["to"] } }
         batch.deliver_at ||= [ Time.current + HOST_ACTIVITY_WINDOW, batch.throttle_until ].compact.max
+      end
+    end
+
+    # E1, AC-8.5, AC-8.6 and erasure: the participant is gone for a reason the host is not
+    # told. Their entry leaves the batch (no id kept): a net join drops out, anything else
+    # becomes one anonymous "left" in the count.
+    def participant_removed(event, user)
+      return if event.host_id.nil?
+
+      update_batch(:host_activity, event: event) do |batch|
+        entries = batch.payload.fetch("entries", [])
+        entry = entries.find { |item| item["user_id"] == user.id }
+        removed = batch.payload.fetch("removed", 0)
+        removed += 1 unless entry && entry["from"].zero?
+        batch.payload = { "entries" => entries - [ entry ], "removed" => removed }
+        batch.deliver_at ||= [ Time.current + HOST_ACTIVITY_WINDOW, batch.throttle_until ].compact.max
+      end
+    end
+
+    # BUG-11: on erasure, no pending host digest keeps the person's id.
+    def forget_participant(user)
+      PendingEventNotification.where(kind: "host_activity")
+                              .where("payload -> 'entries' @> ?::jsonb", [ { user_id: user.id } ].to_json)
+                              .includes(:event).find_each do |batch|
+        participant_removed(batch.event, user) if batch.event
       end
     end
 
@@ -108,16 +136,22 @@ module Events
       starts.any? { |time| time < limit } ? nil : morning
     end
 
+    # A person closed or erased since their entry was recorded is never named: a leave
+    # counts as an anonymous "left", a join drops out.
     def deliver_host_activity(batch)
       event = batch.event
       people = active_users(batch)
+      removed = batch.payload.fetch("removed", 0)
       entries = batch.payload.fetch("entries", []).filter_map do |entry|
         person = people[entry["user_id"]]
+        removed += 1 if person.nil? && entry["from"].positive?
         person && { "user" => person, "from" => entry["from"], "to" => entry["to"] }
       end
-      if entries.any? && event.host && notifiable_host?(event.host) && (event.published? || event.suspended?) && !event.ended?
-        EventMailer.host_activity(event, entries, places_left: event.places_left, places_total: event.places_total).deliver_later
-        batch.throttle_until = Time.current + BUSY_EVENT_GAP if entries.size > 1
+      count = entries.size + removed
+      if count.positive? && event.host && notifiable_host?(event.host) && (event.published? || event.suspended?) && !event.ended?
+        EventMailer.host_activity(event, entries, removed: removed, places_left: event.places_left,
+                                                  places_total: event.places_total).deliver_later
+        batch.throttle_until = Time.current + BUSY_EVENT_GAP if count > 1
       end
       batch.update!(payload: {}, deliver_at: nil)
     end

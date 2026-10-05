@@ -80,14 +80,16 @@ module Events
       Notifications.participation_changed(@event, @user, from: participation.requested_places, to: 0)
     end
 
-    # AC-8.5, AC-8.6: removal by the system (closure, revoked verification), no reason given
-    # and no email to the host (events-emails: hosts are not told why).
+    # AC-8.5, AC-8.6: removal by the system (closure, revoked verification). The host sees
+    # an anonymous "1 person left" in the E1 digest, never the name or the reason.
     def remove!
-      Event.transaction do
+      participation = Event.transaction do
         @event.lock!
         participation = @event.participations.find_by(user_id: @user.id)
         release!(participation) if participation
+        participation
       end
+      Notifications.participant_removed(@event, @user) if participation
     end
 
     private
