@@ -28,7 +28,7 @@ Project rules for every agent are in [CLAUDE.md](CLAUDE.md). Agent definitions a
 | `mobile/` | App: React Native with Expo SDK 57, TypeScript, Expo Router, NativeWind, Jest. How to run it on an iPhone: [mobile/README.md](mobile/README.md) |
 | `CLAUDE.md` | Product context, workflow, tech stack, non-negotiables, git rules |
 | `.claude/agents/` | The five subagent definitions |
-| `docs/SparkCircles_Design_System_EN.md` | Design system v1.4.1, the source of truth for all UI |
+| `docs/SparkCircles_Design_System_EN.md` | Design system v1.7, the source of truth for all UI |
 | `docs/specs/`, `docs/design/`, `docs/api/`, `docs/qa/`, `docs/marketing/` | Handoff files between agents, named after the feature slug |
 | `docs/mobile/` | Mobile setup proposal and decisions |
 | `.github/workflows/` | CI: `api.yml` for `api/**`, `mobile.yml` for `mobile/**` |
