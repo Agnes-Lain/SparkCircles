@@ -174,6 +174,105 @@ CREATE TABLE public.email_changes (
 
 
 --
+-- Name: event_participations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.event_participations (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    event_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    adults integer DEFAULT 1 NOT NULL,
+    children integer DEFAULT 0 NOT NULL,
+    places integer GENERATED ALWAYS AS ((adults + children)) STORED,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT event_participations_counts_check CHECK (((adults >= 1) AND (children >= 0) AND ((adults + children) <= 100)))
+);
+
+
+--
+-- Name: event_reports; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.event_reports (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    event_id uuid NOT NULL,
+    reporter_id uuid,
+    reason character varying NOT NULL,
+    details text,
+    resolved_at timestamp(6) without time zone,
+    resolved_by_id uuid,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT event_reports_reason_check CHECK (((reason)::text = ANY ((ARRAY['dangerous_place'::character varying, 'suspicious_host'::character varying, 'inappropriate_content'::character varying, 'inappropriate_tag'::character varying, 'other'::character varying])::text[])))
+);
+
+
+--
+-- Name: events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.events (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    host_id uuid,
+    source character varying DEFAULT 'hosted'::character varying NOT NULL,
+    external_id character varying,
+    source_url character varying,
+    series_id uuid,
+    status character varying DEFAULT 'draft'::character varying NOT NULL,
+    suspension_reason character varying,
+    visibility character varying DEFAULT 'searchable'::character varying NOT NULL,
+    join_rule character varying DEFAULT 'anyone'::character varying NOT NULL,
+    title character varying(80) NOT NULL,
+    description text,
+    category character varying NOT NULL,
+    tags character varying[] DEFAULT '{}'::character varying[] NOT NULL,
+    starts_at timestamp(6) without time zone NOT NULL,
+    ends_at timestamp(6) without time zone NOT NULL,
+    time_zone character varying DEFAULT 'Europe/Paris'::character varying NOT NULL,
+    area character varying NOT NULL,
+    exact_address text,
+    places_total integer,
+    places_taken integer DEFAULT 0 NOT NULL,
+    age_min integer,
+    age_max integer,
+    published_at timestamp(6) without time zone,
+    suspended_at timestamp(6) without time zone,
+    cancelled_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT events_age_range_check CHECK ((((age_min IS NULL) OR ((age_min >= 0) AND (age_min <= 17))) AND ((age_max IS NULL) OR ((age_max >= 0) AND (age_max <= 17))) AND ((age_min IS NULL) OR (age_max IS NULL) OR (age_min <= age_max)))),
+    CONSTRAINT events_category_check CHECK (((category)::text = ANY ((ARRAY['sport'::character varying, 'outdoors'::character varying, 'board_games'::character varying, 'video_games'::character varying, 'crafts'::character varying, 'music'::character varying, 'shows'::character varying, 'books'::character varying, 'workshops'::character varying, 'playdates'::character varying, 'other'::character varying])::text[]))),
+    CONSTRAINT events_description_length_check CHECK (((description IS NULL) OR (char_length(description) <= 1000))),
+    CONSTRAINT events_join_rule_check CHECK (((join_rule)::text = ANY ((ARRAY['anyone'::character varying, 'verified_only'::character varying])::text[]))),
+    CONSTRAINT events_places_taken_check CHECK (((places_taken >= 0) AND ((places_total IS NULL) OR (places_taken <= places_total)))),
+    CONSTRAINT events_places_total_check CHECK (((places_total IS NULL) OR ((places_total >= 1) AND (places_total <= 100)))),
+    CONSTRAINT events_source_check CHECK (((source)::text = ANY ((ARRAY['hosted'::character varying, 'open_data'::character varying])::text[]))),
+    CONSTRAINT events_source_fields_check CHECK (((((source)::text = 'hosted'::text) AND (host_id IS NOT NULL) AND (exact_address IS NOT NULL) AND (places_total IS NOT NULL)) OR (((source)::text = 'open_data'::text) AND (external_id IS NOT NULL) AND (source_url IS NOT NULL)))),
+    CONSTRAINT events_status_check CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'published'::character varying, 'suspended'::character varying, 'cancelled'::character varying, 'past'::character varying])::text[]))),
+    CONSTRAINT events_suspension_reason_check CHECK (((suspension_reason IS NULL) OR ((suspension_reason)::text = ANY ((ARRAY['host_unverified'::character varying, 'admin'::character varying])::text[])))),
+    CONSTRAINT events_tags_count_check CHECK ((cardinality(tags) <= 5)),
+    CONSTRAINT events_time_order_check CHECK ((ends_at > starts_at)),
+    CONSTRAINT events_title_length_check CHECK (((char_length((title)::text) >= 1) AND (char_length((title)::text) <= 80))),
+    CONSTRAINT events_visibility_check CHECK (((visibility)::text = 'searchable'::text))
+);
+
+
+--
+-- Name: guest_access_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.guest_access_events (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    kind character varying NOT NULL,
+    ip_hash character varying(32) NOT NULL,
+    endpoint character varying(100) NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT guest_access_events_kind_check CHECK (((kind)::text = ANY ((ARRAY['rate_limited'::character varying, 'blocked'::character varying, 'client_refused'::character varying])::text[])))
+);
+
+
+--
 -- Name: roles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -352,6 +451,38 @@ ALTER TABLE ONLY public.email_changes
 
 
 --
+-- Name: event_participations event_participations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.event_participations
+    ADD CONSTRAINT event_participations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: event_reports event_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.event_reports
+    ADD CONSTRAINT event_reports_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: events events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events
+    ADD CONSTRAINT events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: guest_access_events guest_access_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.guest_access_events
+    ADD CONSTRAINT guest_access_events_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -482,6 +613,111 @@ CREATE INDEX index_email_changes_on_user_id ON public.email_changes USING btree 
 
 
 --
+-- Name: index_event_participations_on_event_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_event_participations_on_event_id ON public.event_participations USING btree (event_id);
+
+
+--
+-- Name: index_event_participations_on_event_id_and_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_event_participations_on_event_id_and_user_id ON public.event_participations USING btree (event_id, user_id);
+
+
+--
+-- Name: index_event_participations_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_event_participations_on_user_id ON public.event_participations USING btree (user_id);
+
+
+--
+-- Name: index_event_reports_on_event_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_event_reports_on_event_id ON public.event_reports USING btree (event_id);
+
+
+--
+-- Name: index_event_reports_on_event_id_and_reporter_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_event_reports_on_event_id_and_reporter_id ON public.event_reports USING btree (event_id, reporter_id);
+
+
+--
+-- Name: index_event_reports_on_reporter_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_event_reports_on_reporter_id ON public.event_reports USING btree (reporter_id);
+
+
+--
+-- Name: index_event_reports_on_resolved_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_event_reports_on_resolved_at ON public.event_reports USING btree (resolved_at);
+
+
+--
+-- Name: index_events_on_area_and_starts_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_events_on_area_and_starts_at ON public.events USING btree (area, starts_at);
+
+
+--
+-- Name: index_events_on_ends_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_events_on_ends_at ON public.events USING btree (ends_at);
+
+
+--
+-- Name: index_events_on_host_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_events_on_host_id ON public.events USING btree (host_id);
+
+
+--
+-- Name: index_events_on_series_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_events_on_series_id ON public.events USING btree (series_id);
+
+
+--
+-- Name: index_events_on_source_and_external_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_events_on_source_and_external_id ON public.events USING btree (source, external_id) WHERE (external_id IS NOT NULL);
+
+
+--
+-- Name: index_events_on_status_and_starts_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_events_on_status_and_starts_at ON public.events USING btree (status, starts_at);
+
+
+--
+-- Name: index_events_on_tags; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_events_on_tags ON public.events USING gin (tags);
+
+
+--
+-- Name: index_guest_access_events_on_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_guest_access_events_on_created_at ON public.guest_access_events USING btree (created_at);
+
+
+--
 -- Name: index_roles_on_user_id_and_name; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -573,6 +809,22 @@ CREATE TRIGGER audit_events_protect_truncate BEFORE TRUNCATE ON public.audit_eve
 
 
 --
+-- Name: event_reports fk_rails_04ea0dec09; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.event_reports
+    ADD CONSTRAINT fk_rails_04ea0dec09 FOREIGN KEY (reporter_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: event_participations fk_rails_4cdd99d0ec; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.event_participations
+    ADD CONSTRAINT fk_rails_4cdd99d0ec FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: data_exports fk_rails_5408e45594; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -605,11 +857,27 @@ ALTER TABLE ONLY public.roles
 
 
 --
+-- Name: event_participations fk_rails_b0b78337cd; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.event_participations
+    ADD CONSTRAINT fk_rails_b0b78337cd FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
+
+
+--
 -- Name: active_storage_attachments fk_rails_c3b3935057; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.active_storage_attachments
     ADD CONSTRAINT fk_rails_c3b3935057 FOREIGN KEY (blob_id) REFERENCES public.active_storage_blobs(id);
+
+
+--
+-- Name: events fk_rails_d56a268962; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events
+    ADD CONSTRAINT fk_rails_d56a268962 FOREIGN KEY (host_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -629,12 +897,24 @@ ALTER TABLE ONLY public.verifications
 
 
 --
+-- Name: event_reports fk_rails_fc5bb17976; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.event_reports
+    ADD CONSTRAINT fk_rails_fc5bb17976 FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261006090300'),
+('20261006090200'),
+('20261006090100'),
+('20261006090000'),
 ('20261003150000'),
 ('20261003090300'),
 ('20261003090200'),
