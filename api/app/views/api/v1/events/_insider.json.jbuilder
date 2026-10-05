@@ -7,9 +7,13 @@ json.partial! "api/v1/events/common", event: event, viewer: viewer
 json.partial! "api/v1/events/host", host: event.host
 json.exact_address event.exact_address if role == :host || !event.cancelled?
 json.participants event.participations.sort_by(&:created_at) do |participation|
-  json.first_name participation.user.first_name
-  json.last_name_initial participation.user.last_name_initial
-  json.verified participation.user.verified?
+  # AC-11.7: someone who closed their account appears as "Former member" in past events.
+  person = participation.user
+  shown = person.visible_to_others?
+  json.first_name(shown ? person.first_name : nil)
+  json.last_name_initial(shown ? person.last_name_initial : nil)
+  json.verified(shown && person.verified?)
+  json.former_member !shown
   json.adults participation.adults
   json.children participation.children
 end

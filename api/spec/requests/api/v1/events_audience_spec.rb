@@ -75,7 +75,7 @@ RSpec.describe "Events: what each audience sees", type: :request do
       data = get_event(event, auth_headers(member))
       expect(data.keys).to match_array(COMMON_KEYS + %w[host])
       expect(data["host"]).to eq("id" => host.id, "first_name" => "Claire", "last_name_initial" => "M", "photo_url" => nil,
-                                 "verified" => true)
+                                 "verified" => true, "former_member" => false)
       expect(response.body).not_to include("Oberkampf", "Thomas")
       expect(data["places"]).to eq("total" => 10, "taken" => 2, "left" => 8)
     end
@@ -102,7 +102,7 @@ RSpec.describe "Events: what each audience sees", type: :request do
       data = get_event(event, auth_headers(participant))
       expect(data["exact_address"]).to eq("12 rue Oberkampf, 75011 Paris")
       expect(data["participants"]).to eq([ { "first_name" => "Thomas", "last_name_initial" => "R", "verified" => false,
-                                             "adults" => 1, "children" => 2 } ])
+                                             "former_member" => false, "adults" => 1, "children" => 2 } ])
       expect(data["my_participation"]).to eq("adults" => 1, "children" => 2, "places" => 3)
       expect(data["viewer"]).to include("role" => "participant", "joined" => true, "join_blocker" => "joined")
       expect(data).not_to have_key("visibility")
