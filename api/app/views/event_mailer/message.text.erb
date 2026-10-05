@@ -1,0 +1,23 @@
+<%= @greeting %>
+
+<% if @title_block %>
+<%= @title_block[:title] %>
+<%= @title_block[:date] %>
+
+<% end %>
+<% @lines.each do |line| %>
+<% if line.is_a?(String) %>
+<%= line %>
+<% elsif line[:item] %>
+- <%= line[:item] %>
+<% elsif line[:text] %>
+<%= line[:label] %> <%= line[:text] %>
+<% else %>
+<%= line[:label] %> <%= line[:before] %> -> <%= line[:after] %><%= ". #{line[:suffix]}" if line[:suffix] %>
+<% end %>
+
+<% end %>
+<%= @action_label %>:
+<%= @action_url %>
+
+<%= t("account_mailer.signature") %>

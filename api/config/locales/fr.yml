@@ -262,3 +262,97 @@ fr:
       lines:
         - "La copie de tes données SparkCircles est prête. Télécharge-la depuis l'application jusqu'au %{date}."
       action: "Télécharger mes données"
+  # E-mails de notification des sorties (EventMailer, events-emails E1 à E7). Jamais d'adresse.
+  event_mailer:
+    places:
+      one: "%{count} place"
+      other: "%{count} places"
+    places_left:
+      one: "Il reste %{count} place sur %{total}."
+      other: "Il reste %{count} places sur %{total}."
+    full: "Ta sortie est complète."
+    quoted_title: "« %{title} »"
+    and: " et "
+    others:
+      one: "%{count} autre"
+      other: "%{count} autres"
+    host_activity:
+      action: "Voir la sortie"
+      join:
+        subject: "%{guest} a rejoint « %{title} »"
+        line: "%{guest} a rejoint ta sortie avec %{places}."
+      change:
+        subject: "%{guest} a changé ses places pour « %{title} »"
+        line: "%{guest} passe de %{from} à %{to} places."
+      leave:
+        subject: "%{guest} ne vient plus à « %{title} »"
+        line: "%{guest} a quitté ta sortie. Sa place est libre."
+      digest:
+        subject: "%{count} nouveautés pour « %{title} »"
+        intro: "Voici ce qui s'est passé sur ta sortie :"
+        join: "%{guest} a rejoint (%{places})"
+        leave: "%{guest} a quitté (%{places})"
+        change: "%{guest} passe de %{from} à %{to} places"
+        more: "et %{count} autres"
+    event_changed:
+      subject: "« %{title} » a changé"
+      intro: "%{host} a modifié cette sortie. Voici ce qui change :"
+      labels:
+        title: "Titre :"
+        date: "Date :"
+        place: "Lieu :"
+        places: "Places :"
+      place_hint: "Ouvre l'app pour voir l'adresse."
+      address_changed: "l'adresse a changé. Ouvre l'app pour la voir."
+      outro: "Ça ne te convient plus ? Tu peux quitter la sortie en un geste dans l'app."
+      action: "Voir les changements"
+    event_cancelled:
+      subject: "« %{title} » est annulée"
+      lines:
+        - "%{host} a annulé la sortie prévue le %{date}."
+        - "Ta place est libérée, tu n'as rien à faire. Dommage, mais il y en a d'autres près de chez toi."
+      action: "Trouver une autre sortie"
+    event_cancelled_neutral:
+      lines:
+        - "La sortie prévue le %{date} est annulée."
+        - "Ta place est libérée, tu n'as rien à faire."
+    event_on_hold:
+      subject: "« %{title} » est en pause"
+      lines:
+        - "Cette sortie est en pause pour le moment. Tu gardes ta place et tu n'as rien à faire."
+        - "On te prévient dès que la sortie reprend, ou si elle est annulée."
+      action: "Voir la sortie"
+      many:
+        subject: "%{titles} sont en pause"
+        lines:
+          - "Ces sorties sont en pause pour le moment. Tu gardes tes places et tu n'as rien à faire."
+          - "On te prévient dès qu'elles reprennent, ou si elles sont annulées."
+        action: "Voir mes sorties"
+    events_on_hold_host:
+      subject: "Tes sorties à venir sont en pause"
+      lines:
+        one:
+          - "Ta vérification n'est plus active, donc ta sortie à venir est en pause : elle n'apparaît plus dans la recherche et personne ne peut la rejoindre."
+          - "Les familles inscrites ont été prévenues, sans détail. Tout reprend automatiquement dès que tu es vérifié de nouveau. Une sortie qui commence pendant la pause est annulée."
+        other:
+          - "Ta vérification n'est plus active, donc tes %{count} sorties à venir sont en pause : elles n'apparaissent plus dans la recherche et personne ne peut les rejoindre."
+          - "Les familles inscrites ont été prévenues, sans détail. Tout reprend automatiquement dès que tu es vérifié de nouveau. Une sortie qui commence pendant la pause est annulée."
+      action: "Vérifier mon identité"
+    event_resumed:
+      subject: "« %{title} » reprend"
+      lines:
+        - "Bonne nouvelle : la sortie reprend comme prévu, le %{date}. Ta place est toujours là."
+      action: "Voir la sortie"
+      many:
+        subject: "%{titles} reprennent"
+        lines:
+          - "Bonne nouvelle : ces sorties reprennent comme prévu. Tes places sont toujours là."
+        action: "Voir mes sorties"
+    events_resumed_host:
+      subject: "Tes sorties reprennent"
+      lines:
+        one:
+          - "Te voilà vérifié de nouveau : ta sortie à venir est visible et ouverte aux inscriptions. Les familles inscrites ont été prévenues."
+        other:
+          - "Te voilà vérifié de nouveau : tes %{count} sorties à venir sont visibles et ouvertes aux inscriptions. Les familles inscrites ont été prévenues."
+      action: "Voir mes sorties"

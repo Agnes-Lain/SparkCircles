@@ -252,3 +252,97 @@ en:
       lines:
         - "Your copy of your SparkCircles data is ready. Download it from the app until %{date}."
       action: "Download my data"
+  # Event notification emails (EventMailer, events-emails E1 to E7). Never an address.
+  event_mailer:
+    places:
+      one: "%{count} place"
+      other: "%{count} places"
+    places_left:
+      one: "%{count} place left out of %{total}."
+      other: "%{count} places left out of %{total}."
+    full: "Your event is full."
+    quoted_title: "“%{title}”"
+    and: " and "
+    others:
+      one: "%{count} other"
+      other: "%{count} others"
+    host_activity:
+      action: "See the event"
+      join:
+        subject: "%{guest} joined “%{title}”"
+        line: "%{guest} joined your event with %{places}."
+      change:
+        subject: "%{guest} changed their places for “%{title}”"
+        line: "%{guest} went from %{from} to %{to} places."
+      leave:
+        subject: "%{guest} is no longer coming to “%{title}”"
+        line: "%{guest} left your event. Their spot is free."
+      digest:
+        subject: "%{count} updates for “%{title}”"
+        intro: "Here's what happened on your event:"
+        join: "%{guest} joined (%{places})"
+        leave: "%{guest} left (%{places})"
+        change: "%{guest} went from %{from} to %{to} places"
+        more: "and %{count} more"
+    event_changed:
+      subject: "“%{title}” has changed"
+      intro: "%{host} changed this event. Here's what's different:"
+      labels:
+        title: "Title:"
+        date: "Date:"
+        place: "Place:"
+        places: "Places:"
+      place_hint: "Open the app to see the address."
+      address_changed: "the address changed. Open the app to see it."
+      outro: "Doesn't work for you anymore? You can leave the event in one tap in the app."
+      action: "See the changes"
+    event_cancelled:
+      subject: "“%{title}” is cancelled"
+      lines:
+        - "%{host} cancelled the event planned for %{date}."
+        - "Your spot is released, there's nothing you need to do. Sorry this one fell through: there are other events near you."
+      action: "Find another event"
+    event_cancelled_neutral:
+      lines:
+        - "The event planned for %{date} is cancelled."
+        - "Your spot is released, there's nothing you need to do."
+    event_on_hold:
+      subject: "“%{title}” is on hold"
+      lines:
+        - "This event is on hold for now. You keep your spot and there's nothing you need to do."
+        - "We'll tell you as soon as it's back on, or if it's cancelled."
+      action: "See the event"
+      many:
+        subject: "%{titles} are on hold"
+        lines:
+          - "These events are on hold for now. You keep your spots and there's nothing you need to do."
+          - "We'll tell you as soon as they're back on, or if they're cancelled."
+        action: "See my events"
+    events_on_hold_host:
+      subject: "Your upcoming events are on hold"
+      lines:
+        one:
+          - "Your verification isn't active anymore, so your upcoming event is on hold: it no longer shows in search and no one can join it."
+          - "The families who joined were told, with no details. Everything restarts automatically as soon as you're verified again. An event that starts while on hold is cancelled."
+        other:
+          - "Your verification isn't active anymore, so your %{count} upcoming events are on hold: they no longer show in search and no one can join them."
+          - "The families who joined were told, with no details. Everything restarts automatically as soon as you're verified again. An event that starts while on hold is cancelled."
+      action: "Verify my identity"
+    event_resumed:
+      subject: "“%{title}” is back on"
+      lines:
+        - "Good news: the event is back on as planned, %{date}. Your spot is still yours."
+      action: "See the event"
+      many:
+        subject: "%{titles} are back on"
+        lines:
+          - "Good news: these events are back on as planned. Your spots are still yours."
+        action: "See my events"
+    events_resumed_host:
+      subject: "Your events are back on"
+      lines:
+        one:
+          - "You're verified again: your upcoming event is visible and open for sign-ups again. The families who joined were told."
+        other:
+          - "You're verified again: your %{count} upcoming events are visible and open for sign-ups again. The families who joined were told."
+      action: "See my events"

@@ -1,0 +1,17 @@
+<p><%= @greeting %></p>
+<% if @title_block %>
+  <p><strong style="font-size: 16px; font-weight: 500; color: #1A1A1A;"><%= @title_block[:title] %></strong><br><%= @title_block[:date] %></p>
+<% end %>
+<% @lines.each do |line| %>
+  <% if line.is_a?(String) %>
+    <p><%= line %></p>
+  <% elsif line[:item] %>
+    <p><%= line[:item] %></p>
+  <% elsif line[:text] %>
+    <p><strong><%= line[:label] %></strong> <%= line[:text] %></p>
+  <% else %>
+    <p><strong><%= line[:label] %></strong> <%= line[:before] %> → <%= line[:after] %><%= ". #{line[:suffix]}" if line[:suffix] %></p>
+  <% end %>
+<% end %>
+<p><a href="<%= @action_url %>" class="button"><%= @action_label %></a></p>
+<p><%= t("account_mailer.signature") %></p>
