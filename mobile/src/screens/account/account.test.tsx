@@ -103,7 +103,7 @@ describe('A1 My account', () => {
       notVerified,
       'Non vérifiée',
       'Vérifie ton identité pour organiser des sorties',
-      "Pour participer à une sortie, ce n'est jamais nécessaire. Environ 3 minutes. Ta vérification est faite sous 48 heures.",
+      "Pour participer à une sortie, ce n'est jamais nécessaire. Environ 3 minutes. Notre équipe vérifie tes documents sous 48 heures.",
     ],
     [
       'pending',

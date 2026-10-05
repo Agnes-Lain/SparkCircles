@@ -181,7 +181,7 @@
   },
   "verificationCard": {
     "notVerifiedTitle": "Verify your identity to host events",
-    "notVerifiedBody": "Joining events never needs it. About 3 minutes, reviewed within 48 hours.",
+    "notVerifiedBody": "Joining events never needs it. About 3 minutes. Our team reviews your documents within 48 hours.",
     "pendingTitle": "We're checking your identity",
     "pendingBody": "Usually within 48 hours. We'll let you know.",
     "pendingCaption": "Sent on {{date}}",
@@ -292,7 +292,7 @@
       "needTitle": "What you'll need",
       "needDocument": "A valid passport, ID card, driving licence or residence permit",
       "needSelfie": "A selfie, taken now",
-      "needTime": "About 3 minutes, reviewed within 48 hours.",
+      "needTime": "About 3 minutes. Our team reviews your documents within 48 hours.",
       "privacy": "Your photos are only seen by our team and erased within 30 days of the decision.",
       "start": "Verify my identity",
       "notNow": "Not now",
@@ -382,7 +382,7 @@
       "retakeA11y": "Retake: {{photo}}",
       "send": "Send for review",
       "sending": "Sending your photos securely…",
-      "failedTitle": "Your photos didn't send",
+      "failedTitle": "Your photos weren't sent",
       "failedCaption": "Check your connection and try again.",
       "photoRejected": "Take this photo again.",
       "photosRejectedCaption": "Take the marked photos again, then send them.",
@@ -411,7 +411,7 @@
       "verifyAgain": "Verify again",
       "seeDetails": "See details",
       "renewalPending": "Renewal pending",
-      "renewalBody": "You stay verified while our team checks your new documents. Usually within 48 hours.",
+      "renewalBody": "You stay verified while our team checks your new document. Usually within 48 hours.",
       "renewalReviewCaption": "You can keep hosting events meanwhile",
       "renewalKept": "You stay verified until {{date}}."
     }

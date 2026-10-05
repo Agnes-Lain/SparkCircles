@@ -181,7 +181,7 @@
   },
   "verificationCard": {
     "notVerifiedTitle": "Vérifie ton identité pour organiser des sorties",
-    "notVerifiedBody": "Pour participer à une sortie, ce n'est jamais nécessaire. Environ 3 minutes. Ta vérification est faite sous 48 heures.",
+    "notVerifiedBody": "Pour participer à une sortie, ce n'est jamais nécessaire. Environ 3 minutes. Notre équipe vérifie tes documents sous 48 heures.",
     "pendingTitle": "Nous vérifions ton identité",
     "pendingBody": "En général sous 48 heures. Nous te préviendrons.",
     "pendingCaption": "Envoyée le {{date}}",
@@ -292,7 +292,7 @@
       "needTitle": "Ce qu'il te faut",
       "needDocument": "Un passeport, une carte d'identité, un permis de conduire ou un titre de séjour en cours de validité",
       "needSelfie": "Un selfie, pris maintenant",
-      "needTime": "Environ 3 minutes. Ta vérification est faite sous 48 heures.",
+      "needTime": "Environ 3 minutes. Notre équipe vérifie tes documents sous 48 heures.",
       "privacy": "Tes photos ne sont vues que par notre équipe et sont effacées dans les 30 jours qui suivent la décision.",
       "start": "Vérifier mon identité",
       "notNow": "Pas maintenant",
@@ -357,7 +357,7 @@
       "taken": "Photo prise.",
       "use": "Utiliser cette photo",
       "retake": "La reprendre",
-      "cameraDenied": "SparkCircles a besoin de ton appareil photo pour prendre la photo",
+      "cameraDenied": "SparkCircles a besoin d'accéder à ton appareil photo",
       "openSettings": "Ouvrir les réglages",
       "failedTitle": "La photo n'a pas fonctionné",
       "failedCaption": "Réessaie, ou choisis-en une dans tes photos."
@@ -382,7 +382,7 @@
       "retakeA11y": "Reprendre : {{photo}}",
       "send": "Envoyer pour vérification",
       "sending": "Envoi sécurisé de tes photos…",
-      "failedTitle": "Tes photos ne sont pas parties",
+      "failedTitle": "Tes photos n'ont pas été envoyées",
       "failedCaption": "Vérifie ta connexion et réessaie.",
       "photoRejected": "Reprends cette photo.",
       "photosRejectedCaption": "Reprends les photos indiquées, puis envoie-les.",
@@ -411,7 +411,7 @@
       "verifyAgain": "Vérifier à nouveau",
       "seeDetails": "Voir le détail",
       "renewalPending": "Renouvellement en attente",
-      "renewalBody": "Ton identité reste vérifiée pendant que notre équipe contrôle tes nouveaux documents. En général sous 48 heures.",
+      "renewalBody": "Ton identité reste vérifiée pendant que notre équipe contrôle ton nouveau document. En général sous 48 heures.",
       "renewalReviewCaption": "Tu peux continuer à organiser des sorties en attendant",
       "renewalKept": "Ton identité reste vérifiée jusqu'au {{date}}."
     }

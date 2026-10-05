@@ -351,7 +351,7 @@ describe('V2 / V3 capture', () => {
     await open('/verify/document');
     await press(screen.getByText('Passeport'));
     expect(
-      await screen.findByText('SparkCircles a besoin de ton appareil photo pour prendre la photo'),
+      await screen.findByText("SparkCircles a besoin d'accéder à ton appareil photo"),
     ).toBeOnTheScreen();
     expect(screen.queryByTestId('camera')).toBeNull();
     expect(screen.getByLabelText('Prendre la photo')).toBeDisabled();
@@ -456,7 +456,7 @@ describe('V4 Date of birth and check', () => {
     await fillDateOfBirth('14', '05', '1990');
     const kept = mockDeleted.length;
     await press(screen.getByText('Envoyer pour vérification'));
-    expect(await screen.findByText('Tes photos ne sont pas parties')).toBeOnTheScreen();
+    expect(await screen.findByText("Tes photos n'ont pas été envoyées")).toBeOnTheScreen();
     expect(screen.getByText('Vérifie ta connexion et réessaie.')).toBeOnTheScreen();
     expect(mockDeleted).toHaveLength(kept);
 
