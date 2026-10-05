@@ -5,10 +5,15 @@ module Dev
   # http links from any viewer. The route is only drawn in development (config/routes.rb).
   class OpenAppController < ActionController::Base
     # The routes the app opens from an email link (mobile/src/auth/gate.ts, LINK_ROUTES).
-    # The email-change confirmation uses confirm-email too.
-    PATHS = %w[confirm-email reset-password this-wasnt-me forgot-password my-data].freeze
+    # The email-change confirmation uses confirm-email too. Event emails open events/<id>,
+    # events, my-events and verification.
+    PATHS = %w[confirm-email reset-password this-wasnt-me forgot-password my-data events my-events verification].freeze
+    # Paths with an id: only a UUID is accepted after the prefix.
+    PATH_PATTERNS = [ %r{\Aevents/\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z} ].freeze
 
-    before_action { head :not_found unless Rails.env.development? && PATHS.include?(params[:path]) }
+    def self.allowed?(path) = PATHS.include?(path) || PATH_PATTERNS.any? { |pattern| pattern.match?(path.to_s) }
+
+    before_action { head :not_found unless Rails.env.development? && self.class.allowed?(params[:path]) }
 
     def show
       # The query holds a one-time token: keep it out of caches and Referer headers.

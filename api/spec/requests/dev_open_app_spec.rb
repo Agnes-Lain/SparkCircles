@@ -30,7 +30,8 @@ RSpec.describe "Development app link redirect (/dev/open-app)", type: :request d
 
     before { allow(Rails.env).to receive(:development?).and_return(true) }
 
-    %w[confirm-email reset-password this-wasnt-me forgot-password my-data].each do |path|
+    (%w[confirm-email reset-password this-wasnt-me forgot-password my-data events my-events verification] +
+      [ "events/5b0c2a4e-1f3d-4c8a-9b7e-0d2f6a1c3e5b" ]).each do |path|
       it "sends /#{path} to the same route in Expo Go, keeping the query" do
         get "/dev/open-app/#{path}?token=abc-123_XYZ&lang=fr"
 
@@ -66,7 +67,8 @@ RSpec.describe "Development app link redirect (/dev/open-app)", type: :request d
     end
 
     it "returns 404 for a path the app doesn't open from a link" do
-      [ "welcome", "confirm-email/extra", "admin", "https:/evil.example", "confirm-email.json" ].each do |path|
+      [ "welcome", "confirm-email/extra", "admin", "https:/evil.example", "confirm-email.json", "events/1",
+        "events/5b0c2a4e-1f3d-4c8a-9b7e-0d2f6a1c3e5b/extra", "my-events/x" ].each do |path|
         get "/dev/open-app/#{path}?token=abc"
 
         expect(response).to have_http_status(:not_found), "expected 404 for #{path}"
