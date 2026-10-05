@@ -5,5 +5,7 @@
 # See the ActiveSupport::ParameterFilter documentation for supported notations and behaviors.
 Rails.application.config.filter_parameters += [
   :passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn, :cvv, :cvc,
-  :last_name, :birth, :phone, :address, :neighborhood, :city, :ip_address, :document, :selfie, :note
+  :last_name, :birth, :phone, :address, :neighborhood, :city, :ip_address, :document, :selfie, :note,
+  # Event search terms are never logged next to a network address (AC-15.13).
+  /\Aq\z/, :tag
 ]
