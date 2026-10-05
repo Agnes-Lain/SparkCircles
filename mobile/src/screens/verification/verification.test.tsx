@@ -199,10 +199,22 @@ describe('A1 verification card buttons (M-1)', () => {
     },
   );
 
-  it('verified: only "What this means", no verify button', async () => {
+  it('QA-V1 AC-7.15 verified, more than 30 days left: no renewal entry, only "What this means"', async () => {
     await open('/account', meFixture.verification);
     expect(screen.queryByTestId('verification-action')).toBeNull();
+    expect(screen.queryByText('Vérifier à nouveau')).toBeNull();
     expect(screen.getByText('Ce que cela signifie')).toBeOnTheScreen();
+  });
+
+  it('QA-V1 AC-7.15 expires soon: "Vérifier à nouveau" leads into the renewal flow', async () => {
+    await open('/account', {
+      ...meFixture.verification,
+      expires_on: '2026-11-01',
+      expires_soon: true,
+    });
+    await press(screen.getByRole('button', { name: 'Vérifier à nouveau' }));
+    await press(await screen.findByRole('button', { name: 'Vérifier mon identité' }));
+    expect(await screen.findByText('Quel document as-tu ?')).toBeOnTheScreen();
   });
 
   it('AC-7.15 a renewal under review shows "Renouvellement en attente" and "Voir le détail"', async () => {
@@ -554,6 +566,13 @@ describe('V5 Verification status', () => {
     expect(screen.getByText(rejected.rejection!.message)).toBeOnTheScreen();
     await press(screen.getByRole('button', { name: 'Réessayer' }));
     expect(await screen.findByText('Quel document as-tu ?')).toBeOnTheScreen();
+  });
+
+  it('QA-V1 AC-7.15 verified, more than 30 days left: no renewal entry on V5', async () => {
+    await open('/verify/status', meFixture.verification);
+    expect(await screen.findByTestId('status-verified')).toBeOnTheScreen();
+    expect(screen.queryByText('Vérifier à nouveau')).toBeNull();
+    expect(screen.queryByTestId('status-action')).toBeNull();
   });
 
   it('AC-7.13 expired: "Vérifier à nouveau"', async () => {
