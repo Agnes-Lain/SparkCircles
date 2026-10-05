@@ -142,6 +142,11 @@ module Events
       batch.destroy!
     end
 
+    # E4 for a back-office suspension (participants only, same window and quiet hours).
+    def event_suspended_by_admin(event)
+      host_status_changed(event.host, [ event ], "on_hold") if event.host
+    end
+
     # Only the changes participants are told about: title, time, place; a places change
     # only with another change (PM decision: their own spot is never affected).
     def changes?(before, after)
@@ -175,7 +180,8 @@ module Events
         mail = state == :on_hold ? EventMailer.event_on_hold(user, list) : EventMailer.event_resumed(user, list)
         mail.deliver_later
       end
-      return unless host && notifiable_host?(host)
+      events = events.reject { |event| event.suspension_reason == "admin" } if state == :on_hold
+      return unless host && notifiable_host?(host) && events.any?
 
       mail = state == :on_hold ? EventMailer.events_on_hold_host(host, events) : EventMailer.events_resumed_host(host, events)
       mail.deliver_later

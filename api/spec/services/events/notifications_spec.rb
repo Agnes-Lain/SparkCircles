@@ -185,6 +185,33 @@ RSpec.describe Events::Notifications do
       expect(mails_to(host).sole.subject).to eq("Tes sorties reprennent")
     end
 
+    it "a back-office suspension sends E4 to participants only, no reason, after the 1-minute window" do
+      Admin::EventActions.new(admin: create(:user, :admin)).suspend!(event)
+      run_until(paris("10:15") + 30.seconds)
+      expect(mails).to be_empty
+      run_until(paris("10:17"))
+      expect(mails_to(lea).sole.subject).to eq("« Football au parc » est en pause")
+      expect(mails_to(host)).to be_empty
+      expect(all_bodies).not_to include("signal", "admin", "Camille")
+    end
+
+    it "a back-office suspension merges with a verification hold; only the host-verification events reach the host" do
+      Admin::EventActions.new(admin: create(:user, :admin)).suspend!(event)
+      host.update!(verification_status: "expired")
+      run_until(paris("10:17"))
+      expect(mails_to(lea).sole.subject).to eq("« Football au parc » et « Atelier peinture » sont en pause")
+      expect(mails_to(host).sole.text_part.body.to_s).to include("ta sortie à venir est en pause")
+    end
+
+    it "a back-office suspension of an event already on hold sends nothing more" do
+      host.update!(verification_status: "expired")
+      run_until(paris("10:17"))
+      mails.clear
+      Admin::EventActions.new(admin: create(:user, :admin)).suspend!(event.reload)
+      run_until(paris("10:30"))
+      expect(mails).to be_empty
+    end
+
     it "AC-8.3 an event that starts while on hold is cancelled with the neutral email" do
       host.update!(verification_status: "expired")
       run_until(paris("10:17"))
@@ -233,6 +260,18 @@ RSpec.describe Events::Notifications do
       expect(mails.map(&:subject)).to eq([ "« Demain ! » a changé" ])
       run_until(paris("08:00") + 1.day)
       expect(mails.map(&:subject)).to include("« Football au parc ! » a changé")
+    end
+
+    it "holds a back-office suspension email until 08:00" do
+      join(lea)
+      run_until(paris("10:15"))
+      mails.clear
+      travel_to(paris("23:00"))
+      Admin::EventActions.new(admin: create(:user, :admin)).suspend!(event)
+      run_until(paris("07:00") + 1.day)
+      expect(mails).to be_empty
+      run_until(paris("08:00") + 1.day)
+      expect(mails.map(&:to).flatten).to eq([ lea.email ])
     end
 
     it "holds hold-and-resume emails until 08:00" do
