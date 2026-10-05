@@ -14,9 +14,19 @@ RSpec.describe "Events and the user's data" do
   end
 
   it "AC-12.1 BUG-7 includes the user's hosted events, participations and reports in the data copy" do
-    pending "BUG-7: Accounts::DataExportBuilder has no events, participations or reports"
     data = Accounts::DataExportBuilder.new(host).as_json
     expect(JSON.generate(data)).to include("Football au parc", "12 rue Oberkampf")
+  end
+
+  it "AC-12.1 lists hosted events with their address, participations with places, and reports sent" do
+    data = Accounts::DataExportBuilder.new(host).as_json
+    expect(data[:hosted_events].sole).to include(id: hosted.id, exact_address: "12 rue Oberkampf, 75011 Paris",
+                                                 places_total: hosted.places_total, places_taken: 2, status: "published")
+    expect(data[:event_participations].sole).to include(event_id: joined.id, event_title: joined.title, adults: 1, children: 2,
+                                                        places: 3, event_starts_at: joined.starts_at.utc.iso8601)
+    expect(data[:event_reports].sole).to include(event_id: joined.id, reason: "other", details: "texte libre")
+    # Other people's data stays out of this user's copy.
+    expect(JSON.generate(data[:hosted_events])).not_to include("participants")
   end
 
   it "AC-8.5 closing cancels hosted events and frees the places the user held elsewhere" do
@@ -32,6 +42,6 @@ RSpec.describe "Events and the user's data" do
     expect(Event.where(id: hosted.id)).to be_empty
     expect(EventParticipation.where(event_id: hosted.id)).to be_empty
     expect(EventParticipation.where(event_id: joined.id).sum(:places)).to eq(joined.reload.places_taken)
-    expect(EventReport.where(event_id: joined.id).pluck(:reporter_id)).to eq([ nil ])
+    expect(EventReport.where(event_id: joined.id).pluck(:reporter_id, :details)).to eq([ [ nil, nil ] ])
   end
 end

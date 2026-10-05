@@ -66,7 +66,8 @@ RSpec.describe "Events QA", type: :request do
 
     it "does not log the search text, and logs a keyed hash only" do
       filtered = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters).filter("q" => "claire", "tag" => "foot", "area" => "paris-11")
-      expect(filtered).to eq("q" => "[FILTERED]", "tag" => "[FILTERED]", "area" => "paris-11")
+      # BUG-8: the search filters are hidden too.
+      expect(filtered).to eq("q" => "[FILTERED]", "tag" => "[FILTERED]", "area" => "[FILTERED]")
     end
   end
 
@@ -81,7 +82,6 @@ RSpec.describe "Events QA", type: :request do
     end
 
     it "BUG-1 refuses a phone number written with fullwidth or Arabic-Indic digits" do
-      pending "BUG-1: tag filters only look at ASCII, no NFKC normalisation"
       [ "０６１２３４５６７８", "٠٦١٢٣٤٥٦٧٨" ].each do |tag|
         create_with_tags([ tag ])
         expect(response).to have_http_status(:unprocessable_content), "#{tag} was accepted"
@@ -89,7 +89,6 @@ RSpec.describe "Events QA", type: :request do
     end
 
     it "BUG-1 refuses a banned word written with a Cyrillic letter or fullwidth letters" do
-      pending "BUG-1: banned words are matched on the raw characters"
       [ "sеx", "ｓｅｘ" ].each do |tag|
         create_with_tags([ tag ])
         expect(response).to have_http_status(:unprocessable_content), "#{tag} was accepted"
@@ -99,14 +98,12 @@ RSpec.describe "Events QA", type: :request do
 
   describe "malformed parameters never crash the API" do
     it "BUG-2 answers a JSON 4xx for page[]=1 and radius_km[]=1 (search)" do
-      pending "BUG-2: Array#to_i / Array#to_f raise NoMethodError (500)"
       [ "page[]=1", "page[a]=1", "radius_km[]=1" ].each do |query|
         expect { get "/api/v1/events?area=paris-11&#{query}", headers: guest_headers }.not_to raise_error
       end
     end
 
     it "BUG-3 answers a 4xx for an absurdly large page number from a member" do
-      pending "BUG-3: PG::NumericValueOutOfRange becomes a 500 (members have no page cap)"
       expect { get "/api/v1/events", params: { page: "99999999999999999999" }, headers: auth_headers(member) }.not_to raise_error
       expect(response.status).to be_between(400, 499)
     end
@@ -114,7 +111,6 @@ RSpec.describe "Events QA", type: :request do
 
   describe "AC-1.2 places" do
     it "BUG-4 refuses a fractional number of places instead of truncating it" do
-      pending "BUG-4: places_total 1.5 is accepted and stored as 1"
       post "/api/v1/events", params: { event: event_body.merge(places_total: 1.5) }, headers: auth_headers(create(:user, :verified)), as: :json
       expect(response).to have_http_status(:unprocessable_content)
     end
@@ -122,7 +118,6 @@ RSpec.describe "Events QA", type: :request do
 
   describe "AC-9.1 report details" do
     it "BUG-5 refuses details that are not a string" do
-      pending "BUG-5: a hash in details is accepted (201) and stored"
       post "/api/v1/events/#{event.id}/reports", params: { reason: "other", details: { a: "b" } }, headers: auth_headers(member)
       expect(response).to have_http_status(:unprocessable_content)
     end
@@ -130,7 +125,6 @@ RSpec.describe "Events QA", type: :request do
 
   describe "AC-5.8 the host lowering the places while parents join" do
     it "BUG-6 answers 422 below_taken, not a database error, when the check races a join" do
-      pending "BUG-6: PATCH places_total is not under the event row lock; the DB check fires as a 500"
       target = create(:event, host: host, places_total: 10)
       allow_any_instance_of(Event).to receive(:places_taken).and_return(0)
       Event.where(id: target.id).update_all(places_taken: 6)
