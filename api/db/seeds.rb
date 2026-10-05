@@ -34,8 +34,13 @@ end
 admin = seed_user("admin@sparkcircles.localhost", password: password, created: created, first_name: "Agnes", last_name: "Admin")
 admin.roles.find_or_create_by!(name: "admin")
 
-seed_user("verified@sparkcircles.localhost", password: password, created: created, first_name: "Claire", last_name: "Martin",
-          verification_status: "verified", verification_expires_on: 2.years.from_now.to_date, city_shown: "Croix-Rousse, Lyon")
+claire = seed_user("verified@sparkcircles.localhost", password: password, created: created, first_name: "Claire", last_name: "Martin",
+                   verification_status: "verified", verification_expires_on: 2.years.from_now.to_date, city_shown: "Croix-Rousse, Lyon")
+
+# A second verified parent, in Paris, so each one can join the other's events.
+karim = seed_user("verified-paris@sparkcircles.localhost", password: password, created: created, first_name: "Karim",
+                  last_name: "Benali", verification_status: "verified", verification_expires_on: 2.years.from_now.to_date,
+                  city_shown: "Paris 11e")
 
 pending = seed_user("pending@sparkcircles.localhost", password: password, created: created, first_name: "Thomas", last_name: "Renard",
                     verification_status: "pending", date_of_birth: Date.new(1988, 3, 14))
@@ -47,9 +52,37 @@ unless pending.verifications.exists?
   verification.save!
 end
 
-puts "Seeded: admin@, verified@ and pending@sparkcircles.localhost."
+# Events v1 cold start (spec events, section 7, PM approved): published events from the seed
+# verified accounts. Found again by host and title, so re-seeding never duplicates them; an
+# event that has ended is moved to the coming days.
+paris = ActiveSupport::TimeZone["Europe/Paris"]
+[
+  [ karim, "Foot au parc de Belleville", "sport", "paris-20", "Parc de Belleville, entrée rue Piat", 2, 10, 2, "anyone", %w[foot plein-air], 6, 10,
+    "Petit match détendu pour les 6-10 ans. Ballon fourni, prévoir de l'eau." ],
+  [ karim, "Goûter jeux de société", "board_games", "paris-11", "Café ludique, rue Oberkampf", 4, 16, 2, "verified_only", %w[jeux goûter], 5, 9,
+    "On apporte nos jeux préférés et un goûter à partager." ],
+  [ claire, "Atelier peinture en plein air", "crafts", "paris-12", "Jardin de Reuilly, près du kiosque", 6, 10, 2, "anyone", %w[peinture dessin], 4, 8,
+    "Chevalets et peintures fournis, tabliers bienvenus." ],
+  [ claire, "Heure du conte", "books", "paris-05", "Square Paul-Langevin", 9, 11, 1, "anyone", %w[histoires], 3, 6,
+    "Lecture d'albums sur une couverture, puis échange de livres." ],
+  [ karim, "Éveil musical", "music", "paris-10", "Jardin Villemin, côté canal", 12, 10, 1, "anyone", %w[chant musique], 0, 3,
+    "Comptines et petites percussions pour les tout-petits." ]
+].each do |host, title, category, area, address, in_days, hour, hours, join_rule, tags, age_min, age_max, description|
+  event = Event.find_or_initialize_by(host: host, title: title)
+  next if event.persisted? && !event.ended?
+
+  starts_at = paris.now.to_date.advance(days: in_days).then { |day| paris.local(day.year, day.month, day.day, hour) }
+  event.assign_attributes(category: category, area: area, exact_address: address, places_total: 12, join_rule: join_rule, tags: tags,
+                          age_min: age_min, age_max: age_max, description: description, starts_at: starts_at,
+                          ends_at: starts_at + hours.hours)
+  event.status = "draft" unless event.persisted?
+  event.status == "draft" ? event.publish! : event.update!(status: "published")
+  raise "Seed event #{title} invalid: #{event.errors.full_messages.join(', ')}" unless event.published?
+end
+
+puts "Seeded: admin@, verified@, verified-paris@ and pending@sparkcircles.localhost, and #{Event.listed.count} upcoming events."
 if created.empty?
-  puts "All three accounts already existed: they keep their current password."
+  puts "The accounts already existed: they keep their current password."
 elsif password_generated
   puts "Password of the accounts created now (#{created.join(', ')}), shown only once: #{password}"
   puts "Keep it in your password manager, or re-seed with SEED_PASSWORD=... to choose it."
