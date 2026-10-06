@@ -25,6 +25,7 @@ import { CategoryPill } from '../../components/CategoryPill';
 import { Icon } from '../../components/Icon';
 import { IconButton } from '../../components/IconButton';
 import { IconSquare } from '../../components/IconSquare';
+import { LanguageTag } from '../../components/LanguageTag';
 import { Notification } from '../../components/Notification';
 import { SectionLabel } from '../../components/SettingsList';
 import { Skeleton } from '../../components/Skeleton';
@@ -538,6 +539,7 @@ export function EventDetailScreen() {
                 icon={CATEGORY_ICON[event.category]}
               />
             ) : null}
+            <LanguageTag language={event.language} testID="event-language" />
             {detailBadge ? (
               <View className="flex-row items-center gap-xs">
                 {detailBadge.key === 'onHold' ? (

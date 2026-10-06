@@ -12,6 +12,8 @@ export type JoinRule = 'anyone' | 'verified_only';
 export type ViewerRole = 'guest' | 'member' | 'participant' | 'host';
 export type JoinBlocker =
   'account_required' | 'verification_required' | 'full' | 'closed' | 'host' | 'joined';
+/** AC-16.1 The language the host wrote the event in. */
+export type EventLanguage = 'fr' | 'en';
 export type AgeBand = '0-2' | '3-5' | '6-8' | '9-12' | '13+';
 export type ReportReason =
   'dangerous_place' | 'suspicious_host' | 'inappropriate_content' | 'inappropriate_tag' | 'other';
@@ -47,6 +49,8 @@ export type SparkEvent = {
   title: string | null;
   description: string | null;
   category: CategoryKey | null;
+  /** AC-16.2: every audience; never translated (AC-16.4). */
+  language: EventLanguage;
   tags: string[];
   starts_at: string | null;
   ends_at: string | null;
@@ -108,6 +112,8 @@ export type EventSearch = {
   age_band?: AgeBand;
   tag?: string;
   q?: string;
+  /** AC-16.3: none = every language. */
+  language?: EventLanguage;
 };
 
 /** §3 POST /events and PATCH /events/:id body. */
@@ -124,6 +130,7 @@ export type EventParams = {
   age_max?: number | null;
   tags?: string[];
   join_rule?: JoinRule;
+  language?: EventLanguage;
 };
 
 export type PlacesParams = { adults: number; children: number };
@@ -153,6 +160,7 @@ export function searchQuery(search: EventSearch, page: number): string {
   add('age_band', search.age_band);
   add('tag', search.tag);
   add('q', search.q);
+  add('language', search.language);
   add('page', page);
   return params.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
 }

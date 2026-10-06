@@ -736,6 +736,22 @@
     "noArea": "Pas encore de zone",
     "noPlaces": "Places pas encore indiquées",
     "loading": "Chargement des sorties",
-    "loadingEvent": "Chargement de la sortie"
+    "loadingEvent": "Chargement de la sortie",
+    "language": {
+      "field": "Langue de la sortie",
+      "helper": "Les autres verront ta sortie telle que tu l'écris.",
+      "fr": "Français",
+      "en": "English",
+      "filter": "Langue",
+      "all": "Toutes",
+      "tag": {
+        "fr": "En français",
+        "en": "En anglais"
+      },
+      "a11y": {
+        "fr": "Sortie en français",
+        "en": "Sortie en anglais"
+      }
+    }
   }
 }

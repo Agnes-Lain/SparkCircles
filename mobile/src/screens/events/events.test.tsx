@@ -851,3 +851,81 @@ describe('E5 Create / edit', () => {
     );
   });
 });
+
+describe('Event language (amendment 2026-10-06)', () => {
+  const english: SparkEvent = { ...eventFixture, language: 'en' };
+
+  it('AC-16.1 pre-selects the app language, sends the host choice, shows the helper', async () => {
+    mockEvents.create.mockResolvedValue({ event: { ...hostedEvent, status: 'draft' } });
+    mockEvents.get.mockResolvedValue({ event: { ...hostedEvent, status: 'draft' } });
+    await open('/events/new');
+    expect(await screen.findByText('Langue de la sortie')).toBeOnTheScreen();
+    expect(
+      screen.getByText("Les autres verront ta sortie telle que tu l'écris."),
+    ).toBeOnTheScreen();
+    expect(screen.getByTestId('language-fr')).toBeSelected();
+    await fireEvent.changeText(screen.getByTestId('form-title'), 'Picnic in the park');
+    await fireEvent.press(screen.getByTestId('language-en'));
+    await fireEvent.press(screen.getByTestId('form-draft'));
+    expect(mockEvents.create).toHaveBeenCalledWith(
+      expect.objectContaining({ language: 'en' }),
+      false,
+    );
+  });
+
+  it('AC-16.1 an English app pre-selects English', async () => {
+    await i18n.changeLanguage('en');
+    await open('/events/new');
+    expect(await screen.findByText('Event language')).toBeOnTheScreen();
+    expect(screen.getByTestId('language-en')).toBeSelected();
+  });
+
+  it('AC-16.2 tags an English event « En anglais » on the card and the detail, with a label', async () => {
+    mockEvents.search.mockResolvedValue(eventPage([english]));
+    mockEvents.get.mockResolvedValue({ event: english });
+    await open('/');
+    const tag = await screen.findByTestId(`event-card-language-${english.id}`);
+    expect(tag).toHaveTextContent('En anglais');
+    expect(screen.getByTestId(`event-card-${english.id}`).props.accessibilityLabel).toMatch(
+      /Sortie en anglais/,
+    );
+    await open(`/events/${english.id}`);
+    expect(await screen.findByLabelText('Sortie en anglais')).toBeOnTheScreen();
+  });
+
+  it('AC-16.2 shows nothing when the languages match; "In French" for an English app', async () => {
+    mockEvents.search.mockResolvedValue(eventPage([eventFixture]));
+    await open('/');
+    await screen.findByText('Goûter et jeux au parc');
+    expect(screen.queryByTestId(`event-card-language-${eventFixture.id}`)).toBeNull();
+    await i18n.changeLanguage('en');
+    await open('/');
+    expect(await screen.findByTestId(`event-card-language-${eventFixture.id}`)).toHaveTextContent(
+      'In French',
+    );
+    expect(screen.getByLabelText('Event in French')).toBeOnTheScreen();
+  });
+
+  it('AC-16.3 filters by language from Filtres; "Toutes" is the default', async () => {
+    await open('/');
+    await fireEvent.press(await screen.findByTestId('filters-button'));
+    expect(screen.getByText('Langue')).toBeOnTheScreen();
+    expect(screen.getByTestId('language-all')).toBeSelected();
+    await fireEvent.press(screen.getByTestId('language-en'));
+    await fireEvent.press(screen.getByTestId('filters-apply'));
+    await waitFor(() =>
+      expect(mockEvents.search).toHaveBeenLastCalledWith(
+        expect.objectContaining({ language: 'en' }),
+        1,
+        expect.anything(),
+      ),
+    );
+  });
+
+  it('AC-16.4 shows the title and description as written, untranslated', async () => {
+    mockEvents.get.mockResolvedValue({ event: english });
+    await open(`/events/${english.id}`);
+    expect(await screen.findByText(english.title!)).toBeOnTheScreen();
+    expect(screen.getByText(english.description!)).toBeOnTheScreen();
+  });
+});

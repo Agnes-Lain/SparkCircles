@@ -25,6 +25,7 @@ import { Icon } from '../../components/Icon';
 import { IconButton } from '../../components/IconButton';
 import { Notification } from '../../components/Notification';
 import { RadioRow } from '../../components/RadioRow';
+import { SegmentedControl } from '../../components/SegmentedControl';
 import { DateTimeField } from '../../components/DateTimeField';
 import { TextField } from '../../components/TextField';
 import { useToast } from '../../components/ToastProvider';
@@ -40,7 +41,7 @@ import { EventListSkeleton } from './EventCardSkeleton';
 import { formatCalendarDay } from './format';
 import {
   checkTag,
-  EMPTY_FORM,
+  emptyForm,
   type Field,
   FIELD_ORDER,
   type FormErrors,
@@ -143,7 +144,12 @@ function EventForm({ event }: { event?: SparkEvent }) {
   const published = Boolean(event && event.status !== 'draft');
   const placesTaken = event?.places.taken ?? 0;
 
-  const initial = useMemo(() => (event ? formFromEvent(event) : EMPTY_FORM), [event]);
+  // AC-16.1: a new event's language starts as the app language.
+  const [appLanguage] = useState(locale);
+  const initial = useMemo(
+    () => (event ? formFromEvent(event) : emptyForm(appLanguage)),
+    [event, appLanguage],
+  );
   const [values, setValues] = useState<FormValues>(initial);
   // `?check=1`: opened from a refused publish, the missing fields show at once (BUG-8).
   const [errors, setErrors] = useState<FormErrors>(() =>
@@ -555,6 +561,22 @@ function EventForm({ event }: { event?: SparkEvent }) {
         <Text className="text-caption text-ink-3">
           {published ? t('events.form.readOnly') : t('events.form.joinRuleHelper')}
         </Text>
+      </View>
+
+      {/* AC-16.1: the event's language, one choice; never translated (AC-16.4). */}
+      <View className="gap-xs" testID="form-language">
+        <Text className="text-body text-ink-2">{t('events.language.field')}</Text>
+        <SegmentedControl
+          accessibilityLabel={t('events.language.field')}
+          segments={[
+            { key: 'fr', label: t('events.language.fr') },
+            { key: 'en', label: t('events.language.en') },
+          ]}
+          value={values.language}
+          onChange={(language) => set('language', language)}
+          testIDPrefix="language"
+        />
+        <Text className="text-caption text-ink-3">{t('events.language.helper')}</Text>
       </View>
 
       <View className="h-[0.5px] bg-border-soft" />

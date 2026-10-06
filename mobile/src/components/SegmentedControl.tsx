@@ -14,14 +14,20 @@ export function SegmentedControl<K extends string>({
   segments,
   value,
   onChange,
+  accessibilityLabel,
+  testIDPrefix = 'segment',
 }: {
   segments: Segment<K>[];
   value: K;
   onChange: (key: K) => void;
+  /** Names the group for screen readers (e.g. a form field's label). */
+  accessibilityLabel?: string;
+  testIDPrefix?: string;
 }) {
   return (
     <View
       accessibilityRole="tablist"
+      accessibilityLabel={accessibilityLabel}
       className="flex-row rounded-lg border-[0.5px] border-border-soft bg-surface p-xs"
       style={{ boxShadow: shadows.card }}
     >
@@ -30,7 +36,7 @@ export function SegmentedControl<K extends string>({
         return (
           <Pressable
             key={segment.key}
-            testID={`segment-${segment.key}`}
+            testID={`${testIDPrefix}-${segment.key}`}
             accessibilityRole="tab"
             accessibilityLabel={segment.label}
             accessibilityState={{ selected: active }}

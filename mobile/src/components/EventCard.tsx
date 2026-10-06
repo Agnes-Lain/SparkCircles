@@ -19,6 +19,7 @@ import { Avatar } from './Avatar';
 import { Badge } from './Badge';
 import { CategoryPill } from './CategoryPill';
 import { Icon } from './Icon';
+import { LanguageTag } from './LanguageTag';
 
 /** Room kept at the top right for the future wishlist heart (backlog #24). */
 const HEART_SLOT = 44;
@@ -66,6 +67,10 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
       host: hostName ?? '',
     }) + (showBadge ? t('events.card.verifiedSuffix') : ''),
     category,
+    // AC-16.2: the card is read as one element, so its label carries the language tag too.
+    event.language && event.language !== locale
+      ? t(`events.language.a11y.${event.language}`)
+      : null,
     status?.label,
   ]
     .filter(Boolean)
@@ -111,6 +116,7 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
               icon={CATEGORY_ICON[event.category]}
             />
           ) : null}
+          <LanguageTag language={event.language} testID={`event-card-language-${event.id}`} />
           {event.tags.map((tag) => (
             <View key={tag} className="rounded-pill bg-shell px-2.5 py-1">
               <Text className="text-[11px] font-medium text-ink-2">#{tag}</Text>

@@ -736,6 +736,22 @@
     "noArea": "No area yet",
     "noPlaces": "Places not set yet",
     "loading": "Loading events",
-    "loadingEvent": "Loading the event"
+    "loadingEvent": "Loading the event",
+    "language": {
+      "field": "Event language",
+      "helper": "Others will see your event exactly as you write it.",
+      "fr": "Français",
+      "en": "English",
+      "filter": "Language",
+      "all": "All",
+      "tag": {
+        "fr": "In French",
+        "en": "In English"
+      },
+      "a11y": {
+        "fr": "Event in French",
+        "en": "Event in English"
+      }
+    }
   }
 }

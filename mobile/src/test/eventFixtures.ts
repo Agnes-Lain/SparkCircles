@@ -9,6 +9,7 @@ export const eventFixture: SparkEvent = {
   title: 'Goûter et jeux au parc',
   description: 'Apporte un goûter à partager.',
   category: 'playdates',
+  language: 'fr',
   tags: ['parc', 'goûter'],
   starts_at: '2026-10-10T13:00:00Z',
   ends_at: '2026-10-10T15:00:00Z',

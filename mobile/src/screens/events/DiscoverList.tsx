@@ -12,7 +12,7 @@ import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
 
-import type { AgeBand, EventSearch, SparkEvent } from '../../api/events';
+import type { AgeBand, EventLanguage, EventSearch, SparkEvent } from '../../api/events';
 import { Button } from '../../components/Button';
 import type { CategoryKey } from '../../components/CategoryPill';
 import { CategoryIcon } from '../../components/CategoryPill';
@@ -111,6 +111,7 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
   const [dateSheet, setDateSheet] = useState(false);
   const [ageBand, setAgeBand] = useState<AgeBand | null>(null);
   const [filterTag, setFilterTag] = useState('');
+  const [language, setLanguage] = useState<EventLanguage | null>(null);
   const [filtersSheet, setFiltersSheetState] = useState(false);
   const setFiltersSheet = (open: boolean) => {
     if (open) setSheetKey((k) => k + 1);
@@ -153,8 +154,9 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
       age_band: ageBand ?? undefined,
       tag: typed.tag ?? (filterTag || undefined),
       q: typed.q,
+      language: language ?? undefined,
     };
-  }, [areas, radius, categories, dateFilter, today, ageBand, filterTag, debounced]);
+  }, [areas, radius, categories, dateFilter, today, ageBand, filterTag, language, debounced]);
 
   const query = useEventSearch(search, areaLoaded);
   const events = useMemo(
@@ -181,7 +183,8 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
     (dateFilter ? 1 : 0) +
     (distance > 0 ? 1 : 0) +
     (ageBand ? 1 : 0) +
-    (filterTag ? 1 : 0);
+    (filterTag ? 1 : 0) +
+    (language ? 1 : 0);
   const filtering =
     activeCount > 0 || Boolean(textSearch(debounced).q || textSearch(debounced).tag);
 
@@ -207,6 +210,7 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
     setDateFilter(null);
     setAgeBand(null);
     setFilterTag('');
+    setLanguage(null);
     setText('');
     setDebounced('');
     changeRadius(0);
@@ -384,7 +388,7 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
         <FilterChip
           label={t('events.filters.button')}
           icon={SlidersHorizontal}
-          selected={distance > 0 || Boolean(ageBand) || Boolean(filterTag)}
+          selected={distance > 0 || Boolean(ageBand) || Boolean(filterTag) || Boolean(language)}
           onPress={() => setFiltersSheet(true)}
           testID="filters-button"
         />
@@ -491,12 +495,13 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
       <FiltersSheet
         key={`filters-${sheetKey}`}
         visible={filtersSheet}
-        value={{ radius: distance, ageBand, tag: filterTag }}
+        value={{ radius: distance, ageBand, tag: filterTag, language }}
         withDistance={areas.length > 0}
         onApply={(filters: SheetFilters) => {
           changeRadius(filters.radius);
           setAgeBand(filters.ageBand);
           setFilterTag(filters.tag);
+          setLanguage(filters.language);
           setFiltersSheet(false);
         }}
         onClose={() => setFiltersSheet(false)}

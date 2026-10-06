@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
-import type { AgeBand } from '../../api/events';
+import type { AgeBand, EventLanguage } from '../../api/events';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { FilterChip } from '../../components/FilterChip';
@@ -17,14 +17,21 @@ import { TextLink } from '../../components/TextLink';
 export const RADIUS_CHOICES = [2, 5, 10] as const;
 const AGE_BANDS: AgeBand[] = ['0-2', '3-5', '6-8', '9-12', '13+'];
 
-export type SheetFilters = { radius: number; ageBand: AgeBand | null; tag: string };
+export type SheetFilters = {
+  radius: number;
+  ageBand: AgeBand | null;
+  tag: string;
+  /** AC-16.3: null = every language ("Toutes", the default). */
+  language: EventLanguage | null;
+};
+const LANGUAGES: EventLanguage[] = ['fr', 'en'];
 
 /** "#Foot " → "foot" (the API normalises the same way). */
 export function normaliseTag(text: string): string {
   return text.trim().replace(/^#+/, '').toLowerCase();
 }
 
-/** E1d Filters (AC-3.2): distance, child age, tag. Applied with the Primary. The distance
+/** E1d Filters (AC-3.2): distance, child age, tag, language (AC-16.3). Applied with the Primary. The distance
  *  is offered only from chosen arrondissements ("Tout Paris" has no centre). */
 export function FiltersSheet({
   visible,
@@ -78,6 +85,32 @@ export function FiltersSheet({
           ))}
         </View>
       </View>
+      <View className="gap-sm">
+        <SectionLabel>{t('events.language.filter')}</SectionLabel>
+        <View
+          className="flex-row flex-wrap gap-sm"
+          accessibilityLabel={t('events.language.filter')}
+          testID="language-filter"
+        >
+          <FilterChip
+            label={t('events.language.all')}
+            selected={draft.language === null}
+            onPress={() => setDraft((d) => ({ ...d, language: null }))}
+            testID="language-all"
+          />
+          {LANGUAGES.map((language) => (
+            <FilterChip
+              key={language}
+              label={t(`events.language.${language}`)}
+              selected={draft.language === language}
+              onPress={() =>
+                setDraft((d) => ({ ...d, language: d.language === language ? null : language }))
+              }
+              testID={`language-${language}`}
+            />
+          ))}
+        </View>
+      </View>
       <TextField
         label={t('events.filters.tag')}
         value={draft.tag}
@@ -97,7 +130,7 @@ export function FiltersSheet({
         <TextLink
           quiet
           label={t('events.filters.clearAll')}
-          onPress={() => setDraft({ radius: 0, ageBand: null, tag: '' })}
+          onPress={() => setDraft({ radius: 0, ageBand: null, tag: '', language: null })}
         />
       </View>
     </BottomSheet>

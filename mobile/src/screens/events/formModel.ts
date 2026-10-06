@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 
-import type { EventParams, JoinRule, SparkEvent } from '../../api/events';
+import type { EventLanguage, EventParams, JoinRule, SparkEvent } from '../../api/events';
 import type { FieldErrorKey } from '../../api/types';
 import type { CategoryKey } from '../../components/CategoryPill';
 import { zonedDate, zonedParts, zonedToUtc } from './format';
@@ -29,6 +29,8 @@ export type FormValues = {
   address: string;
   places: string;
   joinRule: JoinRule;
+  /** AC-16.1: pre-selected from the app language. */
+  language: EventLanguage;
   description: string;
   ageMin: string;
   ageMax: string;
@@ -76,11 +78,17 @@ export const EMPTY_FORM: FormValues = {
   address: '',
   places: '',
   joinRule: 'anyone',
+  language: 'fr',
   description: '',
   ageMin: '',
   ageMax: '',
   tags: [],
 };
+
+/** A new event's form, its language pre-selected from the app language (AC-16.1). */
+export function emptyForm(language: EventLanguage): FormValues {
+  return { ...EMPTY_FORM, language };
+}
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -102,6 +110,7 @@ export function formFromEvent(event: SparkEvent): FormValues {
     address: event.exact_address ?? '',
     places: event.places.total === null ? '' : String(event.places.total),
     joinRule: event.join_rule,
+    language: event.language ?? 'fr',
     description: event.description ?? '',
     ageMin: event.age_min === null ? '' : String(event.age_min),
     ageMax: event.age_max === null ? '' : String(event.age_max),
@@ -232,6 +241,7 @@ export function toParams(values: FormValues, { includeRule }: { includeRule: boo
     age_min: values.ageMin.trim() ? Number(values.ageMin) : null,
     age_max: values.ageMax.trim() ? Number(values.ageMax) : null,
     tags: values.tags,
+    language: values.language,
   };
   if (includeRule) {
     params.category = values.category;
