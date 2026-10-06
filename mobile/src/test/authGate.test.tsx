@@ -44,8 +44,10 @@ describe('auth gate (M-9)', () => {
 
     const { app } = await openApp({ token: 'jwt' });
 
-    expect(await screen.findByRole('header', { name: 'Accueil' })).toBeOnTheScreen();
+    // v1.7: the app opens on Sorties (Events).
+    expect(await screen.findByRole('header', { name: 'Sorties' })).toBeOnTheScreen();
     expect(screen.getAllByRole('tab')).toHaveLength(5);
+    expect(screen.getByRole('tab', { name: 'Sorties' })).toBeSelected();
     expect(app.getPathname()).toBe('/');
   });
 
@@ -109,15 +111,15 @@ describe('auth gate (M-9)', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'Réessayer' }));
 
-    expect(await screen.findByRole('header', { name: 'Accueil' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Sorties' })).toBeOnTheScreen();
   });
 
-  it('AC-2.1 opens the confirmation link logged in on Home, with the checkmark and the toast', async () => {
+  it('AC-2.1 opens the confirmation link logged in on My space, with the checkmark and the toast', async () => {
     mockAuth.confirmEmail.mockResolvedValue({ token: 'new-jwt', user: meFixture });
 
     const { app } = await openApp({ token: null, url: '/confirm-email?token=abc123' });
 
-    expect(await screen.findByRole('header', { name: 'Accueil' })).toBeOnTheScreen();
+    expect(await screen.findByRole('header', { name: 'Mon espace' })).toBeOnTheScreen();
     expect(mockAuth.confirmEmail).toHaveBeenCalledWith('abc123', expect.anything());
     expect(screen.getByText('E-mail confirmé. Bienvenue sur SparkCircles !')).toBeOnTheScreen();
     // Decorative (hidden from screen readers): the toast says what happened.
@@ -138,10 +140,10 @@ describe('auth gate (M-9)', () => {
     expect(app.getPathname()).toBe('/link-expired');
   });
 
-  it('AC-3.5 logs out from My account (avatar on Home): Welcome and "You\'re logged out"', async () => {
+  it('AC-3.5 logs out from My account (avatar on My space): Welcome and "You\'re logged out"', async () => {
     mockAuth.me.mockResolvedValue(meFixture);
-    const { app } = await openApp({ token: 'jwt' });
-    await screen.findByRole('header', { name: 'Accueil' });
+    const { app } = await openApp({ token: 'jwt', url: '/my-space' });
+    await screen.findByRole('header', { name: 'Mon espace' });
     expect(screen.queryByTestId('dev-log-out')).toBeNull();
 
     await fireEvent.press(await screen.findByRole('button', { name: 'Mon compte' }));

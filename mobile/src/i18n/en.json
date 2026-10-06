@@ -1,11 +1,14 @@
 {
   "tabs": {
-    "home": "Home",
     "events": "Events",
     "community": "Circles",
-    "market": "Market",
+    "mySpace": "My space",
+    "market": "Services",
     "travel": "Travel",
     "navigation": "Main sections"
+  },
+  "mySpace": {
+    "notifications": "Notifications"
   },
   "errors": {
     "unreachable": {

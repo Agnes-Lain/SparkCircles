@@ -37,7 +37,8 @@ export function ConfirmEmailScreen() {
   const { signIn, status } = useSession();
   const { showToast, celebrate } = useToast();
   const [done, setDone] = useState(false);
-  useLeaveWhenGateMoves(done);
+  // AC-2.1: the welcome checkmark plays on My space (v1.7: My space replaces Home).
+  useLeaveWhenGateMoves(done, '/my-space');
 
   const confirm = useMutation({
     mutationFn: (value: string) => auth().confirmEmail(value, deviceName()),

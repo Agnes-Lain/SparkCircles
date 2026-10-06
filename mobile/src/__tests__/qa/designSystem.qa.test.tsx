@@ -38,11 +38,11 @@ function sourceFiles(dir: string): string[] {
 describe('QA tab bar colours and states (section 10)', () => {
   beforeEach(() => i18n.changeLanguage('fr'));
 
-  it('maps each module to its accent: Home lavender, Events green, Community sky, Market pink, Travel yellow', () => {
+  it('maps each module to its accent: Events green, Community sky, My space lavender, Market pink, Travel yellow', () => {
     expect(TABS.map((t) => [t.module, MODULE_ACCENT[t.module].activeBg])).toEqual([
-      ['home', 'bg-lavender'],
       ['events', 'bg-green'],
       ['community', 'bg-sky'],
+      ['mySpace', 'bg-lavender'],
       ['market', 'bg-pink'],
       ['travel', 'bg-sunny'],
     ]);
@@ -59,7 +59,8 @@ describe('QA tab bar colours and states (section 10)', () => {
       await renderWithProviders(
         <TabBar tabs={TABS} activeRoute={activeRoute} onTabPress={() => {}} />,
       );
-      TABS.forEach((tab) => {
+      // The raised My space button has its own states (ring, no fill): see TabBar.test.tsx.
+      TABS.filter((tab) => tab.icon).forEach((tab) => {
         const accent = MODULE_ACCENT[tab.module];
         const pressable = screen.getByTestId(`tab-${tab.route}`);
         const label = screen.getByText(i18n.t(tab.labelKey));
@@ -76,11 +77,11 @@ describe('QA tab bar colours and states (section 10)', () => {
     },
   );
 
-  it('uses the approved icons (home, sparkles, users, shopping-bag, key)', () => {
-    expect(TABS.map((t) => t.icon.displayName ?? '')).toEqual([
-      expect.stringMatching(/House|Home/),
+  it('uses the approved icons (sparkles, users, Ripple symbol, shopping-bag, key)', () => {
+    expect(TABS.map((t) => t.icon?.displayName ?? 'ripple')).toEqual([
       expect.stringMatching(/Sparkles/),
       expect.stringMatching(/Users/),
+      'ripple',
       expect.stringMatching(/ShoppingBag/),
       expect.stringMatching(/Key/),
     ]);

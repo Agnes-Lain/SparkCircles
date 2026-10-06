@@ -41,7 +41,7 @@ export function publicName(firstName: string, lastName: string): string {
 export function AccountScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const back = useBack('/');
+  const back = useBack('/my-space');
   const me = useMe();
   const logOut = useLogOut();
   const [loggingOut, setLoggingOut] = useState(false);

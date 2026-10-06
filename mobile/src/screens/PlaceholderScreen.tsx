@@ -13,7 +13,7 @@ export function PlaceholderScreen({
 }: {
   title: string;
   children?: ReactNode;
-  /** Shown at the top right of the title row (Home: the "My account" avatar button). */
+  /** Shown at the top right of the title row (My space: the notifications bell and the "My account" avatar). */
   headerRight?: ReactNode;
 }) {
   return (

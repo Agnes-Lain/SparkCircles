@@ -57,9 +57,9 @@ const VARIANT: Record<
 
 // Module CTA (section 5): module Base fill, Ink text (contrast rule 2).
 const MODULE_FILL: Record<Module, string> = {
-  home: 'bg-lavender',
   events: 'bg-green',
   community: 'bg-sky',
+  mySpace: 'bg-lavender',
   market: 'bg-pink',
   travel: 'bg-sunny',
 };
