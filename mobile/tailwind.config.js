@@ -1,4 +1,4 @@
-// Tailwind / NativeWind config = design system v1.4.1, section 15. Values live in
+// Tailwind / NativeWind config = design system v1.7, section 15. Values live in
 // src/theme/tokens.js; don't put values here.
 const { colors, borderRadius, fontSize, spacing, boxShadow } = require('./src/theme/tokens');
 

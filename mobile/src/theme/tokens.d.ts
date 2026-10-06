@@ -16,6 +16,7 @@ export declare const colors: {
   ink: { DEFAULT: string; 2: string; 3: string };
   'border-soft': string;
   'border-control': string;
+  'other-light': string;
   scrim: string;
 };
 export declare const borderRadius: Record<'sm' | 'md' | 'lg' | 'xl' | 'pill', string>;
@@ -24,4 +25,5 @@ export declare const fontSize: Record<
   FontSize
 >;
 export declare const spacing: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl', string>;
-export declare const boxShadow: Record<'card' | 'modal' | 'float', string>;
+export declare const boxShadow: Record<'card' | 'modal' | 'float' | 'fab', string>;
+export declare const shellGradient: { stops: { offset: string; color: string }[] };

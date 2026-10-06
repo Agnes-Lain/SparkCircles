@@ -34,6 +34,17 @@ function designSystemSection15() {
   return sandbox.module.exports.theme;
 }
 
+/** Evaluates the `shellGradient` constant shown in section 15 (v1.6). */
+function designSystemShellGradient() {
+  const doc = readFileSync(designSystemPath, 'utf8');
+  const section = doc.slice(doc.indexOf('## 15.'), doc.indexOf('## 16.'));
+  const code = /```js\n(\/\/ mobile\/src\/theme\/shellGradient[\s\S]*?)```/.exec(section)?.[1];
+  if (!code) throw new Error('Section 15 shellGradient block not found');
+  const sandbox = { result: undefined as unknown };
+  runInNewContext(code.replace('export const shellGradient =', 'result ='), sandbox);
+  return sandbox.result;
+}
+
 describe('design tokens (design system section 15)', () => {
   (hasDesignSystem ? it : it.skip)('match section 15 of the design system exactly', () => {
     const theme = designSystemSection15();
@@ -42,6 +53,7 @@ describe('design tokens (design system section 15)', () => {
     expect(tokens.fontSize).toEqual(theme.extend.fontSize);
     expect(tokens.spacing).toEqual(theme.extend.spacing);
     expect(tokens.boxShadow).toEqual(theme.extend.boxShadow);
+    expect(tokens.shellGradient).toEqual(designSystemShellGradient());
   });
 
   it('replace Tailwind default colors: only SparkCircles colors exist (M-11)', () => {
