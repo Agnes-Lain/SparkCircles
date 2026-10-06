@@ -1,8 +1,10 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
+import { eventKey, myEventsKey } from '../api/events';
+import { joinedEvent } from '../test/eventFixtures';
 import { memoryTokenStore } from '../test/fakes';
-import { TestProviders } from '../test/render';
+import { createTestQueryClient, TestProviders } from '../test/render';
 import { emitUnauthorized } from './sessionEvents';
 import { SessionProvider } from './SessionProvider';
 import { useSession } from './useSession';
@@ -17,10 +19,10 @@ function Status() {
   );
 }
 
-async function renderSession(token: string | null) {
+async function renderSession(token: string | null, queryClient = createTestQueryClient()) {
   const tokenStore = memoryTokenStore(token);
   await render(
-    <TestProviders>
+    <TestProviders queryClient={queryClient}>
       <SessionProvider tokenStore={tokenStore}>
         <Status />
       </SessionProvider>
@@ -58,5 +60,16 @@ describe('SessionProvider', () => {
 
     expect(await screen.findByText('signedOut (logout)')).toBeOnTheScreen();
     expect(tokenStore.value).toBeNull();
+  });
+
+  it('BUG-1 logging out forgets every cached event (exact addresses included)', async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(eventKey(joinedEvent.id), joinedEvent);
+    queryClient.setQueryData(myEventsKey('participant', 'upcoming'), { pages: [], pageParams: [] });
+    await renderSession('jwt', queryClient);
+    await fireEvent.press(await screen.findByText('signedIn'));
+    await screen.findByText('signedOut (logout)');
+    expect(queryClient.getQueryData(eventKey(joinedEvent.id))).toBeUndefined();
+    expect(queryClient.getQueryCache().findAll({ queryKey: ['events'] })).toEqual([]);
   });
 });

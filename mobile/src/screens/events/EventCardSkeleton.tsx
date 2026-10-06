@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { Skeleton } from '../../components/Skeleton';
@@ -30,8 +31,16 @@ export function EventCardSkeleton() {
 
 /** Three loading cards under a day label (design: 3 cards). */
 export function EventListSkeleton() {
+  const { t } = useTranslation();
+  // One element for screen readers that says what is loading (QA BUG-10).
   return (
-    <View testID="events-loading" className="gap-md" accessibilityElementsHidden>
+    <View
+      testID="events-loading"
+      className="gap-md"
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={t('events.loading')}
+    >
       <Skeleton width={140} height={11} />
       <EventCardSkeleton />
       <EventCardSkeleton />

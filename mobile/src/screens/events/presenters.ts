@@ -16,21 +16,29 @@ export function personName(
     : person.first_name;
 }
 
+/** A draft may have no title yet (BUG-8): "Sortie sans titre". */
+export function titleText(event: SparkEvent, t: TFunction): string {
+  return event.title ?? t('events.untitled');
+}
+
 /** "Plus que 4 places sur 10", "Plus qu'une place sur 10", "Complet · 10 places" (4.2). */
 export function placesText(event: SparkEvent, t: TFunction): string {
+  if (event.places.total === null) return t('events.noPlaces');
   if (event.full || event.places.left <= 0)
     return t('events.card.full', { total: event.places.total });
   return t('events.card.placesLeft', { count: event.places.left, total: event.places.total });
 }
 
 /** "Sam. 10 oct. · 15:00–17:00" */
-export function whenText(event: SparkEvent, locale: Locale): string {
+export function whenText(event: SparkEvent, locale: Locale, t: TFunction): string {
+  if (!event.starts_at || !event.ends_at) return t('events.noDate');
   const day = formatShortDay(event.starts_at, event.time_zone, locale);
   return `${day} · ${formatTime(event.starts_at, event.time_zone)}–${formatTime(event.ends_at, event.time_zone)}`;
 }
 
 /** "Paris 11e · à 1,5 km de ta zone", or the area alone without a chosen area. */
 export function whereText(event: SparkEvent, t: TFunction, locale: Locale): string {
+  if (!event.area) return t('events.noArea');
   if (event.distance_km === null) return event.area.label;
   return t('events.area.distance', {
     area: event.area.label,
@@ -40,7 +48,8 @@ export function whereText(event: SparkEvent, t: TFunction, locale: Locale): stri
 
 /** True once the event's end has passed (or the server says it is past). */
 export function hasEnded(event: SparkEvent, now: Date = new Date()): boolean {
-  return event.status === 'past' || new Date(event.ends_at).getTime() <= now.getTime();
+  if (event.status === 'past') return true;
+  return event.ends_at !== null && new Date(event.ends_at).getTime() <= now.getTime();
 }
 
 export type StatusBadge = { kind: BadgeKind; label: string; key: string };

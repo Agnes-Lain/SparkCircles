@@ -43,8 +43,9 @@ import { ConfirmSheet } from './ConfirmSheet';
 import { Confetti } from './Confetti';
 import { clockTime, formatKm, formatLongDay, formatTime } from './format';
 import { JoinSheet } from './JoinSheet';
-import { hasEnded, partyText, personName, placesText, statusBadge } from './presenters';
-import { refreshEvents, storeEvent, useEvent } from './queries';
+import { hasEnded, partyText, personName, placesText, statusBadge, titleText } from './presenters';
+import { forgetParticipation, freshEvent, refreshEvents, storeEvent, useEvent } from './queries';
+import { type ClosedReason, closedReason, isRefusal, refusalText } from './refusals';
 import { ReportSheet } from './ReportSheet';
 
 type Sheet =
@@ -63,8 +64,15 @@ function Card({ children, testID }: { children: ReactNode; testID?: string }) {
 }
 
 function DetailSkeleton() {
+  const { t } = useTranslation();
   return (
-    <View testID="event-loading" className="gap-lg px-lg pt-md" accessibilityElementsHidden>
+    <View
+      testID="event-loading"
+      className="gap-lg px-lg pt-md"
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={t('events.loadingEvent')}
+    >
       <Skeleton width="45%" height={12} />
       <Skeleton width="85%" height={28} />
       <Skeleton width={110} height={28} roundedClassName="rounded-full" />
@@ -110,10 +118,15 @@ export function EventDetailScreen() {
     mutationFn: () => events().leave(id!),
     onSuccess: () => {
       close();
-      refreshEvents(queryClient, id);
+      forgetParticipation(queryClient, id!);
       showToast(t('events.detail.left'));
     },
-    onError: close,
+    onError: (error) => {
+      close();
+      // Not a participant any more (left elsewhere): the address goes too (BUG-1, BUG-3).
+      if (error.code === 'not_joined') forgetParticipation(queryClient, id!);
+      else onRefused(error);
+    },
   });
   const cancel = useMutation<{ event: SparkEvent }, ApiError, void>({
     mutationFn: () => events().cancel(id!),
@@ -122,7 +135,10 @@ export function EventDetailScreen() {
       storeEvent(queryClient, data.event);
       showToast(t('events.detail.cancelled'));
     },
-    onError: close,
+    onError: (error) => {
+      close();
+      onRefused(error);
+    },
   });
   const remove = useMutation<void, ApiError, void>({
     mutationFn: () => events().remove(id!),
@@ -132,7 +148,10 @@ export function EventDetailScreen() {
       queryClient.removeQueries({ queryKey: ['events', 'detail', id] });
       back();
     },
-    onError: close,
+    onError: (error) => {
+      close();
+      onRefused(error);
+    },
   });
   const publish = useMutation<{ event: SparkEvent }, ApiError, void>({
     mutationFn: () => events().publish(id!),
@@ -141,11 +160,33 @@ export function EventDetailScreen() {
       storeEvent(queryClient, data.event);
       showToast(t('events.detail.online'));
     },
-    onError: close,
+    onError: (error) => {
+      close();
+      // BUG-8: a draft saved with missing fields: the form shows what is missing.
+      if (error.code === 'validation_failed') router.push(`/events/${id}/edit?check=1`);
+      else onRefused(error);
+    },
   });
 
+  // BUG-3: a refusal because the event changed meanwhile shows its real state.
+  const [refused, setRefused] = useState<ClosedReason | null>(null);
+  function onRefused(error: ApiError) {
+    setRefused(null);
+    if (!isRefusal(error)) return;
+    void freshEvent(queryClient, id!).then((fresh) =>
+      setRefused(closedReason(fresh, { editing: fresh?.viewer.role === 'host' })),
+    );
+  }
+
   // A refusal closes the sheet and shows on the page.
-  const actionError = leave.error ?? cancel.error ?? remove.error ?? publish.error;
+  const failed = leave.error ?? cancel.error ?? remove.error ?? publish.error;
+  const actionError =
+    failed &&
+    !isRefusal(failed) &&
+    failed.code !== 'not_joined' &&
+    failed.code !== 'validation_failed'
+      ? failed
+      : null;
 
   const event = query.data;
 
@@ -209,7 +250,8 @@ export function EventDetailScreen() {
   const detailBadge =
     status && (isHost || ['onHold', 'cancelled', 'ended'].includes(status.key)) ? status : null;
   const offline = Boolean(query.error?.isOffline);
-  const date = formatLongDay(event.starts_at, event.time_zone, locale);
+  const date = event.starts_at ? formatLongDay(event.starts_at, event.time_zone, locale) : null;
+  const title = titleText(event, t);
   const participants = event.participants ?? [];
 
   const verify = () => {
@@ -399,15 +441,16 @@ export function EventDetailScreen() {
     barCaption = t('events.detail.started');
   }
 
+  const total = event.places.total ?? 0;
   const placesLine = isHost
     ? t('events.detail.hostPlaces', {
         taken: event.places.taken,
-        total: event.places.total,
+        total,
         left: event.places.left,
       })
     : placesText(event, t);
   const full = event.full || event.places.left <= 0;
-  const filled = event.places.total > 0 ? event.places.taken / event.places.total : 0;
+  const filled = total > 0 ? event.places.taken / total : 0;
 
   return (
     <SafeAreaView edges={['top']} className="flex-1" testID="event-detail">
@@ -436,6 +479,9 @@ export function EventDetailScreen() {
             caption={t('events.detail.offlineBody', { time: clockTime(query.dataUpdatedAt) })}
             testID="event-offline"
           />
+        ) : null}
+        {refused && refused !== 'unavailable' ? (
+          <Notification level="error" {...refusalText(refused, t, isHost)} testID="event-refused" />
         ) : null}
         {actionError ? (
           <Notification
@@ -482,14 +528,16 @@ export function EventDetailScreen() {
             <Text className="text-caption font-medium text-ink-2">{t('events.type')}</Text>
           </View>
           <Text accessibilityRole="header" className="text-h1 text-ink">
-            {event.title}
+            {title}
           </Text>
           <View className="flex-row flex-wrap items-center gap-sm">
-            <CategoryPill
-              category={event.category}
-              label={t(`events.categories.${event.category}`)}
-              icon={CATEGORY_ICON[event.category]}
-            />
+            {event.category ? (
+              <CategoryPill
+                category={event.category}
+                label={t(`events.categories.${event.category}`)}
+                icon={CATEGORY_ICON[event.category]}
+              />
+            ) : null}
             {detailBadge ? (
               <View className="flex-row items-center gap-xs">
                 {detailBadge.key === 'onHold' ? (
@@ -501,15 +549,21 @@ export function EventDetailScreen() {
           </View>
         </View>
 
-        <View accessible className="gap-xs">
-          <Text className="text-data text-ink">{formatTime(event.starts_at, event.time_zone)}</Text>
-          <Text className="text-body font-medium text-ink">
-            {t('events.detail.until', {
-              date,
-              time: formatTime(event.ends_at, event.time_zone),
-            })}
-          </Text>
-        </View>
+        {event.starts_at && event.ends_at && date ? (
+          <View accessible className="gap-xs">
+            <Text className="text-data text-ink">
+              {formatTime(event.starts_at, event.time_zone)}
+            </Text>
+            <Text className="text-body font-medium text-ink">
+              {t('events.detail.until', {
+                date,
+                time: formatTime(event.ends_at, event.time_zone),
+              })}
+            </Text>
+          </View>
+        ) : (
+          <Text className="text-body font-medium text-ink-2">{t('events.noDate')}</Text>
+        )}
 
         <Card testID="where">
           <SectionLabel>{t('events.detail.where')}</SectionLabel>
@@ -522,7 +576,9 @@ export function EventDetailScreen() {
                 </Text>
                 <Text className="text-caption text-ink-3">
                   {isHost
-                    ? t('events.detail.hostExactCaption', { area: event.area.label })
+                    ? t('events.detail.hostExactCaption', {
+                        area: event.area?.label ?? t('events.noArea'),
+                      })
                     : t('events.detail.exactCaption')}
                 </Text>
               </View>
@@ -532,7 +588,9 @@ export function EventDetailScreen() {
               <View className="flex-row items-start gap-md">
                 <IconSquare icon={MapPin} />
                 <View className="flex-1">
-                  <Text className="text-h3 text-ink">{event.area.label}</Text>
+                  <Text className="text-h3 text-ink">
+                    {event.area?.label ?? t('events.noArea')}
+                  </Text>
                   {event.distance_km !== null ? (
                     <Text className="text-caption text-ink-2">
                       {t('events.area.distanceOnly', {
@@ -625,9 +683,13 @@ export function EventDetailScreen() {
 
         {event.description ? <Text className="text-body text-ink">{event.description}</Text> : null}
 
-        {event.age_min !== null && event.age_max !== null ? (
-          <Text className="text-body text-ink-2">
-            {t('events.detail.ages', { min: event.age_min, max: event.age_max })}
+        {event.age_min !== null || event.age_max !== null ? (
+          <Text className="text-body text-ink-2" testID="event-ages">
+            {event.age_min !== null && event.age_max !== null
+              ? t('events.detail.ages', { min: event.age_min, max: event.age_max })
+              : event.age_min !== null
+                ? t('events.detail.agesFrom', { min: event.age_min })
+                : t('events.detail.agesUpTo', { max: event.age_max })}
           </Text>
         ) : null}
 

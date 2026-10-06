@@ -13,12 +13,13 @@ import { Notification } from '../../components/Notification';
 import { Stepper } from '../../components/Stepper';
 import { resolveLocale } from '../../i18n';
 import { formatShortDay, formatTime } from './format';
-import { personName } from './presenters';
-import { refreshEvents, storeEvent } from './queries';
+import { personName, titleText } from './presenters';
+import { forgetParticipation, freshEvent, refreshEvents, storeEvent } from './queries';
+import { type ClosedReason, closedReason, isRefusal, refusalText } from './refusals';
 
 type Problem =
   { kind: 'race'; left: number } | { kind: 'offline' } | { kind: 'rateLimited' } | null;
-type Step = 'form' | 'full' | 'started' | 'restricted';
+type Step = 'form' | 'full' | 'closed' | 'restricted';
 
 /** Keeps at least one adult and the total within `available` (adults kept first). */
 export function clampParty(adults: number, children: number, available: number) {
@@ -59,6 +60,7 @@ export function JoinSheet({
   const [children, setChildren] = useState(change && mine ? mine.children : 0);
   const [problem, setProblem] = useState<Problem>(null);
   const [step, setStep] = useState<Step>('form');
+  const [closed, setClosed] = useState<ClosedReason>('started');
 
   // Mounted afresh on each opening (the detail changes its `key`), so the state above starts
   // from the event as it is now.
@@ -102,12 +104,26 @@ export function JoinSheet({
       } else if (error.code === 'verification_required') {
         setStep('restricted');
       } else if (
-        error.code === 'event_started' ||
-        error.code === 'event_not_joinable' ||
-        error.code === 'not_found'
+        error.code === 'already_joined' ||
+        error.code === 'own_event' ||
+        error.code === 'not_joined'
       ) {
-        refreshEvents(queryClient, event.id);
-        setStep('started');
+        // BUG-3: already in (or the host, or no longer in): the page shows the real state.
+        if (error.code === 'not_joined') forgetParticipation(queryClient, event.id);
+        else refreshEvents(queryClient, event.id);
+        onClose();
+      } else if (isRefusal(error)) {
+        // BUG-3: cancelled, on hold, started or gone: say which, from the event as it is now.
+        const show = (reason: ClosedReason) => {
+          setClosed(reason);
+          setStep('closed');
+        };
+        if (error.code === 'event_started') {
+          refreshEvents(queryClient, event.id);
+          show('started');
+        } else {
+          void freshEvent(queryClient, event.id).then((fresh) => show(closedReason(fresh)));
+        }
       } else if (error.code === 'rate_limited') {
         setProblem({ kind: 'rateLimited' });
       } else {
@@ -130,11 +146,16 @@ export function JoinSheet({
           </View>
           <Button size="large" label={t('events.detail.seeOthers')} onPress={onClose} />
         </View>
-      ) : step === 'started' ? (
-        <View className="gap-lg" testID="join-started">
-          <Text accessibilityRole="header" className="text-h2 text-ink">
-            {t('events.detail.started')}
-          </Text>
+      ) : step === 'closed' ? (
+        <View className="gap-lg" testID={`join-${closed}`}>
+          <View className="gap-xs">
+            <Text accessibilityRole="header" className="text-h2 text-ink">
+              {refusalText(closed, t).title}
+            </Text>
+            {refusalText(closed, t).caption ? (
+              <Text className="text-body text-ink-2">{refusalText(closed, t).caption}</Text>
+            ) : null}
+          </View>
           <Button size="large" label={t('common.ok')} onPress={onClose} />
         </View>
       ) : step === 'restricted' ? (
@@ -157,13 +178,15 @@ export function JoinSheet({
             <Text className="text-body text-ink-2">{t('events.join.body')}</Text>
           </View>
           <View accessible className="gap-xs rounded-lg bg-shell p-md">
-            <Text className="text-body font-medium text-ink">{event.title}</Text>
-            <Text className="text-caption text-ink-2">
-              {`${formatShortDay(event.starts_at, event.time_zone, locale)} · ${formatTime(
-                event.starts_at,
-                event.time_zone,
-              )}`}
-            </Text>
+            <Text className="text-body font-medium text-ink">{titleText(event, t)}</Text>
+            {event.starts_at ? (
+              <Text className="text-caption text-ink-2">
+                {`${formatShortDay(event.starts_at, event.time_zone, locale)} · ${formatTime(
+                  event.starts_at,
+                  event.time_zone,
+                )}`}
+              </Text>
+            ) : null}
             {host && !host.former_member ? (
               <View className="flex-row items-center gap-sm">
                 <Text className="text-caption text-ink">{personName(host, t)}</Text>

@@ -25,6 +25,7 @@ import { Icon } from '../../components/Icon';
 import { IconButton } from '../../components/IconButton';
 import { Notification } from '../../components/Notification';
 import { RadioRow } from '../../components/RadioRow';
+import { DateTimeField } from '../../components/DateTimeField';
 import { TextField } from '../../components/TextField';
 import { useToast } from '../../components/ToastProvider';
 import { resolveLocale } from '../../i18n';
@@ -46,28 +47,56 @@ import {
   formFromEvent,
   type FormValues,
   LIMITS,
+  localClock,
+  localDay,
+  missingFields,
   notifiesParticipants,
-  parseDay,
-  parseTime,
+  pickerValue,
   serverErrors,
+  startChanged,
   TAG_ERROR_KEY,
   toParams,
   validateForm,
 } from './formModel';
-import { storeEvent, useEvent, useEventOptions } from './queries';
+import { hasEnded } from './presenters';
+import { freshEvent, storeEvent, useEvent, useEventOptions } from './queries';
+import { type ClosedReason, closedReason, isRefusal, refusalText } from './refusals';
 
 type Sheet = null | 'category' | 'publish' | 'notify' | 'leave';
 type Action = 'draft' | 'publish' | 'save';
+
+/** BUG-4: only the host edits, and only a draft or a published event that hasn't ended
+ *  (the API's `Event#editable?`). */
+export function canEdit(event: SparkEvent): boolean {
+  if (event.viewer.role !== 'host') return false;
+  return event.status === 'draft' || (event.status === 'published' && !hasEnded(event));
+}
 
 /** Create (`/events/new`) and edit (`/events/:id/edit`): only verified parents host (AC-1.1). */
 export function EventFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const me = useMe();
   const existing = useEvent(id ?? '');
+  const closed =
+    Boolean(id) &&
+    ((existing.data && !canEdit(existing.data)) ||
+      existing.error?.code === 'not_found' ||
+      existing.error?.code === 'forbidden');
   // Not verified: the "verify to host" gate (V0) replaces the form; nothing is created.
   if (me.data && !me.data.verification.verified) return <Redirect href="/verify" />;
+  if (closed) return <NotEditable id={id!} />;
   if (id && !existing.data) return <EditLoading error={existing.error} retry={existing.refetch} />;
   return <EventForm event={existing.data} key={existing.data?.id ?? 'new'} />;
+}
+
+/** BUG-4: someone else's event, or one that can't be edited any more: back to its page. */
+function NotEditable({ id }: { id: string }) {
+  const { t } = useTranslation();
+  const { showToast } = useToast();
+  useEffect(() => {
+    showToast(t('events.form.notEditable'));
+  }, [showToast, t]);
+  return <Redirect href={`/events/${id}`} />;
 }
 
 function EditLoading({ error, retry }: { error: ApiError | null; retry: () => unknown }) {
@@ -101,6 +130,10 @@ function EditLoading({ error, retry }: { error: ApiError | null; retry: () => un
 function EventForm({ event }: { event?: SparkEvent }) {
   const { t, i18n } = useTranslation();
   const locale = resolveLocale(i18n.language);
+  const pickerLocale = locale === 'fr' ? 'fr-FR' : 'en-GB';
+  const [now] = useState(() => new Date());
+  // `?check=1`: a publish from the draft's page was refused for missing fields (BUG-8).
+  const { check } = useLocalSearchParams<{ check?: string }>();
   const router = useRouter();
   const navigation = useNavigation();
   const back = useBack('/');
@@ -112,21 +145,26 @@ function EventForm({ event }: { event?: SparkEvent }) {
 
   const initial = useMemo(() => (event ? formFromEvent(event) : EMPTY_FORM), [event]);
   const [values, setValues] = useState<FormValues>(initial);
-  const [errors, setErrors] = useState<FormErrors>({});
+  // `?check=1`: opened from a refused publish, the missing fields show at once (BUG-8).
+  const [errors, setErrors] = useState<FormErrors>(() =>
+    check ? validateForm(initial, t, { placesTaken }) : {},
+  );
   const [tagInput, setTagInput] = useState('');
   const [tagError, setTagError] = useState<string | null>(null);
   const [tagNotice, setTagNotice] = useState('');
-  const [areaText, setAreaText] = useState(event?.area.label ?? '');
+  const [areaText, setAreaText] = useState(event?.area?.label ?? '');
   const [areaFocused, setAreaFocused] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
-  const [problem, setProblem] = useState<'verification' | 'offline' | 'rateLimited' | null>(null);
+  const [problem, setProblem] = useState<
+    'verification' | 'offline' | 'rateLimited' | ClosedReason | null
+  >(null);
   const leaving = useRef<null | (() => void)>(null);
   const saved = useRef(false);
 
   const titleRef = useRef<TextInput>(null);
   const categoryRef = useRef<View>(null);
-  const dateRef = useRef<TextInput>(null);
-  const timeRef = useRef<TextInput>(null);
+  const dateRef = useRef<View>(null);
+  const timeRef = useRef<View>(null);
   const areaRef = useRef<TextInput>(null);
   const addressRef = useRef<TextInput>(null);
   const placesRef = useRef<TextInput>(null);
@@ -152,7 +190,20 @@ function EventForm({ event }: { event?: SparkEvent }) {
     setValues((v) => ({ ...v, [key]: value }));
 
   const dirty = JSON.stringify(values) !== JSON.stringify(initial) || tagInput.trim() !== '';
-  const requiredValid = Object.keys(validateForm(values, t, { placesTaken })).length === 0;
+  // BUG-7: a started event can still be fixed; its start is checked only if it changes.
+  const checkStart = !published || startChanged(initial, values);
+  const validate = () => validateForm(values, t, { placesTaken, checkStart });
+  const requiredValid = Object.keys(validate()).length === 0;
+  const missing = missingFields(values);
+  const fieldLabel: Record<string, string> = {
+    title: t('events.form.title'),
+    category: t('events.form.category'),
+    date: t('events.form.date'),
+    time: `${t('events.form.start')}, ${t('events.form.end')}`,
+    area: t('events.form.area'),
+    address: t('events.form.address'),
+    places: t('events.form.places'),
+  };
 
   // Back with edits: "Leave without saving?" (design E5 "Unsaved changes").
   useEffect(() => {
@@ -169,6 +220,12 @@ function EventForm({ event }: { event?: SparkEvent }) {
     setErrors(next);
     focusFirstError(next);
   };
+
+  useEffect(() => {
+    if (check) focusFirstError(errors);
+    // Once, on opening from a refused publish.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const mutation = useMutation<SparkEvent, ApiError, Action>({
     mutationFn: async (action) => {
@@ -195,12 +252,18 @@ function EventForm({ event }: { event?: SparkEvent }) {
     },
     onError: (error) => {
       setSheet(null);
+      const newTags = values.tags.filter((tag) => !initial.tags.includes(tag));
       if (error.code === 'validation_failed') {
-        showErrors(serverErrors(error.details, t, placesTaken));
+        showErrors(serverErrors(error.details, t, placesTaken, newTags));
       } else if (error.code === 'verification_required') {
         setProblem('verification');
       } else if (error.code === 'rate_limited') {
         setProblem('rateLimited');
+      } else if (isRefusal(error) && event) {
+        // BUG-3: the event changed meanwhile (on hold, cancelled, ended, gone): say why.
+        void freshEvent(queryClient, event.id).then((fresh) =>
+          setProblem(closedReason(fresh, { editing: true })),
+        );
       } else {
         setProblem('offline');
       }
@@ -210,7 +273,7 @@ function EventForm({ event }: { event?: SparkEvent }) {
   const submit = (action: Action) => {
     setProblem(null);
     if (action !== 'draft') {
-      const found = validateForm(values, t, { placesTaken });
+      const found = validate();
       if (Object.keys(found).length) {
         showErrors(found);
         return;
@@ -257,7 +320,7 @@ function EventForm({ event }: { event?: SparkEvent }) {
           .filter((a) => fold(a.label).includes(fold(areaText)))
           .slice(0, 6)
       : [];
-  const day = parseDay(values.day, values.month, values.year);
+  const day = values.date;
   const areaLabel = options.data?.areas.find((a) => a.key === values.area)?.label ?? areaText;
   const tagsFull = values.tags.length >= LIMITS.tags;
 
@@ -283,13 +346,15 @@ function EventForm({ event }: { event?: SparkEvent }) {
           }
           testID="form-verification"
         />
-      ) : problem ? (
+      ) : problem === 'rateLimited' || problem === 'offline' ? (
         <Notification
           level="error"
           title={problem === 'rateLimited' ? t('rateLimited.title') : t('errors.unreachable.title')}
-          caption={problem === 'rateLimited' ? t('rateLimited.wait') : undefined}
+          caption={problem === 'rateLimited' ? t('rateLimited.wait') : t('events.form.keptCaption')}
           testID="form-error"
         />
+      ) : problem ? (
+        <Notification level="error" {...refusalText(problem, t, true)} testID="form-refused" />
       ) : null}
 
       <TextField
@@ -338,86 +403,46 @@ function EventForm({ event }: { event?: SparkEvent }) {
         ) : null}
       </View>
 
-      <View className="gap-xs">
-        <Text className="text-body text-ink-2">{t('events.form.date')}</Text>
-        <View
-          role="group"
-          accessibilityLabel={t('events.form.date')}
-          className="flex-row gap-sm"
-          testID="form-date"
-        >
-          <View className="flex-1">
-            <TextField
-              ref={dateRef}
-              kind="birthDay"
-              label={t('verify.review.day')}
-              value={values.day}
-              onChangeText={(v) => set('day', v)}
-              error={errors.date}
-              hideErrorText
-              testID="form-day"
-            />
-          </View>
-          <View className="flex-1">
-            <TextField
-              kind="birthMonth"
-              label={t('verify.review.month')}
-              value={values.month}
-              onChangeText={(v) => set('month', v)}
-              error={errors.date}
-              hideErrorText
-              testID="form-month"
-            />
-          </View>
-          <View className="flex-[1.5]">
-            <TextField
-              kind="birthYear"
-              label={t('verify.review.year')}
-              value={values.year}
-              onChangeText={(v) => set('year', v)}
-              error={errors.date}
-              hideErrorText
-              testID="form-year"
-            />
-          </View>
-        </View>
-        {errors.date ? (
-          <FieldError message={errors.date} />
-        ) : day ? (
-          <Text className="text-caption text-ink-3">{formatCalendarDay(day, locale)}</Text>
-        ) : null}
-      </View>
+      <DateTimeField
+        ref={dateRef}
+        mode="date"
+        label={t('events.form.date')}
+        display={values.date ? formatCalendarDay(values.date, locale) : ''}
+        placeholder={t('events.form.datePlaceholder')}
+        value={pickerValue(values.date, null, now)}
+        minimumDate={now}
+        locale={pickerLocale}
+        onChange={(moment) => set('date', localDay(moment))}
+        error={errors.date}
+        testID="form-date"
+      />
 
       <View className="gap-xs">
         <View className="flex-row gap-sm">
           <View className="flex-1">
-            <TextField
+            <DateTimeField
               ref={timeRef}
-              kind="time"
+              mode="time"
               label={t('events.form.start')}
-              placeholder="15:00"
-              value={values.start}
-              onChangeText={(v) => set('start', v)}
-              onBlur={() => {
-                const parsed = parseTime(values.start);
-                if (parsed) set('start', parsed);
-              }}
+              display={values.start ?? ''}
+              placeholder={t('events.form.timePlaceholder')}
+              value={pickerValue(values.date, values.start ?? '15:00', now)}
+              locale={pickerLocale}
+              onChange={(moment) => set('start', localClock(moment))}
               error={errors.time}
               hideErrorText
               testID="form-start"
             />
           </View>
           <View className="flex-1">
-            <TextField
-              kind="time"
+            <DateTimeField
+              mode="time"
               label={t('events.form.end')}
-              placeholder="17:00"
-              value={values.end}
-              onChangeText={(v) => set('end', v)}
-              onBlur={() => {
-                const parsed = parseTime(values.end);
-                if (parsed) set('end', parsed);
-              }}
+              display={values.end ?? ''}
+              placeholder={t('events.form.timePlaceholder')}
+              value={pickerValue(values.date, values.end ?? values.start ?? '17:00', now)}
+              locale={pickerLocale}
+              onChange={(moment) => set('end', localClock(moment))}
               error={errors.time}
               hideErrorText
               testID="form-end"
@@ -652,8 +677,13 @@ function EventForm({ event }: { event?: SparkEvent }) {
               testID="form-publish"
             />
             {!requiredValid ? (
-              <Text className="text-center text-caption text-ink-3">
+              <Text className="text-center text-caption text-ink-3" testID="form-missing">
                 {t('events.form.fillRequired')}
+                {missing.length
+                  ? ` ${t('events.form.missing', {
+                      fields: missing.map((field) => fieldLabel[field]).join(', '),
+                    })}`
+                  : ''}
               </Text>
             ) : null}
             <Button
@@ -714,7 +744,7 @@ function EventForm({ event }: { event?: SparkEvent }) {
           <Text className="text-caption text-ink-2">
             {[
               day ? formatCalendarDay(day, locale) : '',
-              `${parseTime(values.start) ?? ''}–${parseTime(values.end) ?? ''}`,
+              `${values.start ?? ''}–${values.end ?? ''}`,
               areaLabel,
             ].join(' · ')}
           </Text>

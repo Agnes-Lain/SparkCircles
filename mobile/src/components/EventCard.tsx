@@ -9,6 +9,7 @@ import { CATEGORY_ICON } from '../screens/events/categories';
 import {
   personName,
   placesText,
+  titleText,
   statusBadge,
   whenText,
   whereText,
@@ -47,16 +48,18 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
   const status = statusBadge(event, t, mine);
   const full = event.full || event.places.left <= 0;
   const places = placesText(event, t);
-  const when = whenText(event, locale);
+  const when = whenText(event, locale, t);
   const where = whereText(event, t, locale);
-  const category = t(`events.categories.${event.category}`);
-  const filled = event.places.total > 0 ? event.places.taken / event.places.total : 0;
+  const title = titleText(event, t);
+  const category = event.category ? t(`events.categories.${event.category}`) : null;
+  const total = event.places.total ?? 0;
+  const filled = total > 0 ? event.places.taken / total : 0;
   const showBadge = Boolean(host && !host.former_member && host.verified && !isHost);
 
   const label = [
     t('events.card.a11y', {
       type: t('events.type'),
-      title: event.title,
+      title,
       when,
       where,
       places,
@@ -90,7 +93,7 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
           <Text className="text-caption font-medium text-ink-2">{t('events.type')}</Text>
         </View>
         <Text numberOfLines={2} className="text-h3 text-ink" style={{ paddingRight: HEART_SLOT }}>
-          {event.title}
+          {title}
         </Text>
         <View className="flex-row items-center gap-xs">
           <Icon icon={Calendar} size={18} color="ink-2" />
@@ -101,11 +104,13 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
           <Text className="flex-1 text-caption text-ink-2">{where}</Text>
         </View>
         <View className="flex-row flex-wrap items-center gap-sm">
-          <CategoryPill
-            category={event.category}
-            label={category}
-            icon={CATEGORY_ICON[event.category]}
-          />
+          {event.category && category ? (
+            <CategoryPill
+              category={event.category}
+              label={category}
+              icon={CATEGORY_ICON[event.category]}
+            />
+          ) : null}
           {event.tags.map((tag) => (
             <View key={tag} className="rounded-pill bg-shell px-2.5 py-1">
               <Text className="text-[11px] font-medium text-ink-2">#{tag}</Text>

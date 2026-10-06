@@ -4,9 +4,13 @@ import {
   checkTag,
   EMPTY_FORM,
   type FormValues,
+  localClock,
+  localDay,
+  missingFields,
   notifiesParticipants,
-  parseTime,
+  pickerValue,
   serverErrors,
+  startChanged,
   toParams,
   validateForm,
 } from './formModel';
@@ -21,9 +25,7 @@ const valid: FormValues = {
   ...EMPTY_FORM,
   title: 'Foot au parc',
   category: 'sport',
-  day: '10',
-  month: '10',
-  year: '2026',
+  date: '2026-10-10',
   start: '15:00',
   end: '17:00',
   area: 'paris-11',
@@ -75,7 +77,15 @@ describe('E5 form rules', () => {
 
   it('AC-1.2 AC-1.6 says what to fix, with the design copy', () => {
     const errors = validateForm(
-      { ...valid, title: '', day: '1', end: '14:00', places: '0', ageMin: '9', ageMax: '4' },
+      {
+        ...valid,
+        title: '',
+        date: '2026-10-01',
+        end: '14:00',
+        places: '0',
+        ageMin: '9',
+        ageMax: '4',
+      },
       t,
       { now: NOW },
     );
@@ -97,11 +107,47 @@ describe('E5 form rules', () => {
     );
   });
 
-  it('reads times typed in several ways', () => {
-    expect(parseTime('15h30')).toBe('15:30');
-    expect(parseTime('9')).toBe('09:00');
-    expect(parseTime('1530')).toBe('15:30');
-    expect(parseTime('25:00')).toBeNull();
+  it('BUG-5 reads the native pickers in the device time and opens them on the chosen value', () => {
+    const picked = new Date(2026, 9, 10, 9, 5);
+    expect(localDay(picked)).toBe('2026-10-10');
+    expect(localClock(picked)).toBe('09:05');
+    const opened = pickerValue('2026-10-10', '15:30', NOW);
+    expect([opened.getFullYear(), opened.getMonth(), opened.getDate()]).toEqual([2026, 9, 10]);
+    expect([opened.getHours(), opened.getMinutes()]).toEqual([15, 30]);
+    expect(validateForm({ ...valid, start: null }, t, { now: NOW }).time).toBe(
+      "Choisis l'heure de début et de fin.",
+    );
+  });
+
+  it('BUG-7 a started event can still be fixed: its start is checked only when it changes', () => {
+    const started = { ...valid, date: '2026-10-06', start: '09:00', end: '18:00' };
+    expect(validateForm(started, t, { now: NOW }).date).toBe(
+      "Choisis un jour qui n'est pas passé.",
+    );
+    expect(validateForm(started, t, { now: NOW, checkStart: false })).toEqual({});
+    expect(startChanged(started, { ...started, address: 'x' })).toBe(false);
+    expect(startChanged(started, { ...started, start: '10:00' })).toBe(true);
+  });
+
+  it('BUG-8 a draft sends what is typed (missing values as null) and lists what is missing', () => {
+    const partial = { ...EMPTY_FORM, title: 'Pique-nique' };
+    expect(toParams(partial, { includeRule: true })).toMatchObject({
+      title: 'Pique-nique',
+      starts_at: null,
+      ends_at: null,
+      area: null,
+      places_total: null,
+      category: null,
+    });
+    expect(missingFields(partial)).toEqual([
+      'category',
+      'date',
+      'time',
+      'area',
+      'address',
+      'places',
+    ]);
+    expect(missingFields(valid)).toEqual([]);
   });
 
   it('AC-3.8 normalises tags and refuses spaces, punctuation and lengths', () => {
@@ -119,6 +165,11 @@ describe('E5 form rules', () => {
     expect(serverErrors({ tags: ['banned_word'] }, t, 0).tags).toBe(
       "Ce mot n'est pas autorisé dans un tag. Choisis-en un autre.",
     );
+    // BUG-9: one new tag refused is named, never a banned word.
+    expect(serverErrors({ tags: ['contains_phone'] }, t, 0, ['0612345678']).tags).toMatch(
+      /^#0612345678 : Un tag ne peut pas/,
+    );
+    expect(serverErrors({ tags: ['banned_word'] }, t, 0, ['zut']).tags).not.toContain('zut');
     expect(serverErrors({ starts_at: ['in_past'] }, t, 0).date).toBe(
       "Choisis un jour qui n'est pas passé.",
     );

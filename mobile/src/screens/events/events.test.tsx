@@ -79,16 +79,84 @@ async function withArea(area = 'paris-11') {
 }
 
 describe('E1 Sorties, À découvrir', () => {
-  it('AC-3.3 asks once for an area (no GPS), then searches it', async () => {
+  it('AC-3.3 starts on "Tout Paris" with no forced area step (PM decision 2026-10-06)', async () => {
     await open('/');
+    expect(await screen.findByText('Goûter et jeux au parc')).toBeOnTheScreen();
+    expect(screen.queryByText('Où cherches-tu des sorties ?')).toBeNull();
+    expect(mockEvents.search).toHaveBeenCalledWith({}, 1, expect.anything());
+    expect(screen.getByTestId('area-selector')).toHaveTextContent('Tout Paris');
+    expect(
+      screen.getByRole('button', { name: 'Zone : Tout Paris. Modifier la zone' }),
+    ).toBeOnTheScreen();
+  });
+
+  it('AC-3.3 E1c picks several arrondissements, summarises them and keeps them on the device', async () => {
+    await open('/');
+    await fireEvent.press(await screen.findByTestId('area-selector'));
     expect(await screen.findByText('Où cherches-tu des sorties ?')).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Utiliser cette zone' })).toBeDisabled();
-    await fireEvent.press(await screen.findByTestId('area-paris-11'));
+    expect(screen.getByTestId('area-all')).toBeChecked();
+    await fireEvent.press(screen.getByTestId('area-paris-20'));
+    await fireEvent.press(screen.getByTestId('area-paris-11'));
+    expect(screen.getByTestId('area-all')).not.toBeChecked();
+    expect(screen.getByText('2 arrondissements sélectionnés')).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('area-use'));
     await waitFor(() =>
-      expect(mockEvents.search).toHaveBeenCalledWith({ area: 'paris-11' }, 1, expect.anything()),
+      expect(mockEvents.search).toHaveBeenLastCalledWith(
+        { area: ['paris-20', 'paris-11'] },
+        1,
+        expect.anything(),
+      ),
     );
-    expect(await SecureStore.getItemAsync(AREA_KEY)).toBe('paris-11');
+    expect(screen.getByTestId('area-selector')).toHaveTextContent('Paris 11e, 20e');
+    expect(
+      screen.getByRole('button', { name: 'Zone : Paris 11e, 20e. Modifier la zone' }),
+    ).toBeOnTheScreen();
+    expect(await SecureStore.getItemAsync(AREA_KEY)).toBe('paris-20,paris-11');
+  });
+
+  it('AC-3.3 E1c three areas read "3 arrondissements"; "Effacer" goes back to "Tout Paris"', async () => {
+    await withArea('paris-11,paris-12,paris-20');
+    await open('/');
+    await waitFor(() =>
+      expect(screen.getByTestId('area-selector')).toHaveTextContent('3 arrondissements'),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Zone : Paris 11e, 12e, 20e. Modifier la zone' }),
+    ).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('area-selector'));
+    await fireEvent.press(await screen.findByTestId('area-clear'));
+    expect(screen.getByTestId('area-all')).toBeChecked();
+    await fireEvent.press(screen.getByTestId('area-use'));
+    await waitFor(() =>
+      expect(screen.getByTestId('area-selector')).toHaveTextContent('Tout Paris'),
+    );
+    expect(mockEvents.search).toHaveBeenLastCalledWith({}, 1, expect.anything());
+  });
+
+  it('BUG-6 an empty page with a next page keeps loading instead of "no events"', async () => {
+    await withArea();
+    mockEvents.search
+      .mockResolvedValueOnce(eventPage([], 2))
+      .mockResolvedValueOnce(eventPage([], 3))
+      .mockResolvedValueOnce(eventPage([{ ...eventFixture, id: 'third', title: 'Foot' }]));
+    await open('/');
+    expect(await screen.findByText('Foot')).toBeOnTheScreen();
+    expect(mockEvents.search).toHaveBeenLastCalledWith(
+      { area: ['paris-11'] },
+      3,
+      expect.anything(),
+    );
+    expect(screen.queryByTestId('events-empty')).toBeNull();
+  });
+
+  it('BUG-6 stops after a few empty pages and shows the empty state', async () => {
+    await withArea();
+    mockEvents.search.mockImplementation(async (_s: unknown, page: number) =>
+      eventPage([], page + 1),
+    );
+    await open('/');
+    expect(await screen.findByTestId('events-empty')).toBeOnTheScreen();
+    expect(mockEvents.search).toHaveBeenCalledTimes(5);
   });
 
   it('AC-3.1 AC-3.4 lists events by day under the header, with the create button', async () => {
@@ -109,7 +177,7 @@ describe('E1 Sorties, À découvrir', () => {
     await fireEvent.press(screen.getByTestId('date-weekend'));
     await waitFor(() =>
       expect(mockEvents.search).toHaveBeenLastCalledWith(
-        { area: 'paris-11', category: ['sport'], from: '2026-10-10', to: '2026-10-11' },
+        { area: ['paris-11'], category: ['sport'], from: '2026-10-10', to: '2026-10-11' },
         1,
         expect.anything(),
       ),
@@ -132,7 +200,7 @@ describe('E1 Sorties, À découvrir', () => {
     await fireEvent.press(screen.getByTestId('filters-apply'));
     await waitFor(() =>
       expect(mockEvents.search).toHaveBeenLastCalledWith(
-        { area: 'paris-11', radius_km: 5, age_band: '3-5', tag: 'foot' },
+        { area: ['paris-11'], radius_km: 5, age_band: '3-5', tag: 'foot' },
         1,
         expect.anything(),
       ),
@@ -146,7 +214,7 @@ describe('E1 Sorties, À découvrir', () => {
     await fireEvent.changeText(screen.getByTestId('events-search'), '#parc');
     await waitFor(() =>
       expect(mockEvents.search).toHaveBeenLastCalledWith(
-        { area: 'paris-11', tag: 'parc' },
+        { area: ['paris-11'], tag: 'parc' },
         1,
         expect.anything(),
       ),
@@ -158,7 +226,7 @@ describe('E1 Sorties, À découvrir', () => {
     await open('/?tag=parc');
     await waitFor(() =>
       expect(mockEvents.search).toHaveBeenCalledWith(
-        { area: 'paris-11', tag: 'parc' },
+        { area: ['paris-11'], tag: 'parc' },
         1,
         expect.anything(),
       ),
@@ -176,7 +244,7 @@ describe('E1 Sorties, À découvrir', () => {
     await fireEvent.press(screen.getByTestId('widen-area'));
     await waitFor(() =>
       expect(mockEvents.search).toHaveBeenLastCalledWith(
-        { area: 'paris-11', radius_km: 2 },
+        { area: ['paris-11'], radius_km: 2 },
         1,
         expect.anything(),
       ),
@@ -205,7 +273,18 @@ describe('E1 Sorties, À découvrir', () => {
       screen.getByTestId('events-list').props.onEndReached();
     });
     expect(await screen.findByText('Foot')).toBeOnTheScreen();
-    expect(mockEvents.search).toHaveBeenLastCalledWith({ area: 'paris-11' }, 2, expect.anything());
+    expect(mockEvents.search).toHaveBeenLastCalledWith(
+      { area: ['paris-11'] },
+      2,
+      expect.anything(),
+    );
+  });
+
+  it('BUG-10 the loading list is announced to screen readers', async () => {
+    await withArea();
+    mockEvents.search.mockReturnValue(new Promise(() => {}));
+    await open('/');
+    expect(await screen.findByLabelText('Chargement des sorties')).toBeOnTheScreen();
   });
 
   it('shows the error notification with "Try again", and the rate-limit notice', async () => {
@@ -400,6 +479,64 @@ describe('E2 Event detail, participant', () => {
     expect(await screen.findByText('Tu as quitté la sortie')).toBeOnTheScreen();
   });
 
+  it('BUG-1 after a leave the address and participants disappear at once, even if the refetch fails', async () => {
+    mockEvents.leave.mockResolvedValue(undefined);
+    await detail(joinedEvent);
+    expect(await screen.findByTestId('exact-address')).toBeOnTheScreen();
+    mockEvents.get.mockRejectedValue(offlineError());
+    await fireEvent.press(screen.getByTestId('leave'));
+    await fireEvent.press(screen.getByTestId('confirm-leave'));
+    expect(await screen.findByText('Tu as quitté la sortie')).toBeOnTheScreen();
+    expect(screen.queryByTestId('exact-address')).toBeNull();
+    expect(screen.queryByText(joinedEvent.exact_address!)).toBeNull();
+    expect(screen.queryByTestId('going-badge')).toBeNull();
+  });
+
+  it('BUG-1 a 404 on refetch purges the cached event (address included)', async () => {
+    await detail(joinedEvent);
+    expect(await screen.findByTestId('exact-address')).toBeOnTheScreen();
+    mockEvents.get.mockRejectedValue(apiError(404, 'not_found'));
+    mockEvents.changePlaces.mockRejectedValue(apiError(404, 'not_found'));
+    await fireEvent.press(screen.getByTestId('change-places'));
+    await fireEvent.press(screen.getByTestId('join-confirm'));
+    expect(await screen.findByTestId('event-not-found')).toBeOnTheScreen();
+    expect(screen.queryByText(joinedEvent.exact_address!)).toBeNull();
+  });
+
+  it('BUG-3 a change of places refused because the host cancelled says it is cancelled', async () => {
+    await detail(joinedEvent);
+    mockEvents.changePlaces.mockRejectedValue(apiError(409, 'event_not_joinable'));
+    mockEvents.get.mockResolvedValue({
+      event: { ...joinedEvent, status: 'cancelled', exact_address: undefined },
+    });
+    await fireEvent.press(await screen.findByTestId('change-places'));
+    await fireEvent.press(screen.getByTestId('join-confirm'));
+    expect(await screen.findByTestId('join-cancelled')).toBeOnTheScreen();
+    expect(screen.queryByTestId('join-offline')).toBeNull();
+  });
+
+  it('BUG-3 a join refused because the event went on hold is not read as "started"', async () => {
+    await detail(eventFixture);
+    mockEvents.join.mockRejectedValue(apiError(409, 'event_not_joinable'));
+    mockEvents.get.mockRejectedValue(apiError(404, 'not_found'));
+    await fireEvent.press(await screen.findByTestId('join'));
+    await fireEvent.press(screen.getByTestId('join-confirm'));
+    expect(await screen.findByTestId('event-not-found')).toBeOnTheScreen();
+  });
+
+  it('BUG-10 one-sided ages are shown; loading is announced', async () => {
+    mockEvents.get.mockReturnValue(new Promise(() => {}));
+    await open(`/events/${eventFixture.id}`);
+    expect(await screen.findByLabelText('Chargement de la sortie')).toBeOnTheScreen();
+  });
+
+  it('BUG-10 shows an age range with only a minimum', async () => {
+    await detail({ ...eventFixture, age_min: 6, age_max: null });
+    expect(await screen.findByTestId('event-ages')).toHaveTextContent(
+      'Conseillé à partir de 6 ans',
+    );
+  });
+
   it('AC-8.2 on hold: the participant keeps the booking, only Leave is offered', async () => {
     await detail({ ...joinedEvent, status: 'suspended' });
     expect(await screen.findByText('Cette sortie est en pause')).toBeOnTheScreen();
@@ -491,6 +628,24 @@ describe('E4 Event detail, host', () => {
     expect(mockEvents.remove).toHaveBeenCalledWith(hostedEvent.id);
   });
 
+  it('BUG-8 publishing a draft with missing fields opens the form on them', async () => {
+    const partial: SparkEvent = {
+      ...hostedEvent,
+      status: 'draft',
+      category: null,
+      area: null,
+      places: { total: null, taken: 0, left: 0 },
+    };
+    mockEvents.publish.mockRejectedValue(
+      apiError(422, 'validation_failed', 'x', { category: ['blank'], area: ['blank'] }),
+    );
+    await detail(partial);
+    await fireEvent.press(await screen.findByTestId('host-publish'));
+    await fireEvent.press(screen.getByTestId('confirm-publish'));
+    expect(await screen.findByTestId('event-form')).toBeOnTheScreen();
+    expect(await screen.findByText('Choisis une catégorie.')).toBeOnTheScreen();
+  });
+
   it('AC-1.5 publishing a draft re-checks verification: it stays a draft', async () => {
     mockEvents.publish.mockRejectedValue(apiError(403, 'verification_required'));
     await detail({ ...hostedEvent, status: 'draft' });
@@ -518,18 +673,25 @@ describe('E5 Create / edit', () => {
     expect(screen.getByTestId('form-places')).toHaveDisplayValue('');
     expect(screen.getByTestId('rule-anyone')).toBeChecked();
     expect(screen.getByTestId('form-publish')).toBeDisabled();
-    expect(screen.getByText('Remplis les champs obligatoires pour publier.')).toBeOnTheScreen();
+    expect(screen.getByText(/^Remplis les champs obligatoires pour publier\./)).toBeOnTheScreen();
   });
+
+  /** BUG-5: the native picker (iOS sheet in tests), then "OK". */
+  async function pick(testID: string, moment: Date) {
+    await fireEvent.press(screen.getByTestId(testID));
+    await fireEvent(screen.getByTestId(`${testID}-picker`), 'onChange', {
+      nativeEvent: { timestamp: moment.getTime(), utcOffset: 0 },
+    });
+    await fireEvent.press(screen.getByTestId(`${testID}-done`));
+  }
 
   async function fillForm() {
     await fireEvent.changeText(await screen.findByTestId('form-title'), 'Foot au parc');
     await fireEvent.press(screen.getByTestId('form-category'));
     await fireEvent.press(screen.getByTestId('pick-sport'));
-    await fireEvent.changeText(screen.getByTestId('form-day'), '10');
-    await fireEvent.changeText(screen.getByTestId('form-month'), '10');
-    await fireEvent.changeText(screen.getByTestId('form-year'), '2026');
-    await fireEvent.changeText(screen.getByTestId('form-start'), '15:00');
-    await fireEvent.changeText(screen.getByTestId('form-end'), '17:00');
+    await pick('form-date', new Date(2026, 9, 10));
+    await pick('form-start', new Date(2026, 9, 10, 15, 0));
+    await pick('form-end', new Date(2026, 9, 10, 17, 0));
     await fireEvent(screen.getByTestId('form-area'), 'focus');
     await fireEvent.changeText(screen.getByTestId('form-area'), '11');
     await fireEvent.press(await screen.findByTestId('area-suggestion-paris-11'));
@@ -603,8 +765,71 @@ describe('E5 Create / edit', () => {
   it('AC-1.6 a start in the past is refused on the date field', async () => {
     await open('/events/new');
     await fillForm();
-    await fireEvent.changeText(screen.getByTestId('form-day'), '1');
+    await pick('form-date', new Date(2026, 9, 1));
     expect(screen.getByTestId('form-publish')).toBeDisabled();
+  });
+
+  it('BUG-5 date and times come from labelled native pickers, never typed', async () => {
+    await open('/events/new');
+    expect(await screen.findByRole('button', { name: 'Date, Choisis un jour' })).toBeOnTheScreen();
+    await pick('form-date', new Date(2026, 9, 10));
+    expect(screen.getByRole('button', { name: 'Date, Sam. 10 oct.' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Début, Choisis une heure' })).toBeOnTheScreen();
+  });
+
+  it('BUG-8 saves a draft with only a title, and lists what is still missing to publish', async () => {
+    mockEvents.create.mockResolvedValue({ event: { ...hostedEvent, status: 'draft' } });
+    mockEvents.get.mockResolvedValue({ event: { ...hostedEvent, status: 'draft' } });
+    await open('/events/new');
+    await fireEvent.changeText(await screen.findByTestId('form-title'), 'Pique-nique');
+    expect(screen.getByTestId('form-missing')).toHaveTextContent(
+      /À compléter : Catégorie, Date, Début, Fin, Quartier, Adresse exacte, Places\.$/,
+    );
+    await fireEvent.press(screen.getByTestId('form-draft'));
+    expect(mockEvents.create).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Pique-nique', starts_at: null, area: null }),
+      false,
+    );
+    expect(await screen.findByText('Brouillon enregistré')).toBeOnTheScreen();
+  });
+
+  it('BUG-7 a started event can still be edited (the address), without the date check', async () => {
+    const started = {
+      ...hostedEvent,
+      starts_at: '2026-10-06T08:00:00Z',
+      ends_at: '2026-10-06T16:00:00Z',
+    };
+    mockEvents.get.mockResolvedValue({ event: started });
+    mockEvents.update.mockResolvedValue({ event: started });
+    await open(`/events/${hostedEvent.id}/edit`);
+    await fireEvent.changeText(await screen.findByTestId('form-address'), '5 rue Oberkampf');
+    expect(screen.getByTestId('form-save')).toBeEnabled();
+    await fireEvent.press(screen.getByTestId('form-save'));
+    await fireEvent.press(await screen.findByTestId('confirm-notify'));
+    expect(mockEvents.update).toHaveBeenCalledWith(
+      hostedEvent.id,
+      expect.objectContaining({ exact_address: '5 rue Oberkampf' }),
+    );
+  });
+
+  it('BUG-4 a cancelled event cannot be edited: back to its page with a message', async () => {
+    mockEvents.get.mockResolvedValue({ event: { ...hostedEvent, status: 'cancelled' } });
+    await open(`/events/${hostedEvent.id}/edit`);
+    expect(await screen.findByTestId('event-detail')).toBeOnTheScreen();
+    expect(screen.getByText('Cette sortie ne peut plus être modifiée.')).toBeOnTheScreen();
+    expect(screen.queryByTestId('event-form')).toBeNull();
+  });
+
+  it('BUG-3 an edit refused because the event went on hold says so', async () => {
+    mockEvents.get
+      .mockResolvedValueOnce({ event: hostedEvent })
+      .mockResolvedValue({ event: { ...hostedEvent, status: 'suspended' } });
+    mockEvents.update.mockRejectedValue(apiError(409, 'event_not_editable'));
+    await open(`/events/${hostedEvent.id}/edit`);
+    await fireEvent.changeText(await screen.findByTestId('form-description'), 'Avec goûter');
+    await fireEvent.press(screen.getByTestId('form-save'));
+    expect(await screen.findByText('Tes sorties sont en pause')).toBeOnTheScreen();
+    expect(screen.queryByText('Impossible de joindre SparkCircles')).toBeNull();
   });
 
   it('AC-2.5 AC-7.2 editing a published event: the rule is fixed, participants are told', async () => {

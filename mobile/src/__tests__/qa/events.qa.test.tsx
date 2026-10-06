@@ -28,7 +28,7 @@ import { EventDetailScreen } from '../../screens/events/EventDetailScreen';
 import { EventFormScreen } from '../../screens/events/EventFormScreen';
 import { EventsScreen } from '../../screens/events/EventsScreen';
 import { serverErrors } from '../../screens/events/formModel';
-import { refreshEvents } from '../../screens/events/queries';
+import { forgetParticipation } from '../../screens/events/queries';
 
 jest.mock('../../api', () => jest.requireActual('../../test/apiMock').apiModule);
 
@@ -72,9 +72,8 @@ describe('QA Events copy rules (design section 3, PM rule "tu" everywhere)', () 
     }
   });
 
-  // BUG-2: "Que ferez-vous ?" (form.descriptionPlaceholder), "Pour vous retrouver"
-  // (detail.hostCancelledBody).
-  it.failing('FR uses "tu" everywhere: no "vous", "votre", "vos", "-vous"', () => {
+  // BUG-2 (fixed): "Que vas-tu proposer ?", "Pour les retrouver".
+  it('FR uses "tu" everywhere: no "vous", "votre", "vos", "-vous"', () => {
     const offenders = fr.filter(([, text]) => /\bvous\b|\bvotre\b|\bvos\b|-vous\b/i.test(text));
     expect(offenders).toEqual([]);
   });
@@ -97,21 +96,26 @@ describe('QA Events form: server errors land on the right field (422)', () => {
 });
 
 describe('QA Events cache: the exact address (AC-6.3)', () => {
-  // BUG-1: after a leave the cached detail (with `exact_address`, `participants`,
-  // `my_participation`) is only marked stale; it stays readable until the refetch answers.
-  it.failing('after refreshEvents (what a leave calls) the cached event has no address', () => {
+  // BUG-1 (fixed): a leave now calls forgetParticipation, which strips the address,
+  // participants and places from the cache at once, before the refetch.
+  it('after forgetParticipation (what a leave calls) the cached event has no address', () => {
     const client = new QueryClient();
     client.setQueryData(eventKey(joinedEvent.id), joinedEvent);
     client.setQueryData(myEventsKey('participant', 'upcoming'), {
       pages: [eventPage([joinedEvent])],
       pageParams: [1],
     });
-    refreshEvents(client, joinedEvent.id);
+    forgetParticipation(client, joinedEvent.id);
     const cached = client.getQueryData<typeof joinedEvent>(eventKey(joinedEvent.id));
     expect(cached?.exact_address).toBeUndefined();
+    expect(cached?.participants).toBeUndefined();
+    expect(cached?.my_participation).toBeUndefined();
+    expect(cached?.viewer.joined).toBe(false);
+    // The participant lists are dropped (refetched when opened).
     expect(
-      JSON.stringify(client.getQueryData(myEventsKey('participant', 'upcoming'))),
+      JSON.stringify(client.getQueryData(myEventsKey('participant', 'upcoming')) ?? null),
     ).not.toContain(joinedEvent.exact_address);
+    client.clear();
   });
 });
 
@@ -148,8 +152,8 @@ describe('QA Events screens', () => {
     expect(screen.queryByTestId('confetti')).toBeNull();
   });
 
-  // BUG-3: only some refusals are mapped; the others read "We couldn't reach SparkCircles".
-  it.failing('AC-5.8 an already_joined refusal is not shown as "no connection"', async () => {
+  // BUG-3 (fixed): an already_joined refusal refreshes the event and closes the sheet.
+  it('AC-5.8 an already_joined refusal is not shown as "no connection"', async () => {
     mockEvents.join.mockRejectedValueOnce(new ApiError(409, 'already_joined', 'x'));
     await open(`/events/${eventFixture.id}`);
     await fireEvent.press(await screen.findByTestId('join'));
@@ -158,10 +162,10 @@ describe('QA Events screens', () => {
     expect(screen.queryByTestId('join-offline')).toBeNull();
   });
 
-  // BUG-4: /events/:id/edit opened on someone else's event (a link) shows the full form.
-  // This test pins today's behaviour; when fixed, expect the form to be absent (redirect).
-  it('BUG-4 (open) the edit form opens for a member who is not the host', async () => {
+  // BUG-4 (fixed): /events/:id/edit on someone else's event goes back to its page.
+  it('BUG-4 the edit form does not open for a member who is not the host', async () => {
     await open(`/events/${eventFixture.id}/edit`);
-    expect(await screen.findByTestId('event-form')).toBeOnTheScreen();
+    expect(await screen.findByTestId('event-detail')).toBeOnTheScreen();
+    expect(screen.queryByTestId('event-form')).toBeNull();
   });
 });

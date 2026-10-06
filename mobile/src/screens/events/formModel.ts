@@ -20,11 +20,11 @@ export const LIMITS = {
 export type FormValues = {
   title: string;
   category: CategoryKey | null;
-  day: string;
-  month: string;
-  year: string;
-  start: string;
-  end: string;
+  /** "2026-10-10", from the native date picker (BUG-5). */
+  date: string | null;
+  /** "15:00", from the native time pickers. */
+  start: string | null;
+  end: string | null;
   area: string | null;
   address: string;
   places: string;
@@ -69,11 +69,9 @@ export type FormErrors = Partial<Record<Field, string>>;
 export const EMPTY_FORM: FormValues = {
   title: '',
   category: null,
-  day: '',
-  month: '',
-  year: '',
-  start: '',
-  end: '',
+  date: null,
+  start: null,
+  end: null,
   area: null,
   address: '',
   places: '',
@@ -86,21 +84,23 @@ export const EMPTY_FORM: FormValues = {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** The form values of an existing event (edit), in the event's local time. */
+const clock = (iso: string, timeZone: string) => {
+  const parts = zonedParts(new Date(iso), timeZone);
+  return `${pad(parts.hour)}:${pad(parts.minute)}`;
+};
+
+/** The form values of an existing event (edit), in the event's local time. A draft may
+ *  have empty fields (BUG-8). */
 export function formFromEvent(event: SparkEvent): FormValues {
-  const start = zonedParts(new Date(event.starts_at), event.time_zone);
-  const end = zonedParts(new Date(event.ends_at), event.time_zone);
   return {
-    title: event.title,
+    title: event.title ?? '',
     category: event.category,
-    day: String(start.day),
-    month: String(start.month),
-    year: String(start.year),
-    start: `${pad(start.hour)}:${pad(start.minute)}`,
-    end: `${pad(end.hour)}:${pad(end.minute)}`,
-    area: event.area.key,
+    date: event.starts_at ? zonedDate(event.starts_at, event.time_zone) : null,
+    start: event.starts_at ? clock(event.starts_at, event.time_zone) : null,
+    end: event.ends_at ? clock(event.ends_at, event.time_zone) : null,
+    area: event.area?.key ?? null,
     address: event.exact_address ?? '',
-    places: String(event.places.total),
+    places: event.places.total === null ? '' : String(event.places.total),
     joinRule: event.join_rule,
     description: event.description ?? '',
     ageMin: event.age_min === null ? '' : String(event.age_min),
@@ -109,28 +109,23 @@ export function formFromEvent(event: SparkEvent): FormValues {
   };
 }
 
-/** "15:00", "15h30", "1530", "9" → "15:00", "15:30", "15:30", "09:00"; null if not a time. */
-export function parseTime(text: string): string | null {
-  const match = /^(\d{1,2})(?:[:hH.]?(\d{2}))?[hH]?$/.exec(text.trim());
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2] ?? 0);
-  if (hours > 23 || minutes > 59) return null;
-  return `${pad(hours)}:${pad(minutes)}`;
+/** "2026-10-10" and "09:05" from a picked moment, in the device's local time (what the
+ *  native picker shows). */
+export function localDay(moment: Date): string {
+  return `${moment.getFullYear()}-${pad(moment.getMonth() + 1)}-${pad(moment.getDate())}`;
+}
+export function localClock(moment: Date): string {
+  return `${pad(moment.getHours())}:${pad(moment.getMinutes())}`;
 }
 
-/** "10", "10", "2026" → "2026-10-10", or null if it isn't a real day. */
-export function parseDay(day: string, month: string, year: string): string | null {
-  if (!/^\d{1,2}$/.test(day.trim()) || !/^\d{1,2}$/.test(month.trim())) return null;
-  if (!/^\d{4}$/.test(year.trim())) return null;
-  const d = Number(day);
-  const m = Number(month);
-  const y = Number(year);
-  const date = new Date(Date.UTC(y, m - 1, d));
-  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) {
-    return null;
+/** The moment to open a picker on: the chosen day and time, as device-local values. */
+export function pickerValue(date: string | null, time: string | null, fallback: Date): Date {
+  const base = date ? new Date(`${date}T00:00:00`) : new Date(fallback);
+  if (time) {
+    const [h, m] = time.split(':').map(Number);
+    base.setHours(h ?? 0, m ?? 0, 0, 0);
   }
-  return `${y}-${pad(m)}-${pad(d)}`;
+  return base;
 }
 
 /** A whole number in a range, or null ("1.5" and "abc" are refused, never truncated). */
@@ -161,11 +156,20 @@ export const TAG_ERROR_KEY = {
   invalid: 'events.form.tagInvalid',
 } as const;
 
-/** Checks the form like the API does, with the design's messages (design E5 table). */
+/**
+ * Checks the form like the API does at publish, with the design's messages (design E5
+ * table). `checkStart`: the start must be ahead (drafts being published, or a published
+ * event whose date or times change); a started event can still be fixed (BUG-7, the API's
+ * `Event#editable?`).
+ */
 export function validateForm(
   values: FormValues,
   t: TFunction,
-  { now = new Date(), placesTaken = 0 }: { now?: Date; placesTaken?: number } = {},
+  {
+    now = new Date(),
+    placesTaken = 0,
+    checkStart = true,
+  }: { now?: Date; placesTaken?: number; checkStart?: boolean } = {},
 ): FormErrors {
   const errors: FormErrors = {};
   if (!values.title.trim()) errors.title = t('events.form.titleError');
@@ -173,15 +177,19 @@ export function validateForm(
     errors.title = t('events.form.tooLong', { count: LIMITS.title });
   if (!values.category) errors.category = t('events.form.categoryError');
 
-  const day = parseDay(values.day, values.month, values.year);
+  const day = values.date;
   const today = zonedDate(now, EVENT_TIME_ZONE);
-  if (!day || day < today) errors.date = t('events.form.dateError');
+  if (!day || (checkStart && day < today)) errors.date = t('events.form.dateError');
 
-  const start = parseTime(values.start);
-  const end = parseTime(values.end);
-  if (!start || !end) errors.time = t('events.form.timeFormat');
+  const { start, end } = values;
+  if (!start || !end) errors.time = t('events.form.timeRequired');
   else if (end <= start) errors.time = t('events.form.timeError');
-  else if (day && !errors.date && zonedToUtc(day, start, EVENT_TIME_ZONE) <= now.toISOString())
+  else if (
+    checkStart &&
+    day &&
+    !errors.date &&
+    zonedToUtc(day, start, EVENT_TIME_ZONE) <= now.toISOString()
+  )
     errors.date = t('events.form.dateError');
 
   if (!values.area) errors.area = t('events.form.areaError');
@@ -207,43 +215,52 @@ export function validateForm(
   return errors;
 }
 
-/** The request body (POST / PATCH). Times go to UTC from the event's local time. */
+/**
+ * The request body (POST / PATCH). Times go to UTC from the event's local time. A draft
+ * saves whatever is typed (BUG-8): what is missing is sent as null.
+ */
 export function toParams(values: FormValues, { includeRule }: { includeRule: boolean }) {
-  const day = parseDay(values.day, values.month, values.year);
-  const start = parseTime(values.start);
-  const end = parseTime(values.end);
+  const { date: day, start, end } = values;
   const params: EventParams = {
     title: values.title.trim(),
     description: values.description.trim(),
-    starts_at: day && start ? zonedToUtc(day, start, EVENT_TIME_ZONE) : undefined,
-    ends_at: day && end ? zonedToUtc(day, end, EVENT_TIME_ZONE) : undefined,
-    area: values.area ?? undefined,
+    starts_at: day && start ? zonedToUtc(day, start, EVENT_TIME_ZONE) : null,
+    ends_at: day && end ? zonedToUtc(day, end, EVENT_TIME_ZONE) : null,
+    area: values.area,
     exact_address: values.address.trim(),
-    places_total: /^\d+$/.test(values.places.trim()) ? Number(values.places) : undefined,
+    places_total: /^\d+$/.test(values.places.trim()) ? Number(values.places) : null,
     age_min: values.ageMin.trim() ? Number(values.ageMin) : null,
     age_max: values.ageMax.trim() ? Number(values.ageMax) : null,
     tags: values.tags,
   };
   if (includeRule) {
-    params.category = values.category ?? undefined;
+    params.category = values.category;
     params.join_rule = values.joinRule;
   }
   return params;
 }
 
+/** True when the day or the times changed (the start is then checked again, BUG-7). */
+export function startChanged(before: FormValues, after: FormValues): boolean {
+  return before.date !== after.date || before.start !== after.start;
+}
+
+/** The required fields still empty, in screen order, for "Still to fill in" (BUG-8). */
+export function missingFields(values: FormValues): Field[] {
+  const missing: Field[] = [];
+  if (!values.title.trim()) missing.push('title');
+  if (!values.category) missing.push('category');
+  if (!values.date) missing.push('date');
+  if (!values.start || !values.end) missing.push('time');
+  if (!values.area) missing.push('area');
+  if (!values.address.trim()) missing.push('address');
+  if (!values.places.trim()) missing.push('places');
+  return missing;
+}
+
 /** True when a published event's change must be told to participants (AC-7.2). */
 export function notifiesParticipants(before: FormValues, after: FormValues): boolean {
-  const keys: (keyof FormValues)[] = [
-    'title',
-    'day',
-    'month',
-    'year',
-    'start',
-    'end',
-    'area',
-    'address',
-    'places',
-  ];
+  const keys: (keyof FormValues)[] = ['title', 'date', 'start', 'end', 'area', 'address', 'places'];
   return keys.some((key) => String(before[key]).trim() !== String(after[key]).trim());
 }
 
@@ -262,11 +279,16 @@ const FIELD_OF: Record<string, Field> = {
   join_rule: 'joinRule',
 };
 
-/** The API's `validation_failed` details as the design's field messages. */
+/**
+ * The API's `validation_failed` details as the design's field messages. `newTags`: the tags
+ * added since the last save; when only one is new, a refused tag is named (BUG-9), except
+ * for a banned word, which is never echoed (AC-3.9).
+ */
 export function serverErrors(
   details: Record<string, FieldErrorKey[]> | undefined,
   t: TFunction,
   placesTaken: number,
+  newTags: string[] = [],
 ): FormErrors {
   const errors: FormErrors = {};
   for (const [apiField, keys] of Object.entries(details ?? {})) {
@@ -274,6 +296,8 @@ export function serverErrors(
     const key = keys[0];
     if (!field || !key || errors[field]) continue;
     errors[field] = fieldMessage(field, key, t, placesTaken);
+    if (field === 'tags' && newTags.length === 1 && !keys.includes('banned_word'))
+      errors.tags = t('events.form.tagNamed', { tag: newTags[0], message: errors.tags });
   }
   return errors;
 }
