@@ -114,7 +114,9 @@ describe('QA copy (section 19, CLAUDE.md tone)', () => {
         if (badgeName && (words[i + 1] === 'badge' || words[i - 1] === 'badge')) return;
         // The tab's own name, as the design writes it: "dans Mon espace", "in My space".
         if (/^(Mon|My)$/.test(w) && /^(espace|space)\b/.test(words[i + 1] ?? '')) return;
-        expect(w).toMatch(/^(SparkCircles|API|ID\b|I\b|I'm|OK|Français|French|English|Paris\b)/);
+        expect(w).toMatch(
+          /^(SparkCircles|API|ID\b|I\b|I'm|OK|Français|French|English|European|Paris\b)/,
+        );
       });
     });
   });
