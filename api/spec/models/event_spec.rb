@@ -54,6 +54,26 @@ RSpec.describe Event do
       expect(build(:event, starts_at: start, ends_at: start + 25.hours).errors_on_validate(:ends_at)).to eq([ :too_long_duration ])
     end
 
+    it "BUG-8 a draft needs only its host; publishing needs every field" do
+      draft = described_class.new(host: create(:user, :verified), title: "  ")
+      expect(draft).to be_valid
+      expect(draft.title).to be_nil
+      expect(draft.publish!).to be(false)
+      expect(draft.errors.attribute_names).to contain_exactly(:title, :category, :area, :starts_at, :ends_at, :exact_address, :places_total)
+    end
+
+    it "BUG-8 the database refuses a published event with missing fields" do
+      draft = described_class.create!(host: create(:user, :verified))
+      expect { draft.update_columns(status: "published") }.to raise_error(ActiveRecord::StatementInvalid, /required_unless_draft|source_fields/)
+    end
+
+    it "AC-1.6 checks a draft's start only when it is published" do
+      draft = build(:event, :draft, starts_at: 1.hour.ago, ends_at: 1.hour.from_now)
+      expect(draft).to be_valid
+      expect(draft.publish!).to be(false)
+      expect(draft.errors.details[:starts_at]).to eq([ { error: :in_past } ])
+    end
+
     it "AC-5.8 the database refuses more places taken than the total" do
       event = create(:event, places_total: 2)
       expect { event.update_columns(places_taken: 3) }.to raise_error(ActiveRecord::StatementInvalid, /places_taken_check/)

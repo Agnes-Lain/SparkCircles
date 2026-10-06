@@ -30,18 +30,35 @@ RSpec.describe "Events: create, manage and search", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
-    it "AC-1.2 requires title, category, times, area, address, places and validates limits" do
+    it "AC-1.2 validates what is typed, even on a draft" do
       post "/api/v1/events", params: { event: { title: "x" * 81, places_total: 101, category: "cooking", area: "lyon-01" } },
                              headers: auth_headers(host), as: :json
       expect(response).to have_http_status(:unprocessable_content)
-      expect(json.dig("error", "details")).to include(
-        "title" => [ "too_long" ], "places_total" => [ "out_of_range" ], "category" => [ "inclusion" ],
-        "area" => [ "inclusion" ], "exact_address" => [ "blank" ], "starts_at" => [ "blank" ]
+      expect(json.dig("error", "details")).to eq(
+        "title" => [ "too_long" ], "places_total" => [ "out_of_range" ], "category" => [ "inclusion" ], "area" => [ "inclusion" ]
       )
     end
 
-    it "AC-1.6 refuses a start in the past" do
-      post "/api/v1/events", params: { event: attributes.merge(starts_at: 1.hour.ago.iso8601, ends_at: 1.hour.from_now.iso8601) },
+    it "BUG-8 saves a draft with whatever was typed (only the host is required)" do
+      post "/api/v1/events", params: { event: { description: "On verra" } }, headers: auth_headers(host), as: :json
+      expect(response).to have_http_status(:created)
+      expect(json["event"]).to include("status" => "draft", "title" => nil, "starts_at" => nil, "area" => nil, "category" => nil)
+      expect(json["event"]["places"]).to include("total" => nil)
+    end
+
+    it "BUG-8 requires every field when created with publish: true, one error per field" do
+      expect {
+        post "/api/v1/events", params: { event: { title: "Foot" }, publish: true }, headers: auth_headers(host), as: :json
+      }.not_to change(Event, :count)
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json.dig("error", "details")).to eq(
+        "category" => [ "blank" ], "area" => [ "blank" ], "starts_at" => [ "blank" ], "ends_at" => [ "blank" ],
+        "exact_address" => [ "blank" ], "places_total" => [ "blank" ]
+      )
+    end
+
+    it "AC-1.6 refuses a start in the past at publish" do
+      post "/api/v1/events", params: { event: attributes.merge(starts_at: 1.hour.ago.iso8601, ends_at: 1.hour.from_now.iso8601), publish: true },
                              headers: auth_headers(host), as: :json
       expect(json.dig("error", "details", "starts_at")).to eq([ "in_past" ])
     end
@@ -69,6 +86,20 @@ RSpec.describe "Events: create, manage and search", type: :request do
       post "/api/v1/events/#{draft.id}/publish", headers: auth_headers(host)
       expect(response).to have_http_status(:ok)
       expect(draft.reload).to be_published
+    end
+
+    it "BUG-8 lists the missing fields of a partial draft and keeps it a draft" do
+      partial = Event.create!(host: host, title: "Pique-nique")
+      post "/api/v1/events/#{partial.id}/publish", headers: auth_headers(host)
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json.dig("error", "details").keys).to contain_exactly("category", "area", "starts_at", "ends_at", "exact_address", "places_total")
+      expect(partial.reload).to be_draft
+    end
+
+    it "AC-1.6 refuses to publish a draft whose start has passed" do
+      draft.update_columns(starts_at: 1.hour.ago, ends_at: 1.hour.from_now)
+      post "/api/v1/events/#{draft.id}/publish", headers: auth_headers(host)
+      expect(json.dig("error", "details", "starts_at")).to eq([ "in_past" ])
     end
 
     it "AC-1.5 re-checks verification: an unverified host's event stays a draft" do
@@ -117,6 +148,13 @@ RSpec.describe "Events: create, manage and search", type: :request do
       patch "/api/v1/events/#{event.id}", params: { event: { starts_at: 9.days.from_now.iso8601 } }, headers: auth_headers(host), as: :json
       expect(response).to have_http_status(:conflict)
       expect(error_code).to eq("event_not_editable")
+    end
+
+    it "BUG-7 lets the host fix the address of an event that has started" do
+      event.update_columns(starts_at: 1.hour.ago, ends_at: 1.hour.from_now)
+      patch "/api/v1/events/#{event.id}", params: { event: { exact_address: "5 rue Oberkampf" } }, headers: auth_headers(host), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(event.reload.exact_address).to eq("5 rue Oberkampf")
     end
 
     it "is 404 for someone else" do
@@ -183,6 +221,25 @@ RSpec.describe "Events: create, manage and search", type: :request do
       expect(json["events"].find { |item| item["id"] == later.id }["distance_km"]).to eq(2.0)
     end
 
+    it "multi-area: area[] gives the union of the areas, with the distance from the nearest one" do
+      expect(ids("area" => %w[paris-11 paris-16])).to eq([ soon.id, far.id ])
+      expect(json["events"].map { |item| item["distance_km"] }).to eq([ 0.0, 0.0 ])
+      expect(ids("area" => %w[paris-11], radius_km: 3)).to contain_exactly(soon.id, later.id)
+      expect(ids(area: "paris-16")).to eq([ far.id ])
+    end
+
+    it "multi-area: area=paris is all of Paris (\"Tout Paris\"), with no distance" do
+      expect(ids(area: "paris")).to eq([ soon.id, far.id, later.id ])
+      expect(json["events"].map { |item| item["distance_km"] }.uniq).to eq([ nil ])
+    end
+
+    it "multi-area: refuses unknown keys and more than 20 areas" do
+      get "/api/v1/events", params: { "area" => %w[paris-11 lyon-01] }, headers: auth_headers(member)
+      expect(json.dig("error", "details", "area")).to eq([ "inclusion" ])
+      get "/api/v1/events", params: { "area" => EventArea.keys + [ "paris" ] }, headers: auth_headers(member)
+      expect(json.dig("error", "details", "area")).to eq([ "too_many" ])
+    end
+
     it "AC-3.2 filters by category, dates, age band and tag" do
       expect(ids(category: "music,outdoors")).to contain_exactly(later.id, far.id)
       expect(ids(from: 5.days.from_now.to_date.iso8601)).to eq([ later.id ])
@@ -218,6 +275,11 @@ RSpec.describe "Events: create, manage and search", type: :request do
       expect(ids({ q: "samedi" }, guest_headers)).to eq([ soon.id ])
     end
 
+    it "AC-15.9, AC-15.12 a guest's \"Tout Paris\" (area=paris) or several areas count as a scoped search" do
+      expect(ids({ area: "paris" }, guest_headers)).to eq([ soon.id, far.id, later.id ])
+      expect(ids({ "area" => %w[paris-11 paris-12] }, guest_headers)).to eq([ soon.id, later.id ])
+    end
+
     it "AC-15.12 paginates without a total and caps guests at 5 pages" do
       create_list(:event, 21, host: host, area: "paris-03")
       get "/api/v1/events", params: { area: "paris-03" }, headers: guest_headers
@@ -242,6 +304,14 @@ RSpec.describe "Events: create, manage and search", type: :request do
       expect(json["events"].first).to have_key("participants")
       get "/api/v1/me/events", params: { role: "participant" }, headers: auth_headers(participant)
       expect(json["events"].map { |item| item["id"] }).to eq([ event.id ])
+    end
+
+    it "BUG-8 lists an undated draft with the upcoming events, last" do
+      undated = Event.create!(host: host, title: "Idée")
+      event = create(:event, host: host)
+      get "/api/v1/me/events", params: { role: "host" }, headers: auth_headers(host)
+      expect(json["events"].map { |item| item["id"] }).to eq([ event.id, undated.id ])
+      expect(json["events"].last).to include("starts_at" => nil, "area" => nil)
     end
 
     it "AC-7.5 lists past events in the history" do

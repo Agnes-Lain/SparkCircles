@@ -71,7 +71,7 @@ module Events
     # The state an edit is compared with. No address: a keyed digest only.
     def snapshot(event)
       {
-        "title" => event.title, "starts_at" => event.starts_at.utc.iso8601, "ends_at" => event.ends_at.utc.iso8601,
+        "title" => event.title, "starts_at" => event.starts_at&.utc&.iso8601, "ends_at" => event.ends_at&.utc&.iso8601,
         "area" => event.area, "address_digest" => address_digest(event.exact_address), "places_total" => event.places_total
       }
     end

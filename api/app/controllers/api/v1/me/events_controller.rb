@@ -17,7 +17,12 @@ module Api
 
           per_page = ::Events::Search::PER_PAGE
           scope = role == "host" ? current_user.hosted_events : participated_events
-          scope = time == "upcoming" ? scope.not_ended.order(:starts_at, :id) : scope.ended.order(starts_at: :desc, id: :desc)
+          # Drafts with no date yet (BUG-8) are upcoming, after the dated ones.
+          scope = if time == "upcoming"
+            scope.not_ended.or(scope.where(ends_at: nil)).order(Arel.sql("starts_at ASC NULLS LAST"), :id)
+          else
+            scope.ended.order(starts_at: :desc, id: :desc)
+          end
           rows = scope.includes(:host, participations: :user).offset((page - 1) * per_page).limit(per_page + 1).to_a
 
           @events = rows.first(per_page)

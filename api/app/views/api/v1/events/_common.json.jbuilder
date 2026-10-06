@@ -7,10 +7,11 @@ json.title event.title
 json.description event.description
 json.category event.category
 json.tags event.tags
-json.starts_at event.starts_at.utc.iso8601
-json.ends_at event.ends_at.utc.iso8601
+# A draft may have no date or area yet (BUG-8): null until the host fills them in.
+json.starts_at event.starts_at&.utc&.iso8601
+json.ends_at event.ends_at&.utc&.iso8601
 json.time_zone event.time_zone
-json.area({ key: event.area, label: I18n.t("events.areas.#{event.area}") })
+json.area(event.area && { key: event.area, label: I18n.t("events.areas.#{event.area}") })
 json.distance_km viewer.distance_km(event)
 json.age_min event.age_min
 json.age_max event.age_max

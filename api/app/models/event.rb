@@ -28,21 +28,23 @@ class Event < ApplicationRecord
   has_many :participations, class_name: "EventParticipation", dependent: :delete_all, inverse_of: :event
   has_many :reports, class_name: "EventReport", dependent: :delete_all, inverse_of: :event
 
-  normalizes :title, with: ->(value) { value.squish }
+  normalizes :title, with: ->(value) { value.squish.presence }
   normalizes :description, with: ->(value) { value.strip.presence }
   normalizes :exact_address, with: ->(value) { value.squish.presence }
   normalizes :tags, with: ->(value) { EventTag.normalize_list(value) }
 
-  validates :title, presence: true, length: { maximum: TITLE_MAX }
+  # BUG-8 (PM decision 2026-10-06): a draft saves whatever the host typed. What is typed
+  # is still checked (lengths, ranges, order); every field is required at publish.
+  validates :title, :category, :area, :starts_at, :ends_at, presence: true, unless: :draft?
+  validates :exact_address, :places_total, presence: true, if: -> { hosted? && !draft? }
+  validates :title, length: { maximum: TITLE_MAX }
   validates :description, length: { maximum: DESCRIPTION_MAX }
-  validates :category, presence: true, inclusion: { in: CATEGORIES, allow_blank: true }
+  validates :category, inclusion: { in: CATEGORIES, allow_blank: true }
   validates :status, inclusion: { in: STATUSES }
   validates :join_rule, inclusion: { in: JOIN_RULES }
   validates :visibility, inclusion: { in: VISIBILITIES }
-  validates :area, presence: true, inclusion: { in: ->(_) { EventArea.keys }, allow_blank: true }
-  validates :starts_at, :ends_at, presence: true
-  validates :exact_address, presence: true, length: { maximum: ADDRESS_MAX }, if: :hosted?
-  validates :places_total, presence: true, if: :hosted?
+  validates :area, inclusion: { in: ->(_) { EventArea.keys }, allow_blank: true }
+  validates :exact_address, length: { maximum: ADDRESS_MAX }
   # Checked on the value as sent: 1.5 is refused (not_an_integer), never truncated to 1.
   validates :places_total, :age_min, :age_max, numericality: { only_integer: true }, allow_nil: true
   validate :places_within_range
@@ -68,8 +70,8 @@ class Event < ApplicationRecord
   def published? = status == "published"
   def suspended? = status == "suspended"
   def cancelled? = status == "cancelled"
-  def started? = starts_at <= Time.current
-  def ended? = ends_at <= Time.current
+  def started? = starts_at.present? && starts_at <= Time.current
+  def ended? = ends_at.present? && ends_at <= Time.current
 
   # "past" as soon as it ends, even before the hourly job updates the column.
   def display_status = published? && ended? ? "past" : status
@@ -110,10 +112,12 @@ class Event < ApplicationRecord
 
   private
 
+  # A draft's date is checked when it is published; a published event's when it changes.
   def start_must_be_future?
     return false if starts_at.nil?
+    return true if publishing
 
-    new_record? || publishing || will_save_change_to_starts_at?
+    !draft? && (new_record? || will_save_change_to_starts_at?)
   end
 
   def places_within_range
