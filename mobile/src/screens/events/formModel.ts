@@ -4,6 +4,7 @@ import type { EventLanguage, EventParams, JoinRule, SparkEvent } from '../../api
 import type { FieldErrorKey } from '../../api/types';
 import type { CategoryKey } from '../../components/CategoryPill';
 import { zonedDate, zonedParts, zonedToUtc } from './format';
+import { displayPhone, normalizePhone } from './phone';
 
 // The create / edit form (design E5) as plain data, so its rules are tested without a screen.
 
@@ -35,6 +36,14 @@ export type FormValues = {
   ageMin: string;
   ageMax: string;
   tags: string[];
+  /** AC-17.1: "Adulte accompagnant : obligatoire" (true, default) or "facultatif" (drop-off). */
+  adultRequired: boolean;
+  /** AC-17.13: "Validation des participations : je valide chaque demande". */
+  approvalRequired: boolean;
+  /** The host chose the validation by hand: kept when they toggle the adult setting. */
+  approvalChosen: boolean;
+  /** AC-17.9: the host's phone for this event (drop-off only), never from the profile. */
+  hostPhone: string;
 };
 
 export type Field =
@@ -48,6 +57,7 @@ export type Field =
   | 'joinRule'
   | 'description'
   | 'age'
+  | 'phone'
   | 'tags';
 
 /** Screen order, for "focus goes to the first field in error". */
@@ -62,6 +72,23 @@ export const FIELD_ORDER: readonly Field[] = [
   'joinRule',
   'description',
   'age',
+  'phone',
+  'tags',
+];
+
+/** Drop-off: the age range and the phone sit right after the places (design 3.1). */
+export const DROPOFF_FIELD_ORDER: readonly Field[] = [
+  'title',
+  'category',
+  'date',
+  'time',
+  'area',
+  'address',
+  'places',
+  'age',
+  'phone',
+  'joinRule',
+  'description',
   'tags',
 ];
 
@@ -83,6 +110,10 @@ export const EMPTY_FORM: FormValues = {
   ageMin: '',
   ageMax: '',
   tags: [],
+  adultRequired: true,
+  approvalRequired: false,
+  approvalChosen: false,
+  hostPhone: '',
 };
 
 /** A new event's form, its language pre-selected from the app language (AC-16.1). */
@@ -115,7 +146,21 @@ export function formFromEvent(event: SparkEvent): FormValues {
     ageMin: event.age_min === null ? '' : String(event.age_min),
     ageMax: event.age_max === null ? '' : String(event.age_max),
     tags: [...event.tags],
+    adultRequired: event.adult_required ?? true,
+    approvalRequired: event.approval_required ?? false,
+    approvalChosen: true,
+    hostPhone: event.host_phone ? displayPhone(event.host_phone) : '',
   };
+}
+
+/**
+ * AC-17.1, AC-17.8: choosing "Facultatif" presets "Je valide chaque demande", unless the
+ * host already chose the validation by hand (design 3.1). Typed values stay on the device.
+ */
+export function withAdultRequired(values: FormValues, adultRequired: boolean): FormValues {
+  const next = { ...values, adultRequired };
+  if (!values.approvalChosen) next.approvalRequired = !adultRequired;
+  return next;
 }
 
 /** "2026-10-10" and "09:05" from a picked moment, in the device's local time (what the
@@ -219,6 +264,13 @@ export function validateForm(
   if (ageMin === null || ageMax === null) errors.age = t('events.form.ageRange');
   else if (ageMin !== undefined && ageMax !== undefined && ageMin > ageMax)
     errors.age = t('events.form.ageError');
+  // AC-17.4, AC-17.11: a drop-off event needs the age range and a valid host phone.
+  else if (!values.adultRequired && (ageMin === undefined || ageMax === undefined))
+    errors.age = t('events.dropoff.ageMissing');
+  if (!values.adultRequired) {
+    if (!values.hostPhone.trim()) errors.phone = t('events.dropoff.phoneMissing');
+    else if (!normalizePhone(values.hostPhone)) errors.phone = t('events.dropoff.phoneInvalid');
+  }
 
   if (values.tags.length > LIMITS.tags) errors.tags = t('events.form.tagsMax');
   return errors;
@@ -242,10 +294,17 @@ export function toParams(values: FormValues, { includeRule }: { includeRule: boo
     age_max: values.ageMax.trim() ? Number(values.ageMax) : null,
     tags: values.tags,
     language: values.language,
+    // AC-17.9: only for a drop-off event; sent as typed when the API must refuse it.
+    host_phone: values.adultRequired
+      ? null
+      : (normalizePhone(values.hostPhone) ?? (values.hostPhone.trim() || null)),
   };
   if (includeRule) {
     params.category = values.category;
-    params.join_rule = values.joinRule;
+    // AC-17.3: a drop-off event is always verified members only.
+    params.join_rule = values.adultRequired ? values.joinRule : 'verified_only';
+    params.adult_required = values.adultRequired;
+    params.approval_required = values.approvalRequired;
   }
   return params;
 }
@@ -265,6 +324,9 @@ export function missingFields(values: FormValues): Field[] {
   if (!values.area) missing.push('area');
   if (!values.address.trim()) missing.push('address');
   if (!values.places.trim()) missing.push('places');
+  if (!values.adultRequired && (!values.ageMin.trim() || !values.ageMax.trim()))
+    missing.push('age');
+  if (!values.adultRequired && !values.hostPhone.trim()) missing.push('phone');
   return missing;
 }
 
@@ -287,6 +349,7 @@ const FIELD_OF: Record<string, Field> = {
   age_max: 'age',
   tags: 'tags',
   join_rule: 'joinRule',
+  host_phone: 'phone',
 };
 
 /**
@@ -338,7 +401,10 @@ function fieldMessage(field: Field, key: FieldErrorKey, t: TFunction, placesTake
         ? t('events.form.placesBelowTaken', { count: placesTaken })
         : t('events.form.placesError');
     case 'age':
+      if (key === 'blank') return t('events.dropoff.ageMissing');
       return key === 'invalid_range' ? t('events.form.ageError') : t('events.form.ageRange');
+    case 'phone':
+      return key === 'blank' ? t('events.dropoff.phoneMissing') : t('events.dropoff.phoneInvalid');
     case 'tags':
       return tagMessage(key, t);
     default:

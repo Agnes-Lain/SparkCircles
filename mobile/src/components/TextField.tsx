@@ -33,7 +33,9 @@ export type TextFieldKind =
   | 'birthMonth'
   | 'birthYear'
   | 'number'
-  | 'time';
+  | 'time'
+  | 'phone'
+  | 'emergencyPhone';
 
 export type TextFieldProps = {
   label: string;
@@ -118,6 +120,21 @@ const KIND: Record<TextFieldKind, Partial<TextInputProps>> = {
   },
   number: { keyboardType: 'number-pad', maxLength: 3 },
   time: { keyboardType: 'numbers-and-punctuation', maxLength: 5, autoCorrect: false },
+  // US-17: the host's own number may be autofilled; an emergency number never is.
+  phone: {
+    keyboardType: 'phone-pad',
+    autoComplete: 'tel',
+    textContentType: 'telephoneNumber',
+    autoCorrect: false,
+    maxLength: 24,
+  },
+  emergencyPhone: {
+    keyboardType: 'phone-pad',
+    autoComplete: 'off',
+    textContentType: 'none',
+    autoCorrect: false,
+    maxLength: 24,
+  },
 };
 
 /**

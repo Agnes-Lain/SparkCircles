@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Redirect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { ChevronDown, CircleAlert, Lock, X } from 'lucide-react-native';
+import { ChevronDown, CircleAlert, Lock, Phone, X } from 'lucide-react-native';
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -37,10 +37,12 @@ import { useBack } from '../auth/useBack';
 import { fold } from './AreaSheet';
 import { CATEGORIES, CATEGORY_ICON } from './categories';
 import { ConfirmSheet } from './ConfirmSheet';
+import { DropoffNotice } from './dropoff';
 import { EventListSkeleton } from './EventCardSkeleton';
 import { formatCalendarDay } from './format';
 import {
   checkTag,
+  DROPOFF_FIELD_ORDER,
   emptyForm,
   type Field,
   FIELD_ORDER,
@@ -58,12 +60,13 @@ import {
   TAG_ERROR_KEY,
   toParams,
   validateForm,
+  withAdultRequired,
 } from './formModel';
 import { hasEnded } from './presenters';
 import { freshEvent, storeEvent, useEvent, useEventOptions } from './queries';
 import { type ClosedReason, closedReason, isRefusal, refusalText } from './refusals';
 
-type Sheet = null | 'category' | 'publish' | 'notify' | 'leave';
+type Sheet = null | 'category' | 'publish' | 'notify' | 'leave' | 'phone';
 type Action = 'draft' | 'publish' | 'save';
 
 /** BUG-4: only the host edits, and only a draft or a published event that hasn't ended
@@ -177,8 +180,10 @@ function EventForm({ event }: { event?: SparkEvent }) {
   const joinRuleRef = useRef<View>(null);
   const descriptionRef = useRef<TextInput>(null);
   const ageRef = useRef<TextInput>(null);
+  const phoneRef = useRef<TextInput>(null);
   const tagsRef = useRef<TextInput>(null);
-  const focusFirstError = useFocusFirstError(FIELD_ORDER, {
+  const dropoff = !values.adultRequired;
+  const focusFirstError = useFocusFirstError(dropoff ? DROPOFF_FIELD_ORDER : FIELD_ORDER, {
     title: titleRef,
     category: categoryRef,
     date: dateRef,
@@ -189,6 +194,7 @@ function EventForm({ event }: { event?: SparkEvent }) {
     joinRule: joinRuleRef,
     description: descriptionRef,
     age: ageRef,
+    phone: phoneRef,
     tags: tagsRef,
   } satisfies Record<Field, RefObject<TextInput | View | null>>);
 
@@ -209,6 +215,8 @@ function EventForm({ event }: { event?: SparkEvent }) {
     area: t('events.form.area'),
     address: t('events.form.address'),
     places: t('events.form.places'),
+    age: t('events.dropoff.ageRequired'),
+    phone: t('events.dropoff.phoneLabel'),
   };
 
   // Back with edits: "Leave without saving?" (design E5 "Unsaved changes").
@@ -287,7 +295,13 @@ function EventForm({ event }: { event?: SparkEvent }) {
     }
     setErrors({});
     if (action === 'publish') setSheet('publish');
-    else if (action === 'save' && notifiesParticipants(initial, values)) setSheet('notify');
+    // Design 3.1: a new phone on a published drop-off event is confirmed first.
+    else if (action === 'save' && dropoff && values.hostPhone.trim() !== initial.hostPhone.trim())
+      setSheet('phone');
+    else saveOrNotify(action);
+  };
+  const saveOrNotify = (action: Action) => {
+    if (action === 'save' && notifiesParticipants(initial, values)) setSheet('notify');
     else mutation.mutate(action);
   };
 
@@ -537,31 +551,110 @@ function EventForm({ event }: { event?: SparkEvent }) {
         testID="form-places"
       />
 
-      <View className="gap-xs" ref={joinRuleRef}>
-        <Text className="text-body text-ink-2">{t('events.form.joinRule')}</Text>
-        <View accessibilityRole="radiogroup" accessibilityLabel={t('events.form.joinRule')}>
-          <RadioRow
-            label={t('events.form.anyone')}
-            helper={t('events.form.anyoneHelp')}
-            selected={values.joinRule === 'anyone'}
-            disabled={published}
-            onPress={() => set('joinRule', 'anyone')}
-            testID="rule-anyone"
+      {/* AC-17.1: accompanying adult, two choices; drop-off follows from "Facultatif". */}
+      <SettingField
+        label={t('events.dropoff.adultLabel')}
+        published={published}
+        value={values.adultRequired ? 'required' : 'optional'}
+        segments={[
+          { key: 'required', label: t('events.dropoff.adultRequired') },
+          { key: 'optional', label: t('events.dropoff.adultOptional') },
+        ]}
+        onChange={(key) => setValues((v) => withAdultRequired(v, key === 'required'))}
+        helper={t('events.dropoff.fixedHelper')}
+        testIDPrefix="adult"
+      />
+
+      {dropoff ? (
+        <>
+          <DropoffNotice
+            title={t('events.dropoff.noticeTitle')}
+            body={t('events.dropoff.noticeBody')}
+            testID="form-dropoff-notice"
           />
-          <RadioRow
-            label={t('events.form.verifiedOnly')}
-            helper={t('events.form.verifiedOnlyHelp')}
-            selected={values.joinRule === 'verified_only'}
-            disabled={published}
-            onPress={() => set('joinRule', 'verified_only')}
-            testID="rule-verified"
+          {/* AC-17.3: not a control; read as text, "locked" said in the text itself. */}
+          <View className="gap-xs" ref={joinRuleRef}>
+            <Text className="text-body text-ink-2">{t('events.form.joinRule')}</Text>
+            <View
+              accessible
+              className="flex-row items-start gap-md rounded-md bg-shell p-md"
+              testID="form-locked-rule"
+            >
+              <Icon icon={Lock} size={18} color="ink-2" />
+              <View className="flex-1 gap-xs">
+                <Text className="text-body font-medium text-ink">
+                  {t('events.dropoff.lockedRule')}
+                </Text>
+                <Text className="text-caption text-ink-2">
+                  {t('events.dropoff.lockedRuleBody')}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <AgeRange
+            label={t('events.dropoff.ageRequired')}
+            values={values}
+            set={set}
+            error={errors.age}
+            inputRef={ageRef}
           />
+          <TextField
+            ref={phoneRef}
+            kind="phone"
+            label={t('events.dropoff.phoneLabel')}
+            value={values.hostPhone}
+            onChangeText={(v) => set('hostPhone', v)}
+            leading={<Icon icon={Phone} size={18} color="ink-2" />}
+            helper={t('events.dropoff.phoneNote')}
+            error={errors.phone}
+            testID="form-host-phone"
+          />
+        </>
+      ) : (
+        <View className="gap-xs" ref={joinRuleRef}>
+          <Text className="text-body text-ink-2">{t('events.form.joinRule')}</Text>
+          <View accessibilityRole="radiogroup" accessibilityLabel={t('events.form.joinRule')}>
+            <RadioRow
+              label={t('events.form.anyone')}
+              helper={t('events.form.anyoneHelp')}
+              selected={values.joinRule === 'anyone'}
+              disabled={published}
+              onPress={() => set('joinRule', 'anyone')}
+              testID="rule-anyone"
+            />
+            <RadioRow
+              label={t('events.form.verifiedOnly')}
+              helper={t('events.form.verifiedOnlyHelp')}
+              selected={values.joinRule === 'verified_only'}
+              disabled={published}
+              onPress={() => set('joinRule', 'verified_only')}
+              testID="rule-verified"
+            />
+          </View>
+          {errors.joinRule ? <FieldError message={errors.joinRule} /> : null}
+          <Text className="text-caption text-ink-3">
+            {published ? t('events.form.readOnly') : t('events.form.joinRuleHelper')}
+          </Text>
         </View>
-        {errors.joinRule ? <FieldError message={errors.joinRule} /> : null}
-        <Text className="text-caption text-ink-3">
-          {published ? t('events.form.readOnly') : t('events.form.joinRuleHelper')}
-        </Text>
-      </View>
+      )}
+
+      {/* AC-17.13: participation validation, preset to "Je valide chaque demande" for drop-off. */}
+      <SettingField
+        label={t('events.dropoff.approvalLabel')}
+        published={published}
+        value={values.approvalRequired ? 'manual' : 'auto'}
+        segments={[
+          { key: 'auto', label: t('events.dropoff.approvalAuto') },
+          { key: 'manual', label: t('events.dropoff.approvalManual') },
+        ]}
+        onChange={(key) =>
+          setValues((v) => ({ ...v, approvalRequired: key === 'manual', approvalChosen: true }))
+        }
+        helper={
+          dropoff ? t('events.dropoff.approvalHelperDropoff') : t('events.dropoff.fixedHelper')
+        }
+        testIDPrefix="approval"
+      />
 
       {/* AC-16.1: the event's language, one choice; never translated (AC-16.4). */}
       <View className="gap-xs" testID="form-language">
@@ -593,44 +686,15 @@ function EventForm({ event }: { event?: SparkEvent }) {
         testID="form-description"
       />
 
-      <View className="gap-xs">
-        <Text className="text-body text-ink-2">
-          {t('events.form.optional', { label: t('events.form.age') })}
-        </Text>
-        <View
-          role="group"
-          accessibilityLabel={t('events.form.age')}
-          className="flex-row items-end gap-sm"
-        >
-          <View className="flex-1">
-            <TextField
-              ref={ageRef}
-              kind="number"
-              label={t('events.form.ageFrom')}
-              value={values.ageMin}
-              onChangeText={(v) => set('ageMin', v)}
-              maxLength={2}
-              error={errors.age}
-              hideErrorText
-              testID="form-age-min"
-            />
-          </View>
-          <View className="flex-1">
-            <TextField
-              kind="number"
-              label={t('events.form.ageTo')}
-              value={values.ageMax}
-              onChangeText={(v) => set('ageMax', v)}
-              maxLength={2}
-              error={errors.age}
-              hideErrorText
-              testID="form-age-max"
-            />
-          </View>
-          <Text className="pb-3 text-body text-ink-2">{t('events.form.years')}</Text>
-        </View>
-        {errors.age ? <FieldError message={errors.age} /> : null}
-      </View>
+      {dropoff ? null : (
+        <AgeRange
+          label={t('events.form.optional', { label: t('events.form.age') })}
+          values={values}
+          set={set}
+          error={errors.age}
+          inputRef={ageRef}
+        />
+      )}
 
       <View className="gap-sm">
         <TextField
@@ -751,7 +815,7 @@ function EventForm({ event }: { event?: SparkEvent }) {
         visible={sheet === 'publish'}
         onClose={() => setSheet(null)}
         title={t('events.form.publishTitle')}
-        body={t('events.form.publishBody')}
+        body={t('events.dropoff.publishBody')}
         primary={{
           label: t('events.form.publishConfirm'),
           onPress: () => mutation.mutate('publish'),
@@ -771,12 +835,55 @@ function EventForm({ event }: { event?: SparkEvent }) {
             ].join(' · ')}
           </Text>
           <Text className="text-caption text-ink-2">
-            {values.joinRule === 'anyone'
+            {values.joinRule === 'anyone' && !dropoff
               ? t('events.form.summaryAnyone', { count: Number(values.places) || 0 })
               : t('events.form.summaryVerified', { count: Number(values.places) || 0 })}
           </Text>
+          <SummaryRow
+            label={t('events.dropoff.summaryAdult')}
+            value={dropoff ? t('events.dropoff.adultOptional') : t('events.dropoff.adultRequired')}
+          />
+          <SummaryRow
+            label={t('events.dropoff.summaryRule')}
+            value={
+              values.joinRule === 'anyone' && !dropoff
+                ? t('events.form.anyone')
+                : t('events.form.verifiedOnly')
+            }
+          />
+          <SummaryRow
+            label={t('events.dropoff.summaryValidation')}
+            value={
+              values.approvalRequired
+                ? t('events.dropoff.approvalManual')
+                : t('events.dropoff.approvalAuto')
+            }
+          />
+          {dropoff ? (
+            <SummaryRow
+              label={t('events.dropoff.summaryPhone')}
+              value={t('events.dropoff.summaryPhoneValue')}
+            />
+          ) : null}
         </View>
       </ConfirmSheet>
+
+      <ConfirmSheet
+        visible={sheet === 'phone'}
+        onClose={() => setSheet(null)}
+        title={t('events.dropoff.phoneChanged')}
+        primary={{
+          label: t('events.form.save'),
+          onPress: () => {
+            setSheet(null);
+            saveOrNotify('save');
+          },
+          loading: mutation.isPending,
+          testID: 'confirm-phone',
+        }}
+        secondary={{ label: t('events.form.keepEditing'), onPress: () => setSheet(null) }}
+        testID="phone-sheet"
+      />
 
       <ConfirmSheet
         visible={sheet === 'notify'}
@@ -819,6 +926,116 @@ function EventForm({ event }: { event?: SparkEvent }) {
         testID="leave-form-sheet"
       />
     </FormScreen>
+  );
+}
+
+/** A two-choice setting (design 3.1); read-only once published ("Fixé depuis la publication"). */
+function SettingField<K extends string>({
+  label,
+  published,
+  value,
+  segments,
+  onChange,
+  helper,
+  testIDPrefix,
+}: {
+  label: string;
+  published: boolean;
+  value: K;
+  segments: { key: K; label: string }[];
+  onChange: (key: K) => void;
+  helper: string;
+  testIDPrefix: string;
+}) {
+  const { t } = useTranslation();
+  const current = segments.find((segment) => segment.key === value)?.label ?? '';
+  return (
+    <View className="gap-xs" testID={`form-${testIDPrefix}`}>
+      <Text className="text-body text-ink-2">{label}</Text>
+      {published ? (
+        <View
+          accessible
+          accessibilityLabel={`${label}, ${current}. ${t('events.dropoff.fixedSincePublish')}`}
+          className="flex-row items-center gap-sm rounded-md bg-shell p-md"
+          testID={`form-${testIDPrefix}-readonly`}
+        >
+          <Text className="flex-1 text-body font-medium text-ink">{current}</Text>
+          <Icon icon={Lock} size={16} color="ink-2" />
+          <Text className="text-caption text-ink-2">{t('events.dropoff.fixedSincePublish')}</Text>
+        </View>
+      ) : (
+        <>
+          <SegmentedControl
+            accessibilityLabel={label}
+            segments={segments}
+            value={value}
+            onChange={onChange}
+            testIDPrefix={testIDPrefix}
+          />
+          <Text className="text-caption text-ink-3">{helper}</Text>
+        </>
+      )}
+    </View>
+  );
+}
+
+/** The age range, optional, or required for a drop-off event (AC-17.4). */
+function AgeRange({
+  label,
+  values,
+  set,
+  error,
+  inputRef,
+}: {
+  label: string;
+  values: FormValues;
+  set: <K extends keyof FormValues>(key: K, value: FormValues[K]) => void;
+  error?: string;
+  inputRef: RefObject<TextInput | null>;
+}) {
+  const { t } = useTranslation();
+  return (
+    <View className="gap-xs">
+      <Text className="text-body text-ink-2">{label}</Text>
+      <View role="group" accessibilityLabel={label} className="flex-row items-end gap-sm">
+        <View className="flex-1">
+          <TextField
+            ref={inputRef}
+            kind="number"
+            label={t('events.form.ageFrom')}
+            value={values.ageMin}
+            onChangeText={(v) => set('ageMin', v)}
+            maxLength={2}
+            error={error}
+            hideErrorText
+            testID="form-age-min"
+          />
+        </View>
+        <View className="flex-1">
+          <TextField
+            kind="number"
+            label={t('events.form.ageTo')}
+            value={values.ageMax}
+            onChangeText={(v) => set('ageMax', v)}
+            maxLength={2}
+            error={error}
+            hideErrorText
+            testID="form-age-max"
+          />
+        </View>
+        <Text className="pb-3 text-body text-ink-2">{t('events.form.years')}</Text>
+      </View>
+      {error ? <FieldError message={error} /> : null}
+    </View>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="flex-row justify-between gap-sm">
+      <Text className="text-caption text-ink-2">{label}</Text>
+      <Text className="shrink text-right text-caption font-medium text-ink">{value}</Text>
+    </View>
   );
 }
 
