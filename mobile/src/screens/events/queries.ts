@@ -67,8 +67,7 @@ export function useEvent(id: string) {
     queryFn: async ({ signal }) => {
       try {
         const { event } = await events().get(id, signal);
-        if (event.status === 'cancelled' && event.viewer.role !== 'host')
-          stripFromLists(client, id);
+        stripIfCancelled(client, event);
         return event;
       } catch (error) {
         if (error instanceof ApiError && (error.status === 403 || error.status === 404))
@@ -80,12 +79,19 @@ export function useEvent(id: string) {
   });
 }
 
-/** Fetches the event again for its real state; `undefined` when it isn't visible any more. */
+/**
+ * Fetches the event again for its real state; `undefined` when it isn't visible any more.
+ * A cancelled event drops its address from the lists at once, as in `useEvent` (QA R2-1).
+ */
 export async function freshEvent(client: QueryClient, id: string) {
   try {
     return await client.fetchQuery<SparkEvent, ApiError>({
       queryKey: eventKey(id),
-      queryFn: async ({ signal }) => (await events().get(id, signal)).event,
+      queryFn: async ({ signal }) => {
+        const { event } = await events().get(id, signal);
+        stripIfCancelled(client, event);
+        return event;
+      },
       staleTime: 0,
     });
   } catch (error) {
@@ -98,8 +104,7 @@ export async function freshEvent(client: QueryClient, id: string) {
 /** Puts the event a mutation returned in the cache and refreshes every list (AC-1.8). */
 export function storeEvent(client: QueryClient, event: SparkEvent) {
   client.setQueryData(eventKey(event.id), event);
-  if (event.status === 'cancelled' && event.viewer.role !== 'host')
-    stripFromLists(client, event.id);
+  stripIfCancelled(client, event);
   refreshLists(client);
 }
 
@@ -153,7 +158,13 @@ function withoutInsiderDetails(event: SparkEvent): SparkEvent {
   return rest;
 }
 
-/** Drops the insider details of one event from every cached list page. */
+/** AC-6.3: a cancelled event keeps no exact address or participants for a non-host. */
+function stripIfCancelled(client: QueryClient, event: SparkEvent) {
+  if (event.status === 'cancelled' && event.viewer.role !== 'host')
+    stripFromLists(client, event.id);
+}
+
+/** Drops the insider details of one event from every cached list page, synchronously. */
 function stripFromLists(client: QueryClient, id: string) {
   for (const query of client.getQueryCache().findAll({ queryKey: EVENTS_KEY })) {
     const kind = query.queryKey[1];
