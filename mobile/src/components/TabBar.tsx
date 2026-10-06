@@ -130,6 +130,8 @@ function CentreTab({
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
+      // The disc rises above the bar: extend the touch area upwards so a tap on its top counts.
+      hitSlop={{ top: 36 }}
       className="flex-1 items-center justify-center bg-transparent px-xs py-1.5"
       style={{ minHeight: MIN_TOUCH_TARGET, minWidth: DISC_SIZE, overflow: 'visible' }}
     >
