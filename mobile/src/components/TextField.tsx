@@ -1,5 +1,5 @@
 import { CircleAlert, Eye, EyeOff } from 'lucide-react-native';
-import { type Ref, useState } from 'react';
+import { type ReactNode, type Ref, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, TextInput, type TextInputProps, View } from 'react-native';
 
@@ -15,6 +15,12 @@ const INPUT_TEXT = {
   paddingVertical: 0,
 };
 
+const MULTILINE_TEXT = {
+  fontSize: parseFloat(fontSize.body[0]),
+  textAlignVertical: 'top' as const,
+  paddingVertical: 10,
+};
+
 export type TextFieldKind =
   | 'text'
   | 'name'
@@ -25,7 +31,9 @@ export type TextFieldKind =
   | 'newPassword'
   | 'birthDay'
   | 'birthMonth'
-  | 'birthYear';
+  | 'birthYear'
+  | 'number'
+  | 'time';
 
 export type TextFieldProps = {
   label: string;
@@ -40,6 +48,16 @@ export type TextFieldProps = {
   /** Keeps the error border and spoken error but leaves the text to the caller (grouped fields). */
   hideErrorText?: boolean;
   returnKeyType?: TextInputProps['returnKeyType'];
+  /** Leading element inside the box (the address `lock`, the tag "#", the search icon). */
+  leading?: ReactNode;
+  /** Trailing element inside the box (a clear button). */
+  trailing?: ReactNode;
+  maxLength?: number;
+  /** Several lines (descriptions); the box grows with the text. */
+  multiline?: boolean;
+  editable?: boolean;
+  onBlur?: () => void;
+  onFocus?: () => void;
   onSubmitEditing?: () => void;
   ref?: Ref<TextInput>;
   testID?: string;
@@ -98,6 +116,8 @@ const KIND: Record<TextFieldKind, Partial<TextInputProps>> = {
     autoComplete: 'birthdate-year',
     textContentType: 'birthdateYear',
   },
+  number: { keyboardType: 'number-pad', maxLength: 3 },
+  time: { keyboardType: 'numbers-and-punctuation', maxLength: 5, autoCorrect: false },
 };
 
 /**
@@ -118,6 +138,13 @@ export function TextField({
   hideErrorText = false,
   returnKeyType,
   onSubmitEditing,
+  leading,
+  trailing,
+  maxLength,
+  multiline = false,
+  editable = true,
+  onBlur,
+  onFocus,
   ref,
   testID,
 }: TextFieldProps) {
@@ -133,8 +160,9 @@ export function TextField({
       <View
         testID={testID ? `${testID}-box` : undefined}
         className={`flex-row items-center rounded-md border-[1.5px] bg-surface ${border}`}
-        style={{ minHeight: MIN_TOUCH_TARGET }}
+        style={{ minHeight: multiline ? 96 : MIN_TOUCH_TARGET }}
       >
+        {leading ? <View className="ml-3.5">{leading}</View> : null}
         <TextInput
           ref={ref}
           testID={testID}
@@ -148,14 +176,24 @@ export function TextField({
           returnKeyType={returnKeyType}
           onSubmitEditing={onSubmitEditing}
           submitBehavior={onSubmitEditing ? 'submit' : undefined}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          className="flex-1 self-stretch px-3.5 text-ink"
+          onFocus={() => {
+            setFocused(true);
+            onFocus?.();
+          }}
+          onBlur={() => {
+            setFocused(false);
+            onBlur?.();
+          }}
+          editable={editable}
+          multiline={multiline}
+          className={`flex-1 self-stretch text-ink ${leading ? 'pl-sm pr-3.5' : 'px-3.5'}`}
           // Body size without its line height: on iOS a lineHeight on a TextInput pushes the
           // text down and crowds descenders (PM report). The box centres the text instead.
-          style={INPUT_TEXT}
+          style={multiline ? MULTILINE_TEXT : INPUT_TEXT}
           {...KIND[kind]}
+          {...(maxLength ? { maxLength } : {})}
         />
+        {trailing}
         {isPassword ? (
           <View className="mr-0.5">
             <IconButton

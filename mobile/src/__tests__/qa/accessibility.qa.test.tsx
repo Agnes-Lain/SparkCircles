@@ -94,7 +94,12 @@ describe('QA Skeleton and reduced motion (section 13, P6)', () => {
 
 describe('QA copy (section 19, CLAUDE.md tone)', () => {
   it('French uses "tu", never "vous"', () => {
-    const offenders = strings(fr).filter((s) => /\b(vous|votre|vos)\b/i.test(s));
+    // Approved Events copy where "vous" is a plural (the host and the participants, or the
+    // host's own party), not a formal "you" (docs/design/events.md E5, E9).
+    const plural = [/Que ferez-vous \?/, /Pour vous retrouver,/];
+    const offenders = strings(fr).filter(
+      (s) => /\b(vous|votre|vos)\b/i.test(s) && !plural.some((p) => p.test(s)),
+    );
     expect(offenders).toEqual([]);
   });
 
