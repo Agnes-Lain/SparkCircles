@@ -95,6 +95,9 @@ describe('E1 Sorties, À découvrir', () => {
     await fireEvent.press(await screen.findByTestId('area-selector'));
     expect(await screen.findByText('Où cherches-tu des sorties ?')).toBeOnTheScreen();
     expect(screen.getByTestId('area-all')).toBeChecked();
+    // QA R2-3 (PM decision): no "Utiliser ma position" row until location ships (backlog #25).
+    expect(screen.queryByText(/ma position/i)).toBeNull();
+    expect(screen.getByText(/Nous n'utilisons jamais ta position/)).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('area-paris-20'));
     await fireEvent.press(screen.getByTestId('area-paris-11'));
     expect(screen.getByTestId('area-all')).not.toBeChecked();
