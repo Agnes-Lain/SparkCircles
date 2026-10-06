@@ -22,3 +22,12 @@ export async function markHeroSeen(): Promise<void> {
     // The full hero shows again next time.
   }
 }
+
+/** Development only: forget the flag so the next visit shows the full hero again. */
+export async function resetHeroSeen(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(HERO_SEEN_KEY, SECURE_STORE_OPTIONS);
+  } catch {
+    // Nothing to reset.
+  }
+}

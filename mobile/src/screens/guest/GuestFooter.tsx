@@ -8,6 +8,7 @@ import { Button } from '../../components/Button';
 import { TextLink } from '../../components/TextLink';
 import { useToast } from '../../components/ToastProvider';
 import { changeAppLanguage } from '../../i18n/localeStore';
+import { resetHeroSeen } from './heroStore';
 import { shadows } from '../../theme/colors';
 import { openLegalDocument } from '../auth/external';
 import { useGuestAccount } from './useGuestAccount';
@@ -91,6 +92,15 @@ export function GuestFooter() {
         onPress={() => void changeAppLanguage('en')}
         testID="footer-en"
       />
+      {__DEV__ ? (
+        <TextLink
+          small
+          quiet
+          label="[dev] Revoir l'accueil"
+          onPress={() => void resetHeroSeen()}
+          testID="footer-dev-reset-hero"
+        />
+      ) : null}
     </View>
   );
 }
