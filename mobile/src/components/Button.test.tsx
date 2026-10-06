@@ -48,6 +48,14 @@ describe('Button (design system section 5)', () => {
     expect(screen.getByText('Créer ma communauté').props.className).toContain('text-ink');
   });
 
+  it('Secondary: mint Light fill, mint Dark label and 1.5 px mint Dark border (v1.6)', async () => {
+    await renderWithProviders(<Button label="Plus tard" variant="secondary" onPress={jest.fn()} />);
+    const button = screen.getByRole('button', { name: 'Plus tard' });
+    expect(button.props.className).toContain('bg-green-light');
+    expect(button.props.className).toContain('border-[1.5px] border-green-dark');
+    expect(screen.getByText('Plus tard').props.className).toContain('text-green-dark');
+  });
+
   it('QA BUG-09 Primary keeps its size when pressed: the reserved border only changes color', async () => {
     await renderWithProviders(<Button label="Log in" onPress={jest.fn()} />);
     const button = screen.getByRole('button', { name: 'Log in' });

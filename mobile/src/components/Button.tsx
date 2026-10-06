@@ -38,8 +38,9 @@ const VARIANT: Record<
   { box: string; text: string; tint: ColorToken }
 > = {
   primary: { box: 'bg-green border-[1.5px] border-transparent', text: 'text-ink', tint: 'ink' },
+  // v1.6: 1.5 px mint Dark border (the Light fill alone is invisible on the gradient).
   secondary: {
-    box: 'bg-green-light border-[1.5px] border-transparent',
+    box: 'bg-green-light border-[1.5px] border-green-dark',
     text: 'text-green-dark',
     tint: 'green-dark',
   },
