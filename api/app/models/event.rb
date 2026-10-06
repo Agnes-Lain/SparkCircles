@@ -10,6 +10,8 @@ class Event < ApplicationRecord
   CATEGORIES = %w[sport outdoors board_games video_games crafts music shows books workshops playdates other].freeze
   STATUSES = %w[draft published suspended cancelled past].freeze
   JOIN_RULES = %w[anyone verified_only].freeze
+  # AC-16.1: the language the host wrote the event in (never translated, AC-16.4).
+  LANGUAGES = %w[fr en].freeze
   VISIBILITIES = %w[searchable].freeze # v2 adds details for verified only, v3 circles
   AGE_BANDS = { "0-2" => 0..2, "3-5" => 3..5, "6-8" => 6..8, "9-12" => 9..12, "13+" => 13..17 }.freeze
   AGES = 0..17
@@ -42,6 +44,7 @@ class Event < ApplicationRecord
   validates :category, inclusion: { in: CATEGORIES, allow_blank: true }
   validates :status, inclusion: { in: STATUSES }
   validates :join_rule, inclusion: { in: JOIN_RULES }
+  validates :language, presence: true, inclusion: { in: LANGUAGES, allow_blank: true }
   validates :visibility, inclusion: { in: VISIBILITIES }
   validates :area, inclusion: { in: ->(_) { EventArea.keys }, allow_blank: true }
   validates :exact_address, length: { maximum: ADDRESS_MAX }

@@ -241,10 +241,12 @@ CREATE TABLE public.events (
     cancelled_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    language character varying DEFAULT 'fr'::character varying NOT NULL,
     CONSTRAINT events_age_range_check CHECK ((((age_min IS NULL) OR ((age_min >= 0) AND (age_min <= 17))) AND ((age_max IS NULL) OR ((age_max >= 0) AND (age_max <= 17))) AND ((age_min IS NULL) OR (age_max IS NULL) OR (age_min <= age_max)))),
     CONSTRAINT events_category_check CHECK (((category)::text = ANY ((ARRAY['sport'::character varying, 'outdoors'::character varying, 'board_games'::character varying, 'video_games'::character varying, 'crafts'::character varying, 'music'::character varying, 'shows'::character varying, 'books'::character varying, 'workshops'::character varying, 'playdates'::character varying, 'other'::character varying])::text[]))),
     CONSTRAINT events_description_length_check CHECK (((description IS NULL) OR (char_length(description) <= 1000))),
     CONSTRAINT events_join_rule_check CHECK (((join_rule)::text = ANY ((ARRAY['anyone'::character varying, 'verified_only'::character varying])::text[]))),
+    CONSTRAINT events_language_check CHECK (((language)::text = ANY ((ARRAY['fr'::character varying, 'en'::character varying])::text[]))),
     CONSTRAINT events_places_taken_check CHECK (((places_taken >= 0) AND ((places_total IS NULL) OR (places_taken <= places_total)))),
     CONSTRAINT events_places_total_check CHECK (((places_total IS NULL) OR ((places_total >= 1) AND (places_total <= 100)))),
     CONSTRAINT events_required_unless_draft_check CHECK ((((status)::text = 'draft'::text) OR ((title IS NOT NULL) AND (category IS NOT NULL) AND (starts_at IS NOT NULL) AND (ends_at IS NOT NULL) AND (area IS NOT NULL)))),
@@ -969,6 +971,7 @@ ALTER TABLE ONLY public.event_reports
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261006180000'),
 ('20261006150000'),
 ('20261006120000'),
 ('20261006090300'),

@@ -41,6 +41,8 @@ module Api
       # AC-1.1 to AC-1.3: a draft, or published at once with "publish": true.
       def create
         @event = current_user.hosted_events.build(event_params)
+        # AC-16.1: no language sent → the app's language (Accept-Language), changeable later.
+        @event.language = I18n.locale.to_s if params.dig(:event, :language).blank?
         saved = ActiveModel::Type::Boolean.new.cast(params[:publish]) ? @event.publish! : @event.save
         return render_validation_errors(@event) unless saved
 
@@ -104,7 +106,7 @@ module Api
 
       def event_params
         params.require(:event).permit(:title, :description, :category, :starts_at, :ends_at, :area, :exact_address,
-                                      :places_total, :age_min, :age_max, :join_rule, tags: [])
+                                      :places_total, :age_min, :age_max, :join_rule, :language, tags: [])
       end
 
       def render_event(status: :ok)

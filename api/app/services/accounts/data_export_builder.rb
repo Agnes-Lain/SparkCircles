@@ -51,7 +51,7 @@ module Accounts
     def hosted_event_entry(event)
       {
         id: event.id, status: event.display_status, title: event.title, description: event.description,
-        category: event.category, tags: event.tags, starts_at: iso(event.starts_at), ends_at: iso(event.ends_at),
+        category: event.category, language: event.language, tags: event.tags, starts_at: iso(event.starts_at), ends_at: iso(event.ends_at),
         time_zone: event.time_zone, area: event.area, exact_address: event.exact_address,
         age_min: event.age_min, age_max: event.age_max, join_rule: event.join_rule, visibility: event.visibility,
         places_total: event.places_total, places_taken: event.places_taken,

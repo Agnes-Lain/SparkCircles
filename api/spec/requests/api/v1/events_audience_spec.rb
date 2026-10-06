@@ -9,7 +9,7 @@ RSpec.describe "Events: what each audience sees", type: :request do
   let(:verified_member) { create(:user, :verified) }
   let(:participant) { create(:user, first_name: "Thomas", last_name: "Renard") }
 
-  COMMON_KEYS = %w[id kind status title description category tags starts_at ends_at time_zone area distance_km
+  COMMON_KEYS = %w[id kind status title description category language tags starts_at ends_at time_zone area distance_km
                    age_min age_max join_rule places full viewer].freeze
 
   def get_event(target, headers)

@@ -9,7 +9,7 @@ module Events
     GUEST_Q_MIN = 3
     # Members have no page cap, but a page past this is out_of_range (keeps OFFSET sane).
     MAX_PAGE = 10_000
-    SCALAR_PARAMS = %i[radius_km category from to age_band tag q page].freeze
+    SCALAR_PARAMS = %i[radius_km category from to age_band tag q language page].freeze
     # Several areas: area[]=paris-11&area[]=paris-20 (a single area=paris-11 still works).
     MAX_AREAS = 20
 
@@ -73,6 +73,7 @@ module Events
       scope = filter_dates(scope)
       scope = filter_age_band(scope)
       scope = filter_tag(scope)
+      scope = filter_language(scope)
       scope = filter_text(scope)
       page = page_number
       raise Invalid, @errors.transform_values(&:uniq) if @errors.any?
@@ -153,6 +154,15 @@ module Events
       return scope if tag.blank?
 
       scope.where("? = ANY (events.tags)", tag)
+    end
+
+    # AC-16.3: one language (fr or en); none = every language.
+    def filter_language(scope)
+      language = param(:language).presence
+      return scope if language.nil?
+      return error(:language, :inclusion, scope) unless Event::LANGUAGES.include?(language.to_s)
+
+      scope.where(language: language.to_s)
     end
 
     # AC-3.10: title (contains), tags (starts with) or a category label in FR or EN.

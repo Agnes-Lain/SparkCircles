@@ -6,6 +6,8 @@ json.status event.display_status
 json.title event.title
 json.description event.description
 json.category event.category
+# AC-16.2: the language the host wrote it in (every audience, guests included).
+json.language event.language
 json.tags event.tags
 # A draft may have no date or area yet (BUG-8): null until the host fills them in.
 json.starts_at event.starts_at&.utc&.iso8601
