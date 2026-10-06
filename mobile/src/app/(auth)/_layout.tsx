@@ -6,7 +6,10 @@ import { colorValue } from '../../theme/colors';
 export default function AuthLayout() {
   return (
     <Stack
-      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colorValue('transparent') } }}
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colorValue('transparent') },
+      }}
     />
   );
 }

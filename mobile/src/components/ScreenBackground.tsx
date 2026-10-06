@@ -22,11 +22,7 @@ export function ScreenBackground() {
         <Defs>
           <LinearGradient id="shell-gradient" x1="0" y1="0" x2="0" y2="1">
             {shellGradient.stops.map((stop) => (
-              <Stop
-                key={stop.offset}
-                offset={stop.offset}
-                stopColor={stop.color}
-              />
+              <Stop key={stop.offset} offset={stop.offset} stopColor={stop.color} />
             ))}
           </LinearGradient>
         </Defs>
