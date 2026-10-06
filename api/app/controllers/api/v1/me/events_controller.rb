@@ -41,8 +41,13 @@ module Api
             render_error(:unprocessable_content, :validation_failed, details: { page: [ "out_of_range" ] })
         end
 
+        # US-17: pending requests are listed with the joined events; a declined, expired or
+        # closed request only while the event is still open.
         def participated_events
-          Event.hosted.where.not(status: "draft").where(id: current_user.event_participations.select(:event_id))
+          rows = current_user.event_participations
+          held = Event.hosted.where.not(status: "draft").where(id: rows.where(status: %w[accepted pending]).select(:event_id))
+          answered = Event.hosted.where(status: "published").where(id: rows.where(status: %w[declined expired closed]).select(:event_id))
+          held.or(answered)
         end
       end
     end

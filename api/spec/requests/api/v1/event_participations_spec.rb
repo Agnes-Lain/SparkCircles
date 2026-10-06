@@ -16,7 +16,7 @@ RSpec.describe "Events: join and leave", type: :request do
       join(parent, adults: 1, children: 2)
       expect(response).to have_http_status(:created)
       expect(json["event"]).to include("exact_address" => event.exact_address,
-                                       "my_participation" => { "adults" => 1, "children" => 2, "places" => 3 })
+                                       "my_participation" => include("adults" => 1, "children" => 2, "places" => 3))
       expect(json["event"]["places"]).to eq("total" => 5, "taken" => 3, "left" => 2)
     end
 

@@ -39,6 +39,9 @@ production:
   event_status:
     class: EventStatusJob
     schedule: every hour at minute 5
+  expire_event_requests:
+    class: ExpireEventRequestsJob
+    schedule: every 5 minutes
   purge_past_events:
     class: PurgePastEventsJob
     schedule: every day at 4:15am

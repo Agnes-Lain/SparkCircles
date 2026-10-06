@@ -55,7 +55,15 @@ Rails.application.routes.draw do
           post :cancel
         end
         scope module: :events do
-          resource :participation, only: %i[create update destroy]
+          resource :participation, only: %i[create update destroy] do
+            delete :request, action: :withdraw
+          end
+          # US-17: the host's request list and decisions.
+          resources :requests, only: :index do
+            post :accept, on: :member
+            post :decline, on: :member
+            post :accept_all, on: :collection
+          end
           resources :reports, only: :create
         end
       end
