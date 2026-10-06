@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type Href, Redirect, useRouter } from 'expo-router';
 import { Check, CircleAlert } from 'lucide-react-native';
@@ -313,11 +314,7 @@ export function ReviewScreen() {
   );
 }
 
-function photoLabel(
-  slot: PhotoSlot,
-  type: DocumentType,
-  t: ReturnType<typeof useTranslation>['t'],
-): string {
+function photoLabel(slot: PhotoSlot, type: DocumentType, t: TFunction): string {
   const document = t(`verify.document.short.${type}`);
   if (slot === 'selfie') return t('verify.review.selfie');
   if (type === 'passport') return t('verify.review.photoPage', { document });
