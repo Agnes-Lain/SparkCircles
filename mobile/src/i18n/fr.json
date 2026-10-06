@@ -472,7 +472,9 @@
       "label": "Dates et filtres",
       "today": "Aujourd'hui",
       "weekend": "Ce week-end",
-      "pick": "Choisir une date"
+      "pick": "Choisir une date",
+      "picked": "Date choisie : {{date}}",
+      "clear": "Effacer la date"
     },
     "filters": {
       "button": "Filtres",

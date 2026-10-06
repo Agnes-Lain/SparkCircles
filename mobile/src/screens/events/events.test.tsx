@@ -1,5 +1,7 @@
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 import type { SparkEvent } from '../../api/events';
 import type { Me } from '../../api/types';
@@ -190,6 +192,61 @@ describe('E1 Sorties, À découvrir', () => {
     await fireEvent.press(screen.getByTestId('clear-all'));
     expect(screen.queryByText('2 filtres actifs')).toBeNull();
     expect(screen.getByRole('button', { name: 'Tout' })).toBeSelected();
+  });
+
+  it('AC-3.2 "Choisir une date" uses the native picker (today to 6 months), shows the day and clears it', async () => {
+    await withArea();
+    await open('/');
+    await screen.findByText('Goûter et jeux au parc');
+    await fireEvent.press(screen.getByRole('button', { name: 'Choisir une date' }));
+    const picker = screen.getByTestId('date-pick-picker');
+    expect(picker.props.minimumDate).toBe(new Date(2026, 9, 6).getTime());
+    expect(picker.props.maximumDate).toBe(new Date(2027, 3, 6).getTime());
+    expect(picker.props.locale).toBe('fr-FR');
+    // Dark-mode bug: the iOS picker stays light (white text on the white sheet otherwise).
+    expect(picker.props.themeVariant).toBe('light');
+    expect(picker.props.accessibilityLabel).toBe('Choisir une date');
+    await fireEvent(picker, 'onChange', {
+      nativeEvent: { timestamp: new Date(2026, 9, 12).getTime(), utcOffset: 0 },
+    });
+    await fireEvent.press(screen.getByTestId('date-pick-done'));
+    await waitFor(() =>
+      expect(mockEvents.search).toHaveBeenLastCalledWith(
+        { area: ['paris-11'], from: '2026-10-12', to: '2026-10-12' },
+        1,
+        expect.anything(),
+      ),
+    );
+    const chip = screen.getByRole('button', { name: 'Date choisie : Lun. 12 oct.' });
+    expect(chip).toHaveTextContent('Lun. 12 oct.');
+    expect(chip).toBeSelected();
+    expect(screen.getByText('1 filtre actif')).toBeOnTheScreen();
+
+    await fireEvent.press(chip);
+    await fireEvent.press(screen.getByRole('button', { name: 'Effacer la date' }));
+    expect(screen.queryByText('1 filtre actif')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Choisir une date' })).not.toBeSelected();
+  });
+
+  it('AC-3.2 "Pick a date" opens the Android system dialog with a Clear button once chosen', async () => {
+    const androidOpen = jest.spyOn(DateTimePickerAndroid, 'open').mockImplementation(() => {});
+    jest.replaceProperty(Platform, 'OS', 'android');
+    await withArea();
+    await open('/');
+    await screen.findByText('Goûter et jeux au parc');
+    await fireEvent.press(screen.getByTestId('date-pick'));
+    const first = androidOpen.mock.calls[0]![0];
+    expect(first).toMatchObject({ mode: 'date', neutralButton: undefined });
+    await act(async () =>
+      first.onValueChange?.({ nativeEvent: { timestamp: 0, utcOffset: 0 } }, new Date(2026, 9, 17)),
+    );
+    expect(screen.getByTestId('date-pick')).toHaveTextContent('Sam. 17 oct.');
+    await fireEvent.press(screen.getByTestId('date-pick'));
+    const second = androidOpen.mock.calls[1]![0];
+    expect(second.neutralButton).toEqual({ label: 'Effacer la date' });
+    await act(async () => second.onNeutralButtonPress?.());
+    expect(screen.getByTestId('date-pick')).toHaveTextContent('Choisir une date');
+    jest.restoreAllMocks();
   });
 
   it('AC-3.2 applies distance, child age and tag from the filters sheet', async () => {

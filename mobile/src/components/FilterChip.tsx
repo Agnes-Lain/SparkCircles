@@ -17,6 +17,9 @@ export type FilterChipProps = {
   icon?: LucideIcon;
   /** Custom leading element instead of `icon` (the category circle, see CategoryPill). */
   leading?: ReactNode;
+  /** Spoken label when it says more than the visible one (e.g. "Chosen date: Sat 12 Oct"). */
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
   testID?: string;
 };
 
@@ -25,13 +28,23 @@ export type FilterChipProps = {
  * 13 px/400 Ink label, 15 px icons; selected = mint Base fill + mint Dark border, label 500.
  * The touch area reaches 44 px through a hit slop (keep ≥ 8 px between chips).
  */
-export function FilterChip({ label, selected, onPress, icon, leading, testID }: FilterChipProps) {
+export function FilterChip({
+  label,
+  selected,
+  onPress,
+  icon,
+  leading,
+  accessibilityLabel,
+  accessibilityHint,
+  testID,
+}: FilterChipProps) {
   const lead = leading ?? (icon ? <Icon icon={icon} size={15} color="ink" /> : null);
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ selected }}
       onPress={onPress}
       hitSlop={{ top: CHIP_HIT_SLOP, bottom: CHIP_HIT_SLOP }}

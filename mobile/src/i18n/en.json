@@ -472,7 +472,9 @@
       "label": "Dates and filters",
       "today": "Today",
       "weekend": "This weekend",
-      "pick": "Pick a date"
+      "pick": "Pick a date",
+      "picked": "Chosen date: {{date}}",
+      "clear": "Clear date"
     },
     "filters": {
       "button": "Filters",

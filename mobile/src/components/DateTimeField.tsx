@@ -5,9 +5,20 @@ import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, Text, View } from 'react-native';
 
 import { MIN_TOUCH_TARGET } from '../theme/a11y';
+import { colorValue } from '../theme/colors';
 import { BottomSheet } from './BottomSheet';
 import { Button } from './Button';
 import { Icon } from './Icon';
+
+/**
+ * iOS picker colors: always light (no dark mode yet, so the system's dark picker would draw
+ * white text on our white sheet), Ink text, Mint Dark selection.
+ */
+export const IOS_PICKER_THEME = {
+  themeVariant: 'light',
+  textColor: colorValue('ink'),
+  accentColor: colorValue('green-dark'),
+} as const;
 
 export type DateTimeFieldProps = {
   mode: 'date' | 'time';
@@ -19,6 +30,7 @@ export type DateTimeFieldProps = {
   value: Date;
   onChange: (moment: Date) => void;
   minimumDate?: Date;
+  maximumDate?: Date;
   /** "fr-FR" or "en-GB": the iOS picker's language (Android follows the system). */
   locale: string;
   error?: string;
@@ -40,6 +52,7 @@ export const DateTimeField = forwardRef<View, DateTimeFieldProps>(function DateT
     value,
     onChange,
     minimumDate,
+    maximumDate,
     locale,
     error,
     hideErrorText,
@@ -58,6 +71,7 @@ export const DateTimeField = forwardRef<View, DateTimeFieldProps>(function DateT
         mode,
         value,
         minimumDate,
+        maximumDate,
         is24Hour,
         onValueChange: (_event, picked) => onChange(picked),
       });
@@ -103,8 +117,10 @@ export const DateTimeField = forwardRef<View, DateTimeFieldProps>(function DateT
               display={mode === 'date' ? 'inline' : 'spinner'}
               value={draft}
               minimumDate={minimumDate}
+              maximumDate={maximumDate}
               locale={locale}
               is24Hour={is24Hour}
+              {...IOS_PICKER_THEME}
               accessibilityLabel={label}
               onValueChange={(_event, picked) => setDraft(picked)}
             />

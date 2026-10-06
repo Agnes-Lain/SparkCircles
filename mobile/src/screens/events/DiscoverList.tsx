@@ -1,13 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import {
-  Calendar,
-  ChevronDown,
-  Map,
-  MapPin,
-  Search,
-  SlidersHorizontal,
-  X,
-} from 'lucide-react-native';
+import { ChevronDown, Map, MapPin, Search, SlidersHorizontal, X } from 'lucide-react-native';
 import {
   type ReactNode,
   type RefObject,
@@ -41,11 +33,11 @@ import { BadgeSheet } from '../account/BadgeSheet';
 import { AreaSheet, areaSummary } from './AreaSheet';
 import { readArea, saveArea } from './areaStore';
 import { CATEGORIES, CATEGORY_ICON } from './categories';
-import { DateSheet } from './DateSheet';
 import { EventListSkeleton } from './EventCardSkeleton';
 import { FiltersSheet, normaliseTag, RADIUS_CHOICES, type SheetFilters } from './FiltersSheet';
 import { clockTime, formatLongDay, weekendRange, zonedDate, zonedToday } from './format';
 import { useEventOptions, useEventSearch } from './queries';
+import { PickDateChip } from './PickDateChip';
 import { useGuestAccount } from '../guest/useGuestAccount';
 
 /** v1 events are all in Paris (contract: `time_zone` is "Europe/Paris"). */
@@ -135,7 +127,6 @@ export function DiscoverList({
   };
   const [categories, setCategories] = useState<CategoryKey[]>([]);
   const [dateFilter, setDateFilter] = useState<DateFilter>(null);
-  const [dateSheet, setDateSheet] = useState(false);
   const [ageBand, setAgeBand] = useState<AgeBand | null>(null);
   const [filterTag, setFilterTag] = useState('');
   const [language, setLanguage] = useState<EventLanguage | null>(null);
@@ -499,12 +490,11 @@ export function DiscoverList({
           onPress={() => setDateFilter((d) => (d?.mode === 'weekend' ? null : { mode: 'weekend' }))}
           testID="date-weekend"
         />
-        <FilterChip
-          label={t('events.dates.pick')}
-          icon={Calendar}
-          selected={dateFilter?.mode === 'pick'}
-          onPress={() => (dateFilter?.mode === 'pick' ? setDateFilter(null) : setDateSheet(true))}
-          testID="date-pick"
+        <PickDateChip
+          today={today}
+          selected={dateFilter?.mode === 'pick' ? dateFilter.date : null}
+          onPick={(date) => setDateFilter({ mode: 'pick', date })}
+          onClear={() => setDateFilter(null)}
         />
         <FilterChip
           label={t('events.filters.button')}
@@ -679,16 +669,6 @@ export function DiscoverList({
           setFiltersSheet(false);
         }}
         onClose={() => setFiltersSheet(false)}
-      />
-      <DateSheet
-        visible={dateSheet}
-        today={today}
-        selected={dateFilter?.mode === 'pick' ? dateFilter.date : null}
-        onPick={(date) => {
-          setDateFilter({ mode: 'pick', date });
-          setDateSheet(false);
-        }}
-        onClose={() => setDateSheet(false)}
       />
       <BadgeSheet
         verified
