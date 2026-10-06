@@ -6,6 +6,7 @@ import { clientSignature, secureDeviceIdStore } from './appSignature';
 import { authApi } from './auth';
 import { createApiClient } from './client';
 import { apiBaseUrl } from './config';
+import { eventsApi } from './events';
 import { verificationApi } from './verification';
 
 export { ApiError } from './errors';
@@ -39,4 +40,9 @@ export function account() {
 /** Identity verification (status, photo upload). */
 export function verification() {
   return verificationApi(api());
+}
+
+/** Events v1 (search, detail, create, join, report). */
+export function events() {
+  return eventsApi(api());
 }

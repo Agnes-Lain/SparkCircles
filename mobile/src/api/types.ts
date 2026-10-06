@@ -22,6 +22,20 @@ export type ApiErrorCode =
   // D-8: locked by a "This wasn't me" report; only the team unlocks it.
   | 'account_secured'
   | 'rate_limited'
+  // Events contract (docs/api/events.md, section 1).
+  | 'client_not_allowed'
+  | 'client_blocked'
+  | 'event_not_editable'
+  | 'event_not_draft'
+  | 'event_not_joinable'
+  | 'own_event'
+  | 'already_joined'
+  | 'not_joined'
+  | 'not_enough_places'
+  | 'event_started'
+  | 'already_reported'
+  | 'search_too_broad'
+  | 'server_error'
   // Client side: no answer from the server (offline, DNS, refused) or too slow.
   | 'network_error'
   | 'timeout'
@@ -38,7 +52,28 @@ export type FieldErrorKey =
   | 'same_as_current'
   | 'too_large'
   | 'invalid_type'
-  | 'expired';
+  | 'expired'
+  // Events contract (docs/api/events.md, section 1).
+  | 'not_an_integer'
+  | 'too_long'
+  | 'inclusion'
+  | 'in_past'
+  | 'before_start'
+  | 'too_long_duration'
+  | 'out_of_range'
+  | 'below_taken'
+  | 'invalid_range'
+  | 'not_editable'
+  | 'too_many'
+  | 'invalid_characters'
+  | 'contains_email'
+  | 'contains_phone'
+  | 'contains_link'
+  | 'contains_handle'
+  | 'contains_address'
+  | 'banned_word'
+  | 'too_few'
+  | 'too_far';
 
 /** §1 Error body: { "error": { "code", "message", "details"? } } */
 export type ApiErrorBody = {
@@ -46,6 +81,8 @@ export type ApiErrorBody = {
     code: ApiErrorCode;
     message: string;
     details?: Record<string, FieldErrorKey[]>;
+    /** Events: `not_enough_places` says how many places are left. */
+    places_left?: number;
   };
 };
 

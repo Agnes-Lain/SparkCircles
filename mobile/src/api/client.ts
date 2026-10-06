@@ -111,7 +111,13 @@ export function createApiClient(config: ApiClientConfig) {
 
     if (!response.ok) {
       const error = isApiErrorBody(data)
-        ? new ApiError(response.status, data.error.code, data.error.message, data.error.details)
+        ? new ApiError(
+            response.status,
+            data.error.code,
+            data.error.message,
+            data.error.details,
+            typeof data.error.places_left === 'number' ? data.error.places_left : undefined,
+          )
         : new ApiError(
             response.status,
             'unexpected_response',

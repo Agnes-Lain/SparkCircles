@@ -3,6 +3,7 @@
 //   jest.mock('../api', () => jest.requireActual('../test/apiMock').apiModule);
 import type { AccountApi } from '../api/account';
 import type { AuthApi } from '../api/auth';
+import type { EventsApi } from '../api/events';
 import type { VerificationApi } from '../api/verification';
 import { ApiError } from '../api/errors';
 
@@ -45,6 +46,24 @@ export const mockVerification: MockedVerification = {
   submit: jest.fn(),
 };
 
+type MockedEvents = { [K in keyof EventsApi]: jest.Mock };
+
+export const mockEvents: MockedEvents = {
+  options: jest.fn(),
+  search: jest.fn(),
+  get: jest.fn(),
+  mine: jest.fn(),
+  create: jest.fn(),
+  update: jest.fn(),
+  remove: jest.fn(),
+  publish: jest.fn(),
+  cancel: jest.fn(),
+  join: jest.fn(),
+  changePlaces: jest.fn(),
+  leave: jest.fn(),
+  report: jest.fn(),
+};
+
 export const mockHealth = jest.fn();
 
 export const apiModule = {
@@ -52,6 +71,7 @@ export const apiModule = {
   auth: () => mockAuth,
   account: () => mockAccount,
   verification: () => mockVerification,
+  events: () => mockEvents,
   ApiError,
 };
 
@@ -59,6 +79,7 @@ export function resetApiMock() {
   Object.values(mockAuth).forEach((fn) => fn.mockReset());
   Object.values(mockAccount).forEach((fn) => fn.mockReset());
   Object.values(mockVerification).forEach((fn) => fn.mockReset());
+  Object.values(mockEvents).forEach((fn) => fn.mockReset());
   mockHealth.mockReset().mockResolvedValue(true);
   mockAuth.logOut.mockResolvedValue(undefined);
 }
