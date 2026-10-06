@@ -351,14 +351,21 @@ RSpec.describe Events::Notifications do
       expect(all_bodies).not_to include("Oberkampf")
     end
 
-    it "E-D an expiry found during quiet hours waits for 08:00" do
+    it "AC-17.19 E-D an expiry found during quiet hours is sent at once (PM decision)" do
       join(lea)
       travel_to(paris("23:00") + 2.days)
       ExpireEventRequestsJob.perform_now
       perform_enqueued_jobs(at: Time.current)
-      expect(mails_to(lea).map(&:subject)).not_to include(a_string_including("a expiré"))
-      run_until(paris("08:01") + 3.days)
-      expect(mails_to(lea).map(&:subject)).to include("Ta demande pour « Football au parc » a expiré")
+      expect(mails_to(lea).map(&:subject)).to eq([ "Ta demande pour « Football au parc » a expiré" ])
+    end
+
+    it "AC-17.19 E-D an expiry found at accept time in quiet hours is sent at once" do
+      join(lea)
+      travel_to(paris("23:30") + 2.days)
+      expect { Events::Requests.new(event.reload).accept!(EventParticipation.find_by(user: lea).id) }
+        .to raise_error(Events::Error)
+      perform_enqueued_jobs(at: Time.current)
+      expect(mails_to(lea).map(&:subject)).to eq([ "Ta demande pour « Football au parc » a expiré" ])
     end
 
     it "AC-17.22 a request closed for lost verification sends nothing" do

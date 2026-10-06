@@ -72,14 +72,13 @@ module Events
       end
     end
 
-    # E-B to E-E, to the parent at once. `kind`: :request_accepted, :request_declined,
-    # :request_expired or :request_closed_full.
+    # E-B to E-E, to the parent at once, even in quiet hours: an expiry (E-D) included, so
+    # a parent waiting for a morning event has time to find another solution (PM decision).
+    # `kind`: :request_accepted, :request_declined, :request_expired or :request_closed_full.
     def request_decided(kind, event, user, **options)
       return if user.closed? || !user.confirmed?
 
-      mail = EventMailer.public_send(kind, event, user, **options)
-      wait = kind == :request_expired ? deferred_until_morning(event) : nil
-      wait ? mail.deliver_later(wait_until: wait) : mail.deliver_later
+      EventMailer.public_send(kind, event, user, **options).deliver_later
     end
 
     # E1, AC-8.5, AC-8.6 and erasure: the participant is gone for a reason the host is not
@@ -171,14 +170,6 @@ module Events
           send(:"deliver_#{batch.kind}", batch)
         end
       end
-    end
-
-    # Quiet hours for a single parent email: 08:00 unless the event starts before then.
-    def deferred_until_morning(event, now = Time.current)
-      return nil unless QuietHours.quiet?(now)
-
-      morning = QuietHours.next_morning(now)
-      event.starts_at && event.starts_at < morning ? nil : morning
     end
 
     def deferred_until(batch, now = Time.current)
