@@ -22,7 +22,7 @@ module Api
         search = ::Events::Search.new(params, guest: current_user.nil?)
         result = search.call
         @events = result.events
-        @viewer = ::Events::Viewer.new(current_user, area: search.area).preload(@events)
+        @viewer = ::Events::Viewer.new(current_user, areas: search.areas).preload(@events)
         preload_insider_details(@events)
         @pagination = { page: result.page, per_page: ::Events::Search::PER_PAGE, next_page: result.next_page }
       rescue ::Events::Search::Invalid => e
@@ -34,7 +34,7 @@ module Api
       # AC-1.4, AC-6.1 to AC-6.4, AC-15.2, AC-15.11
       def show
         @event = Event.hosted.includes(:host).find(params[:id])
-        @viewer = ::Events::Viewer.new(current_user, area: ::Events::Search.scalar(params, :area).presence)
+        @viewer = ::Events::Viewer.new(current_user, areas: ::Events::Search.area_keys(params))
         raise ActiveRecord::RecordNotFound unless @viewer.can_see?(@event)
       end
 

@@ -17,6 +17,18 @@ class EventArea
     def keys = all.map(&:key)
     def find(key) = all.find { |area| area.key == key.to_s }
 
+    # A whole city as one search area ("paris" = every Paris arrondissement, the
+    # "Tout Paris" choice): its area keys, or nil when `key` is not a city.
+    def city(key)
+      keys = all.select { |area| area.city.parameterize == key.to_s }.map(&:key)
+      keys.presence
+    end
+
+    # Closest distance from any of `from_keys` (arrondissements only).
+    def nearest_distance_km(from_keys, to_key)
+      Array(from_keys).filter_map { |key| rounded_distance_km(key, to_key) }.min
+    end
+
     # Keys of the areas whose centre is within `radius_km` of `key`'s centre (itself included).
     def within(key, radius_km)
       origin = find(key)

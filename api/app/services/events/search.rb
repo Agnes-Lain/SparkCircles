@@ -9,7 +9,9 @@ module Events
     GUEST_Q_MIN = 3
     # Members have no page cap, but a page past this is out_of_range (keeps OFFSET sane).
     MAX_PAGE = 10_000
-    SCALAR_PARAMS = %i[area radius_km category from to age_band tag q page].freeze
+    SCALAR_PARAMS = %i[radius_km category from to age_band tag q page].freeze
+    # Several areas: area[]=paris-11&area[]=paris-20 (a single area=paris-11 still works).
+    MAX_AREAS = 20
 
     class Invalid < StandardError
       attr_reader :details
@@ -46,7 +48,22 @@ module Events
       page.between?(1, MAX_PAGE) ? page : nil
     end
 
-    def area = self.class.scalar(@params, :area).presence
+    # The area keys as sent: one string, or a list of strings (area[]=…). Anything else
+    # (area[a]=…, a list of lists) is nil and refused as "invalid".
+    def self.area_keys(params)
+      value = params[:area]
+      return [] if value.nil?
+      return value.to_s.strip.empty? ? [] : [ value.to_s ] if value.is_a?(String)
+      return nil unless value.is_a?(Array) && value.all?(String)
+
+      value.compact_blank.uniq
+    end
+
+    # The search areas: arrondissement keys, or a city key ("paris" = all of Paris).
+    def area_keys = self.class.area_keys(@params) || []
+
+    # The arrondissements the distance is measured from (none for a whole city).
+    def areas = area_keys.select { |key| EventArea.find(key) }
 
     def call
       reject_non_scalar_params
@@ -59,7 +76,8 @@ module Events
       scope = filter_text(scope)
       page = page_number
       raise Invalid, @errors.transform_values(&:uniq) if @errors.any?
-      raise TooBroad if @guest && area.nil? && param(:q).to_s.strip.length < GUEST_Q_MIN
+      # AC-15.9, AC-15.12: a city ("Tout Paris") counts as a scoped search.
+      raise TooBroad if @guest && area_keys.empty? && param(:q).to_s.strip.length < GUEST_Q_MIN
 
       rows = scope.soonest_first.includes(:host).offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
       more = rows.size > PER_PAGE && !(@guest && page >= GUEST_MAX_PAGES)
@@ -75,16 +93,19 @@ module Events
 
     def reject_non_scalar_params
       SCALAR_PARAMS.each { |key| @errors[key] << "invalid" if @params.key?(key) && !@params[key].nil? && param(key).nil? }
+      @errors[:area] << "invalid" if self.class.area_keys(@params).nil?
     end
 
     def filter_area(scope)
-      return scope if area.nil?
-      return error(:area, :inclusion, scope) unless EventArea.find(area)
+      keys = area_keys
+      return scope if keys.empty?
+      return error(:area, :too_many, scope) if keys.size > MAX_AREAS
+      return error(:area, :inclusion, scope) unless keys.all? { |key| EventArea.find(key) || EventArea.city(key) }
 
       radius = param(:radius_km).presence&.to_f || 0
       return error(:radius_km, :out_of_range, scope) unless (0..MAX_RADIUS_KM).cover?(radius)
 
-      scope.where(area: EventArea.within(area, radius))
+      scope.where(area: keys.flat_map { |key| EventArea.city(key) || EventArea.within(key, radius) }.uniq)
     end
 
     def filter_categories(scope)

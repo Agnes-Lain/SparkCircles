@@ -69,6 +69,13 @@ RSpec.describe "Events QA", type: :request do
       # BUG-8: the search filters are hidden too.
       expect(filtered).to eq("q" => "[FILTERED]", "tag" => "[FILTERED]", "area" => "[FILTERED]")
     end
+
+    it "hides several areas (area[]) in the logged path too" do
+      env = Rack::MockRequest.env_for("/api/v1/events?area[]=paris-11&area%5B%5D=paris-20&topic=x")
+      env["action_dispatch.parameter_filter"] = Rails.application.config.filter_parameters
+      expect(ActionDispatch::Request.new(env).filtered_path)
+        .to eq("/api/v1/events?area[]=[FILTERED]&area%5B%5D=[FILTERED]&topic=x")
+    end
   end
 
   describe "AC-3.8, AC-3.9 tag filters" do

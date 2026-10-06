@@ -8,5 +8,6 @@ Rails.application.config.filter_parameters += [
   :last_name, :birth, :phone, :address, :neighborhood, :city, :ip_address, :document, :selfie, :note,
   # AC-15.13: nothing that describes a person's search, or what they wrote in a report, is
   # logged (exact names: "to", "from" or "page" as substrings would hide unrelated keys).
-  /\A(q|area|category|from|to|age_band|radius_km|page|details)\z/, :tag
+  # A list (area[]=…, also percent-encoded in a logged path) is hidden too.
+  /\A(q|area|category|from|to|age_band|radius_km|page|details)(\[\]|%5B%5D)?\z/i, :tag
 ]

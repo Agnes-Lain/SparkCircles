@@ -3,11 +3,12 @@ module Events
   # :guest (no token), :member, :participant or :host. The serializers pick their
   # allow-listed fields from the audience.
   class Viewer
-    attr_reader :user, :area
+    attr_reader :user, :areas
 
-    def initialize(user, area: nil)
+    # `areas`: the arrondissements of the search, for the distance (AC-3.4).
+    def initialize(user, areas: [])
       @user = user
-      @area = area
+      @areas = Array(areas)
       @participations = {}
     end
 
@@ -58,7 +59,7 @@ module Events
     end
 
     def distance_km(event)
-      area && EventArea.rounded_distance_km(area, event.area)
+      EventArea.nearest_distance_km(areas, event.area)
     end
   end
 end

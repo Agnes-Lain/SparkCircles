@@ -55,8 +55,9 @@ RSpec.describe "Events QA fixes", type: :request do
   describe "BUG-2, BUG-3 malformed search parameters" do
     it "answers 422 validation_failed with an invalid key for array or hash values" do
       { "area=paris-11&page[]=1" => "page", "area=paris-11&page[a]=1" => "page", "area=paris-11&radius_km[]=1" => "radius_km",
-        "area[]=paris-11" => "area", "area=paris-11&category[]=sport" => "category",
-        "area=paris-11&from[]=2026-10-10" => "from" }.each do |query, key|
+        "area[a]=paris-11" => "area", "area[][]=paris-11" => "area", "area[]=paris-11&category[]=sport" => "category",
+        "area[]=paris-11&from[]=2026-10-10" => "from", "area[]=paris-11&q[]=foot" => "q",
+        "area[]=paris-11&tag[a]=foot" => "tag" }.each do |query, key|
         get "/api/v1/events?#{query}", headers: guest_headers
         expect(response).to have_http_status(:unprocessable_content), query
         expect(json.dig("error", "details", key)).to eq([ "invalid" ]), query
