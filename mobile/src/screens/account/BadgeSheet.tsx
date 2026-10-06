@@ -11,15 +11,18 @@ import { IconSquare } from '../../components/IconSquare';
 
 /**
  * B1 Badge explanation sheet (AC-8.2, 8.3). "Not verified" never says why (pending,
- * rejected or expired stay private, AC-8.2).
+ * rejected or expired stay private, AC-8.2). `hosts`: the guest wording (AC-15.14, design
+ * guest-home section 4), about "every parent who hosts" since a guest sees no host.
  */
 export function BadgeSheet({
   verified,
+  hosts = false,
   visible,
   onClose,
   returnFocusTo,
 }: {
   verified: boolean;
+  hosts?: boolean;
   visible: boolean;
   onClose: () => void;
   /** The badge or link that opened the sheet (focus returns to it, M-5). */
@@ -45,7 +48,11 @@ export function BadgeSheet({
           {verified ? t('badgeSheet.verifiedTitle') : t('badgeSheet.notVerifiedTitle')}
         </Text>
         <Text className="text-body text-ink-2">
-          {verified ? t('badgeSheet.verifiedBody') : t('badgeSheet.notVerifiedBody')}
+          {!verified
+            ? t('badgeSheet.notVerifiedBody')
+            : hosts
+              ? t('guest.verifySheet.body')
+              : t('badgeSheet.verifiedBody')}
         </Text>
       </View>
       {verified ? (
@@ -53,7 +60,9 @@ export function BadgeSheet({
           <View className="gap-sm">
             <View className="flex-row items-start gap-sm">
               <Icon icon={Check} color="green-dark" />
-              <Text className="flex-1 text-body text-ink">{t('badgeSheet.match')}</Text>
+              <Text className="flex-1 text-body text-ink">
+                {hosts ? t('guest.verifySheet.match') : t('badgeSheet.match')}
+              </Text>
             </View>
             <View className="flex-row items-start gap-sm">
               <Icon icon={X} color="ink-2" />

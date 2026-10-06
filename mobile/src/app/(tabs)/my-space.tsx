@@ -5,16 +5,26 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { api } from '../../api';
+import { useIsGuest } from '../../auth/GateContext';
 import { useMe } from '../../auth/useMe';
 import { Avatar } from '../../components/Avatar';
 import { IconButton } from '../../components/IconButton';
 import { SuccessCheckmark } from '../../components/SuccessCheckmark';
 import { useToast } from '../../components/ToastProvider';
 import { ApiHealthCheck } from '../../screens/dev/ApiHealthCheck';
+import { GuestTabScreen } from '../../screens/guest/GuestTabScreen';
 import { PlaceholderScreen } from '../../screens/PlaceholderScreen';
 
-/** My space (design system v1.7, sections 10 and 17): replaces Home; placeholder for now. */
-export default function MySpaceScreen() {
+/**
+ * My space (design system v1.7, sections 10 and 17): replaces Home; placeholder for now.
+ * Guests get the explanation screen and the invitation to sign up (AC-15.5, AC-15.6).
+ */
+export default function MySpaceTab() {
+  if (useIsGuest()) return <GuestTabScreen tab="mySpace" />;
+  return <MySpaceScreen />;
+}
+
+function MySpaceScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const me = useMe();

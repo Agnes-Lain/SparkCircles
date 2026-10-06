@@ -53,12 +53,15 @@ export function AreaSheet({
   visible,
   areas,
   current,
+  guest = false,
   onApply,
   onClose,
 }: {
   visible: boolean;
   areas: Areas | undefined;
   current: string[];
+  /** Guest wording (design guest-home section 4): the choice stays on this phone (AC-15.9). */
+  guest?: boolean;
   onApply: (areas: string[]) => void;
   onClose: () => void;
 }) {
@@ -83,9 +86,9 @@ export function AreaSheet({
     <BottomSheet visible={visible} onClose={onClose} testID="area-sheet">
       <View className="gap-xs">
         <Text accessibilityRole="header" className="text-h2 text-ink">
-          {t('events.area.sheetTitle')}
+          {guest ? t('guest.area.title') : t('events.area.sheetTitle')}
         </Text>
-        <Text className="text-body text-ink-2">{t('events.area.sheetBody')}</Text>
+        {guest ? null : <Text className="text-body text-ink-2">{t('events.area.sheetBody')}</Text>}
       </View>
       <ScrollView style={{ maxHeight: 320 }}>
         <View role="group" accessibilityLabel={t('events.area.group')}>
@@ -114,6 +117,7 @@ export function AreaSheet({
               ))}
         </View>
       </ScrollView>
+      {guest ? <Text className="text-caption text-ink-2">{t('guest.area.caption')}</Text> : null}
       <View className="gap-sm border-t-[0.5px] border-border-soft pt-md">
         {selected.length ? (
           <Text className="text-caption text-ink-2" testID="area-count">

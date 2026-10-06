@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import {
   Calendar,
   ChevronDown,
@@ -8,11 +8,20 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react-native';
-import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
 
 import type { AgeBand, EventLanguage, EventSearch, SparkEvent } from '../../api/events';
+import { rememberFilters, type SavedFilters, takeRestoredFilters } from '../../auth/returnTo';
 import { Button } from '../../components/Button';
 import type { CategoryKey } from '../../components/CategoryPill';
 import { CategoryIcon } from '../../components/CategoryPill';
@@ -37,6 +46,7 @@ import { EventListSkeleton } from './EventCardSkeleton';
 import { FiltersSheet, normaliseTag, RADIUS_CHOICES, type SheetFilters } from './FiltersSheet';
 import { clockTime, formatLongDay, weekendRange, zonedDate, zonedToday } from './format';
 import { useEventOptions, useEventSearch } from './queries';
+import { useGuestAccount } from '../guest/useGuestAccount';
 
 /** v1 events are all in Paris (contract: `time_zone` is "Europe/Paris"). */
 const TIME_ZONE = 'Europe/Paris';
@@ -46,7 +56,10 @@ const SEARCH_HEIGHT = 48;
  *  per page, so a page can be empty while `next_page` is set). */
 export const MAX_EMPTY_PAGES = 5;
 
-type DateFilter = { mode: 'today' | 'weekend' } | { mode: 'pick'; date: string } | null;
+type DateFilter = SavedFilters['date'];
+
+/** The whole city (guest searches are always scoped to an area, AC-15.9, AC-15.12). */
+const ALL_PARIS = 'paris';
 
 type Row =
   { kind: 'day'; key: string; label: string } | { kind: 'event'; key: string; event: SparkEvent };
@@ -88,8 +101,22 @@ export function textSearch(text: string): Pick<EventSearch, 'q' | 'tag'> {
  * category and date chips; filters sheet; results grouped by day, soonest first, loaded page
  * after page; loading, empty, error, offline and rate-limited states.
  */
-export function DiscoverList({ initialTag }: { initialTag?: string }) {
+export function DiscoverList({
+  initialTag,
+  guest = false,
+  top,
+  bottom,
+}: {
+  initialTag?: string;
+  /** Guest mode (US-15): guest cards and states, no map button, "Tout Paris" sent as `paris`. */
+  guest?: boolean;
+  /** Above the search (the guest hero and the "Trouve une sortie" row); gets the badge opener. */
+  top?: (openBadge: (ref: RefObject<View | null>) => void) => ReactNode;
+  /** Under the results (the guest conversion card and footer). */
+  bottom?: ReactNode;
+}) {
   const { t, i18n } = useTranslation();
+  const account = useGuestAccount();
   const locale = resolveLocale(i18n.language);
   const router = useRouter();
   const { showToast } = useToast();
@@ -119,6 +146,30 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
   };
   const [text, setText] = useState(initialTag ? `#${initialTag}` : '');
   const [debounced, setDebounced] = useState(text);
+
+  // AC-15.7: back from the account step, the search comes back with the guest's filters.
+  const restore = useCallback((saved: SavedFilters | null) => {
+    if (!saved) return;
+    setCategories(saved.categories);
+    setDateFilter(saved.date);
+    setAgeBand(saved.ageBand);
+    setFilterTag(saved.tag);
+    setLanguage(saved.language);
+    setText(saved.text);
+    setDebounced(saved.text);
+  }, []);
+  useFocusEffect(useCallback(() => restore(takeRestoredFilters()), [restore]));
+  useEffect(() => {
+    if (guest)
+      rememberFilters({
+        categories,
+        date: dateFilter,
+        ageBand,
+        tag: filterTag,
+        language,
+        text: debounced,
+      });
+  }, [guest, categories, dateFilter, ageBand, filterTag, language, debounced]);
   const [badgeOpener, setBadgeOpener] = useState<RefObject<View | null> | null>(null);
   const searchRef = useRef<TextInput>(null);
 
@@ -147,7 +198,7 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
             ? { from: dateFilter.date, to: dateFilter.date }
             : {};
     return {
-      area: areas.length ? areas : undefined,
+      area: areas.length ? areas : guest ? [ALL_PARIS] : undefined,
       radius_km: areas.length && radius ? radius : undefined,
       category: categories.length ? categories : undefined,
       ...dates,
@@ -156,7 +207,18 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
       q: typed.q,
       language: language ?? undefined,
     };
-  }, [areas, radius, categories, dateFilter, today, ageBand, filterTag, language, debounced]);
+  }, [
+    areas,
+    radius,
+    categories,
+    dateFilter,
+    today,
+    ageBand,
+    filterTag,
+    language,
+    debounced,
+    guest,
+  ]);
 
   const query = useEventSearch(search, areaLoaded);
   const events = useMemo(
@@ -236,7 +298,58 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
   const areaChip = areaSummary(areas, options.data?.areas, t);
 
   const error = query.error;
-  const errorNotice = error ? (
+  const retry = (
+    <Button
+      variant="secondary"
+      size="small"
+      label={t('errors.tryAgain')}
+      onPress={() => void query.refetch()}
+      testID="events-retry"
+    />
+  );
+  // Guests (design guest-home section 6): yellow notes for offline and too many searches
+  // (also a blocked connection, 403 client_blocked), the error note for anything else.
+  const guestNotice = !error ? null : error.code === 'rate_limited' ||
+    error.code === 'client_blocked' ? (
+    <Notification
+      level="reminder"
+      title={t('guest.states.rateTitle')}
+      caption={t('guest.states.rateBody')}
+      testID="events-rate-limited"
+    />
+  ) : error.isOffline ? (
+    events.length > 0 ? (
+      <Notification
+        level="reminder"
+        title={t('guest.states.offlineTitle')}
+        caption={t('guest.states.offlineBody')}
+        testID="events-offline"
+      />
+    ) : (
+      <View
+        testID="events-offline-empty"
+        className="gap-sm rounded-lg border-[0.5px] border-border-soft bg-surface p-lg"
+        style={{ boxShadow: shadows.card }}
+      >
+        <Text accessibilityRole="header" className="text-h3 text-ink">
+          {t('guest.states.offlineEmptyTitle')}
+        </Text>
+        <Text className="text-body text-ink-2">{t('guest.states.offlineEmptyBody')}</Text>
+        <View className="items-start">{retry}</View>
+      </View>
+    )
+  ) : (
+    <Notification
+      level="error"
+      title={t('guest.states.failTitle')}
+      caption={t('guest.states.failBody')}
+      action={retry}
+      testID="events-error"
+    />
+  );
+  const errorNotice = guest ? (
+    guestNotice
+  ) : error ? (
     error.code === 'rate_limited' ? (
       <Notification
         level="error"
@@ -271,6 +384,7 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
 
   const header = (
     <View className="gap-md pb-md">
+      {top?.(openBadge)}
       <View className="flex-row items-center gap-sm">
         <Pressable
           testID="area-selector"
@@ -286,19 +400,23 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
           </Text>
           <Icon icon={ChevronDown} size={16} color="ink-2" />
         </Pressable>
-        <Pressable
-          testID="map-button"
-          accessibilityRole="button"
-          accessibilityLabel={t('events.map.label')}
-          onPress={() => showToast(t('events.map.toast'))}
-          className="items-center justify-center rounded-md border-[1.5px] border-ink-3 bg-surface"
-          style={{ width: SEARCH_HEIGHT, height: SEARCH_HEIGHT }}
-        >
-          <Icon icon={Map} size={20} color="ink" />
-          <View className="absolute -right-2 -top-2 rounded-pill bg-sunny-light px-1.5 py-0.5">
-            <Text className="text-[10px] font-medium text-sunny-dark">{t('events.map.soon')}</Text>
-          </View>
-        </Pressable>
+        {guest ? null : (
+          <Pressable
+            testID="map-button"
+            accessibilityRole="button"
+            accessibilityLabel={t('events.map.label')}
+            onPress={() => showToast(t('events.map.toast'))}
+            className="items-center justify-center rounded-md border-[1.5px] border-ink-3 bg-surface"
+            style={{ width: SEARCH_HEIGHT, height: SEARCH_HEIGHT }}
+          >
+            <Icon icon={Map} size={20} color="ink" />
+            <View className="absolute -right-2 -top-2 rounded-pill bg-sunny-light px-1.5 py-0.5">
+              <Text className="text-[10px] font-medium text-sunny-dark">
+                {t('events.map.soon')}
+              </Text>
+            </View>
+          </Pressable>
+        )}
         <View
           className="flex-1 flex-row items-center rounded-md border-[0.5px] border-border-soft bg-surface pl-md"
           style={{ height: SEARCH_HEIGHT, boxShadow: shadows.modal }}
@@ -409,9 +527,58 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
 
   const showSkeleton = (!areaLoaded || query.isPending || autoFetching) && !error;
 
+  const guestEmpty = (
+    <EmptyState
+      title={t('guest.states.emptyTitle')}
+      body={t('guest.states.emptyBody')}
+      testID="events-empty"
+    >
+      <View className="self-stretch">
+        <Button
+          variant="module"
+          module="events"
+          size="large"
+          label={
+            filtering
+              ? t('guest.states.clearFilters')
+              : areas.length
+                ? t('guest.states.seeAllParis')
+                : t('guest.states.otherArea')
+          }
+          onPress={() =>
+            filtering ? clearAll() : areas.length ? changeAreas([]) : setAreaSheet(true)
+          }
+          testID="empty-first-action"
+        />
+      </View>
+      <View className="self-stretch">
+        <Button
+          variant="ghost"
+          label={t('guest.createAccount')}
+          onPress={() => account.signUp()}
+          testID="empty-sign-up"
+        />
+      </View>
+    </EmptyState>
+  );
+
   const empty = showSkeleton ? (
-    <EventListSkeleton />
-  ) : error ? null : filtering ? (
+    <View className="gap-md">
+      <EventListSkeleton />
+      {guest ? (
+        <Text
+          role="status"
+          accessibilityLiveRegion="polite"
+          className="text-center text-caption text-ink-2"
+          testID="events-loading-caption"
+        >
+          {t('guest.states.loading')}
+        </Text>
+      ) : null}
+    </View>
+  ) : error ? null : guest ? (
+    guestEmpty
+  ) : filtering ? (
     <EmptyState
       title={t('events.empty.filteredTitle')}
       body={t('events.empty.filteredBody')}
@@ -463,11 +630,14 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
             void query.fetchNextPage();
         }}
         ListFooterComponent={
-          query.isFetchingNextPage ? (
-            <View className="items-center py-md" style={{ minHeight: MIN_TOUCH_TARGET }}>
-              <ActivityIndicator color={colorValue('green-dark')} />
-            </View>
-          ) : null
+          <>
+            {query.isFetchingNextPage ? (
+              <View className="items-center py-md" style={{ minHeight: MIN_TOUCH_TARGET }}>
+                <ActivityIndicator color={colorValue('green-dark')} />
+              </View>
+            ) : null}
+            {bottom && !showSkeleton ? <View className="gap-xl pt-xl">{bottom}</View> : null}
+          </>
         }
         renderItem={({ item }) =>
           item.kind === 'day' ? (
@@ -489,6 +659,7 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
         visible={areaSheet}
         areas={options.data?.areas}
         current={areas}
+        guest={guest}
         onApply={changeAreas}
         onClose={() => setAreaSheet(false)}
       />
@@ -518,6 +689,7 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
       />
       <BadgeSheet
         verified
+        hosts={guest}
         visible={Boolean(badgeOpener)}
         onClose={() => setBadgeOpener(null)}
         returnFocusTo={badgeOpener ?? undefined}

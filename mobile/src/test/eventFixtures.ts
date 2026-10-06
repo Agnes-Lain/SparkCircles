@@ -95,3 +95,23 @@ export const eventOptionsFixture: EventOptions = {
 export function eventPage(events: SparkEvent[], nextPage: number | null = null) {
   return { events, pagination: { page: 1, per_page: 20, next_page: nextPage } };
 }
+
+/** §2.2 The guest view of an "anyone" event: `host` is `{ verified }` only. */
+export const guestEvent: SparkEvent = {
+  ...eventFixture,
+  viewer: { role: 'guest', joined: false, can_join: false, join_blocker: 'account_required' },
+  // The guest serializer sends only the badge (no name, initial, avatar or id).
+  host: { verified: true } as SparkEvent['host'],
+};
+
+/** §2.2 A "verified members only" event as a guest sees it: no `host` key at all. */
+export const guestLockedEvent: SparkEvent = {
+  ...guestEvent,
+  id: '7c1d2e3f-4051-4b6c-9d7e-8f90a1b2c3d4',
+  title: 'Après-midi jeux de société',
+  category: 'board_games',
+  join_rule: 'verified_only',
+  places: { total: 8, taken: 6, left: 2 },
+  viewer: { role: 'guest', joined: false, can_join: false, join_blocker: 'verification_required' },
+  host: undefined,
+};

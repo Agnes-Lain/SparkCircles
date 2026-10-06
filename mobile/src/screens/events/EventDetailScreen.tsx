@@ -48,6 +48,7 @@ import { hasEnded, partyText, personName, placesText, statusBadge, titleText } f
 import { forgetParticipation, freshEvent, refreshEvents, storeEvent, useEvent } from './queries';
 import { type ClosedReason, closedReason, isRefusal, refusalText } from './refusals';
 import { ReportSheet } from './ReportSheet';
+import { type GuestAction, GuestSignUpSheet } from '../guest/GuestSignUpSheet';
 
 type Sheet =
   null | 'join' | 'change' | 'leave' | 'restricted' | 'report' | 'cancel' | 'delete' | 'publish';
@@ -91,7 +92,9 @@ function DetailSkeleton() {
  * participants and the host. The sticky bar holds one primary action at a time (AC-5.7).
  */
 export function EventDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `then`: back from the account step (AC-15.7, AC-15.8), the action the guest wanted is
+  // ready but not done: the join sheet, or the invitation to verify.
+  const { id, then } = useLocalSearchParams<{ id: string; then?: string }>();
   const { t, i18n } = useTranslation();
   const locale = resolveLocale(i18n.language);
   const router = useRouter();
@@ -191,6 +194,16 @@ export function EventDetailScreen() {
 
   const event = query.data;
 
+  // Guest mode (US-15): every action opens the sign-up prompt at that moment (AC-15.5).
+  const [guestSheet, setGuestSheet] = useState<GuestAction | null>(null);
+  const [thenHandled, setThenHandled] = useState(false);
+  // Adjusted while rendering (not in an effect), once the event is known.
+  if (event && !thenHandled && then && event.viewer.role !== 'guest') {
+    setThenHandled(true);
+    if (then === 'join' && event.viewer.can_join) setSheet('join');
+    else if (event.viewer.join_blocker === 'verification_required') setSheet('restricted');
+  }
+
   if (!event) {
     if (query.error?.code === 'not_found' || query.error?.code === 'forbidden') {
       return (
@@ -244,6 +257,8 @@ export function EventDetailScreen() {
 
   const role = event.viewer.role;
   const isHost = role === 'host';
+  const guest = role === 'guest';
+  const lockedForGuest = guest && event.join_rule === 'verified_only';
   const joined = event.viewer.joined;
   const ended = hasEnded(event);
   const host = event.host;
@@ -404,6 +419,19 @@ export function EventDetailScreen() {
           </View>
         </>
       );
+  } else if (guest && !(event.full || event.viewer.join_blocker === 'full')) {
+    // AC-15.4, AC-15.5: the join opens the sign-up prompt (verified-only: sign up and verify).
+    barCaption = lockedForGuest
+      ? t('events.detail.verifiedOnlyCaption')
+      : t('events.detail.joinCaption');
+    bar = (
+      <Button
+        size="large"
+        label={t('events.detail.join')}
+        onPress={() => setGuestSheet(lockedForGuest ? 'verifiedOnly' : 'join')}
+        testID="guest-join"
+      />
+    );
   } else if (event.status === 'suspended') {
     barCaption = t('events.detail.notOpenCaption');
     bar = <Button size="large" disabled label={t('events.detail.notOpen')} onPress={() => {}} />;
@@ -464,7 +492,7 @@ export function EventDetailScreen() {
             testID="more-options"
             accessibilityRole="button"
             accessibilityLabel={t('events.detail.more')}
-            onPress={() => setSheet('report')}
+            onPress={() => (guest ? setGuestSheet('report') : setSheet('report'))}
             className="items-center justify-center"
             style={{ width: MIN_TOUCH_TARGET, height: MIN_TOUCH_TARGET }}
           >
@@ -614,7 +642,30 @@ export function EventDetailScreen() {
           )}
         </Card>
 
-        {isHost || host ? (
+        {guest ? (
+          // US-15 table: no name, initial or avatar; a verified-only event, no host at all.
+          <Card testID="guest-host-card">
+            {lockedForGuest ? (
+              <View className="flex-row items-center gap-md">
+                <IconSquare icon={Lock} />
+                <Text className="flex-1 text-h3 text-ink">{t('guest.card.verifiedOnly')}</Text>
+              </View>
+            ) : host?.verified ? (
+              <View className="flex-row items-center gap-md">
+                <IconSquare icon={ShieldCheck} tone="verification" />
+                <Text className="flex-1 text-h3 text-ink">{t('guest.card.hostedBy')}</Text>
+                <Badge
+                  ref={badgeRef}
+                  kind="badge-green"
+                  label={t('events.badge.verified')}
+                  accessibilityLabel={t('events.badge.verifiedA11y')}
+                  onPress={() => setBadgeOpen(true)}
+                  testID="host-badge"
+                />
+              </View>
+            ) : null}
+          </Card>
+        ) : isHost || host ? (
           <Card testID="host-card">
             <View className="flex-row items-center gap-md">
               <Avatar
@@ -861,7 +912,7 @@ export function EventDetailScreen() {
         secondary={{ label: t('events.form.keepEditing'), onPress: close }}
         testID="publish-sheet"
       />
-      {isHost ? null : (
+      {isHost || guest ? null : (
         <ReportSheet
           key={`report-${sheetKey}`}
           eventId={event.id}
@@ -869,8 +920,20 @@ export function EventDetailScreen() {
           onClose={close}
         />
       )}
+      {guest ? (
+        <GuestSignUpSheet
+          visible={guestSheet !== null}
+          action={guestSheet ?? 'join'}
+          eventTitle={event.title}
+          target={{
+            event: { id: event.id, then: lockedForGuest ? 'verify' : 'join' },
+          }}
+          onClose={() => setGuestSheet(null)}
+        />
+      ) : null}
       <BadgeSheet
         verified
+        hosts={guest}
         visible={badgeOpen}
         onClose={() => setBadgeOpen(false)}
         returnFocusTo={badgeRef}

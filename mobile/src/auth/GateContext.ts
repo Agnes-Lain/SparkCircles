@@ -8,3 +8,8 @@ export const GateContext = createContext<GateState>('loading');
 export function useGate(): GateState {
   return useContext(GateContext);
 }
+
+/** Guest mode (US-15): no session on this device. */
+export function useIsGuest(): boolean {
+  return useGate() === 'signedOut';
+}

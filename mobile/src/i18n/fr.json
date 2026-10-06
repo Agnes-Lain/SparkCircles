@@ -753,5 +753,97 @@
         "en": "Sortie en anglais"
       }
     }
+  },
+  "guest": {
+    "logIn": "Me connecter",
+    "createAccount": "Créer mon compte",
+    "haveAccount": "J'ai déjà un compte",
+    "hero": {
+      "promise": "Les sorties en famille, sans la charge mentale.",
+      "support": "SparkCircles aide les parents à s'organiser ensemble, avec les familles autour d'eux. Les sorties sont ouvertes dès aujourd'hui.",
+      "benefits": "Pourquoi SparkCircles",
+      "findTitle": "Trouve une sortie près de chez toi",
+      "findBody": "Des sorties entre familles, prêtes à rejoindre.",
+      "verifiedTitle": "Les parents qui organisent sont vérifiés",
+      "verifiedBody": "Tu sais avec qui tu vas, avant de dire oui.",
+      "verifiedLink": "Ce que veut dire « vérifié »",
+      "togetherTitle": "Moins à organiser, à plusieurs",
+      "togetherBody": "Des cercles de familles voisines, des services de confiance et l'échange de maison arrivent.",
+      "soon": "Bientôt",
+      "noAccount": "Pas besoin de compte pour regarder les sorties ci-dessous."
+    },
+    "searchTitle": "Trouve une sortie",
+    "card": {
+      "hostedBy": "Organisée par un parent vérifié",
+      "verifiedOnly": "Réservée aux parents vérifiés",
+      "lockedCta": "Crée ton compte et fais-toi vérifier pour participer",
+      "a11y": "{{type}}, {{title}}, {{when}}, {{where}}, {{places}}"
+    },
+    "conversion": {
+      "title": "Envie d'en rejoindre une ?",
+      "body": "Crée ton compte : c'est là que tu confirmes ta place."
+    },
+    "footer": {
+      "privacy": "Confidentialité",
+      "fr": "Français",
+      "en": "English"
+    },
+    "sheet": {
+      "join": "Crée ton compte pour rejoindre cette sortie",
+      "create": "Crée ton compte pour proposer une sortie",
+      "report": "Crée ton compte pour signaler cette sortie",
+      "wishlist": "Crée ton compte pour garder cette sortie de côté",
+      "verifiedOnly": "Crée ton compte et fais-toi vérifier pour rejoindre",
+      "canTitle": "Avec un compte, tu pourras",
+      "canJoin": "Rejoindre des sorties entre familles",
+      "canHost": "Proposer la tienne, une fois vérifié",
+      "canFind": "Retrouver tes sorties dans Mon espace",
+      "promiseTitle": "Après ton inscription, tu reviens sur cette sortie.",
+      "promiseJoin": "Ta place est prête : c'est toi qui confirmes.",
+      "promiseVerify": "Ensuite, on t'explique comment te faire vérifier."
+    },
+    "states": {
+      "loading": "On cherche les sorties…",
+      "emptyTitle": "Pas encore de sortie dans cette zone",
+      "emptyBody": "Élargis la zone pour en voir plus. Ou crée un compte, fais-toi vérifier, et propose la première.",
+      "seeAllParis": "Voir tout Paris",
+      "otherArea": "Choisir une autre zone",
+      "clearFilters": "Effacer les filtres",
+      "offlineTitle": "Tu n'as pas de connexion",
+      "offlineBody": "Ces sorties datent de ta dernière visite. Reconnecte-toi pour les mettre à jour.",
+      "offlineEmptyTitle": "Pas de connexion, rien de plus à afficher",
+      "offlineEmptyBody": "Vérifie ta connexion, puis réessaie.",
+      "rateTitle": "Beaucoup de recherches d'un coup",
+      "rateBody": "Attends une minute, puis relance ta recherche.",
+      "failTitle": "On n'a pas pu charger les sorties",
+      "failBody": "Réessaie dans un instant."
+    },
+    "area": {
+      "title": "Choisis ta zone",
+      "caption": "Ton choix reste sur ce téléphone."
+    },
+    "verifySheet": {
+      "body": "Nous avons contrôlé une pièce d'identité officielle et un selfie de chaque parent qui organise.",
+      "match": "Leur nom et leur visage correspondent à une pièce d'identité officielle"
+    },
+    "tabs": {
+      "seeEvents": "Voir les sorties",
+      "community": {
+        "title": "Des petits cercles de familles près de chez toi",
+        "body": "Un cercle, c'est un petit groupe de familles voisines qui s'entraident au quotidien, par exemple pour l'école, chacun son tour."
+      },
+      "market": {
+        "title": "Des aides de confiance pour la garde et le quotidien",
+        "body": "Trouve de la garde et des services pour les familles, auprès de personnes vérifiées, près de chez toi."
+      },
+      "travel": {
+        "title": "Échange ta maison avec une famille pendant les vacances",
+        "body": "Pars chez une famille vérifiée pendant qu'elle vient chez toi."
+      },
+      "mySpace": {
+        "title": "Tout ce qui compte pour ta famille, au même endroit",
+        "body": "Tes prochaines sorties, tes rappels et tes notifications, réunis."
+      }
+    }
   }
 }

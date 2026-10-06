@@ -753,5 +753,97 @@
         "en": "Event in English"
       }
     }
+  },
+  "guest": {
+    "logIn": "Log in",
+    "createAccount": "Create my account",
+    "haveAccount": "I already have an account",
+    "hero": {
+      "promise": "Family outings, without the mental load.",
+      "support": "SparkCircles helps parents organise things together, with the families around them. Outings are open today.",
+      "benefits": "Why SparkCircles",
+      "findTitle": "Find an outing near you",
+      "findBody": "Outings between families, ready to join.",
+      "verifiedTitle": "Hosts are verified parents",
+      "verifiedBody": "You know who you are meeting, before you say yes.",
+      "verifiedLink": "What verification means",
+      "togetherTitle": "Less to organise, together",
+      "togetherBody": "Circles of nearby families, trusted services and house swaps are coming.",
+      "soon": "Soon",
+      "noAccount": "No account needed to look at the outings below."
+    },
+    "searchTitle": "Find an outing",
+    "card": {
+      "hostedBy": "Hosted by a verified parent",
+      "verifiedOnly": "Verified parents only",
+      "lockedCta": "Create your account and get verified to join",
+      "a11y": "{{type}}, {{title}}, {{when}}, {{where}}, {{places}}"
+    },
+    "conversion": {
+      "title": "Ready to join one?",
+      "body": "Create your account: that is where you confirm your place."
+    },
+    "footer": {
+      "privacy": "Privacy",
+      "fr": "Français",
+      "en": "English"
+    },
+    "sheet": {
+      "join": "Create your account to join this outing",
+      "create": "Create your account to host an outing",
+      "report": "Create your account to report this outing",
+      "wishlist": "Create your account to save this outing",
+      "verifiedOnly": "Create your account and get verified to join",
+      "canTitle": "With an account, you can",
+      "canJoin": "Join outings between families",
+      "canHost": "Host your own, once you are verified",
+      "canFind": "Find your outings in My space",
+      "promiseTitle": "You come back to this outing after sign-up.",
+      "promiseJoin": "Your place is ready: you confirm it yourself.",
+      "promiseVerify": "Then we explain how to get verified."
+    },
+    "states": {
+      "loading": "Looking for outings…",
+      "emptyTitle": "No outings in this area yet",
+      "emptyBody": "Widen the area to see more. Or create an account, get verified, and host the first one.",
+      "seeAllParis": "See all of Paris",
+      "otherArea": "Choose another area",
+      "clearFilters": "Clear filters",
+      "offlineTitle": "You are offline",
+      "offlineBody": "These outings are from your last visit. Reconnect to update them.",
+      "offlineEmptyTitle": "No connection, nothing more to show",
+      "offlineEmptyBody": "Check your connection, then try again.",
+      "rateTitle": "That was a lot of searches at once",
+      "rateBody": "Wait a minute, then search again.",
+      "failTitle": "We could not load the outings",
+      "failBody": "Try again in a moment."
+    },
+    "area": {
+      "title": "Choose your area",
+      "caption": "Your choice stays on this phone."
+    },
+    "verifySheet": {
+      "body": "We checked an official ID and a selfie of every parent who hosts.",
+      "match": "Their name and face match an official ID"
+    },
+    "tabs": {
+      "seeEvents": "See the outings",
+      "community": {
+        "title": "Small circles of families near you",
+        "body": "A circle is a small group of neighbouring families who help each other day to day, for example school runs, taking turns."
+      },
+      "market": {
+        "title": "Trusted help for childcare and daily life",
+        "body": "Find childcare and services for families, from verified people near you."
+      },
+      "travel": {
+        "title": "Swap homes with a family for the holidays",
+        "body": "Stay with a verified family while they stay at yours."
+      },
+      "mySpace": {
+        "title": "Everything for your family, in one place",
+        "body": "Your upcoming outings, your reminders and your notifications, together."
+      }
+    }
   }
 }

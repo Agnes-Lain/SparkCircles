@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Users } from 'lucide-react-native';
+import { Calendar, Lock, MapPin, ShieldCheck, Users } from 'lucide-react-native';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
@@ -55,17 +55,38 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
   const category = event.category ? t(`events.categories.${event.category}`) : null;
   const total = event.places.total ?? 0;
   const filled = total > 0 ? event.places.taken / total : 0;
-  const showBadge = Boolean(host && !host.former_member && host.verified && !isHost);
+  // Guests (US-15 table, AC-15.2, AC-15.4): no host name, initial or avatar, only "Organisée
+  // par un parent vérifié"; a verified-only event shows no host information at all, the lock
+  // badge and the locked call to action instead.
+  const guest = event.viewer.role === 'guest';
+  const locked = guest && event.join_rule === 'verified_only';
+  const showBadge = guest
+    ? !locked && Boolean(host?.verified)
+    : Boolean(host && !host.former_member && host.verified && !isHost);
+
+  const guestLabel = guest
+    ? [
+        t('guest.card.a11y', { type: t('events.type'), title, when, where, places }),
+        locked
+          ? `${t('guest.card.verifiedOnly')}, ${t('guest.card.lockedCta')}`
+          : showBadge
+            ? t('guest.card.hostedBy') + t('events.card.verifiedSuffix')
+            : null,
+      ]
+        .filter(Boolean)
+        .join(', ')
+    : null;
 
   const label = [
-    t('events.card.a11y', {
-      type: t('events.type'),
-      title,
-      when,
-      where,
-      places,
-      host: hostName ?? '',
-    }) + (showBadge ? t('events.card.verifiedSuffix') : ''),
+    guestLabel ??
+      t('events.card.a11y', {
+        type: t('events.type'),
+        title,
+        when,
+        where,
+        places,
+        host: hostName ?? '',
+      }) + (showBadge ? t('events.card.verifiedSuffix') : ''),
     category,
     // AC-16.2: the card is read as one element, so its label carries the language tag too.
     event.language && event.language !== locale
@@ -123,7 +144,34 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
             </View>
           ))}
         </View>
-        {hostName ? (
+        {locked ? (
+          <View className="flex-row" testID={`event-card-locked-${event.id}`}>
+            <View className="flex-row items-center gap-xs rounded-pill border-[0.5px] border-border-soft bg-shell px-2.5 py-1">
+              <Icon icon={Lock} size={12} color="ink-2" />
+              <Text className="text-[11px] font-medium text-ink-2">
+                {t('guest.card.verifiedOnly')}
+              </Text>
+            </View>
+          </View>
+        ) : guest && showBadge ? (
+          <View
+            className="flex-row items-center gap-sm"
+            testID={`event-card-guest-host-${event.id}`}
+          >
+            <Icon icon={ShieldCheck} size={18} color="green-dark" />
+            <Text className="shrink text-body font-medium text-ink">
+              {t('guest.card.hostedBy')}
+            </Text>
+            <Badge
+              ref={badgeRef}
+              kind="badge-green"
+              label={t('events.badge.verified')}
+              accessibilityLabel={t('events.badge.verifiedA11y')}
+              onPress={() => onBadgePress(badgeRef)}
+              testID={`event-card-badge-${event.id}`}
+            />
+          </View>
+        ) : hostName && !guest ? (
           <View className="flex-row items-center gap-sm">
             <Avatar name={hostName} seed={host?.id ?? hostName} size="sm" />
             <Text className="text-body font-medium text-ink">{hostName}</Text>
@@ -157,6 +205,14 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
             />
           </View>
         </View>
+        {locked ? (
+          <View className="-mx-lg -mb-md mt-xs flex-row items-center gap-sm bg-shell px-lg py-md">
+            <Icon icon={Lock} size={16} color="ink" />
+            <Text className="flex-1 text-body font-medium text-ink">
+              {t('guest.card.lockedCta')}
+            </Text>
+          </View>
+        ) : null}
       </View>
       {/* Reserved 44×44 slot for the wishlist heart (backlog #24): empty in v1. */}
       <View
