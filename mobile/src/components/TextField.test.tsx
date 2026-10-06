@@ -15,7 +15,7 @@ describe('TextField keypad "Done" bar', () => {
   beforeEach(() => i18n.changeLanguage('fr'));
   afterEach(() => jest.restoreAllMocks());
 
-  it.each<TextFieldKind>(['emergencyPhone', 'phone', 'number', 'birthYear'])(
+  it.each<TextFieldKind>(['emergencyPhone', 'phone', 'number'])(
     'gives a %s field a labelled Done button on iOS that hides the keypad',
     async (kind) => {
       const dismiss = jest.spyOn(Keyboard, 'dismiss').mockImplementation();

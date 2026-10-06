@@ -97,12 +97,18 @@ async function takeAndUse() {
   await press(await screen.findByText('Utiliser cette photo'));
 }
 
+/** Backlog #30: the native date picker (iOS sheet in tests), then "OK". */
 async function fillDateOfBirth(day: string, month: string, year: string) {
+  await press(screen.getByTestId('dob'));
   await act(async () => {
-    fireEvent.changeText(screen.getByTestId('dob-day'), day);
-    fireEvent.changeText(screen.getByTestId('dob-month'), month);
-    fireEvent.changeText(screen.getByTestId('dob-year'), year);
+    fireEvent(screen.getByTestId('dob-picker'), 'onChange', {
+      nativeEvent: {
+        timestamp: new Date(Number(year), Number(month) - 1, Number(day)).getTime(),
+        utcOffset: 0,
+      },
+    });
   });
+  await press(screen.getByTestId('dob-done'));
 }
 
 /** V1 → V4 for a document type, every photo taken with the camera. */
@@ -136,18 +142,12 @@ afterEach(async () => {
 });
 
 describe('QA: uncovered criteria', () => {
-  it('DOB fields: number pads, labelled Jour / Mois / Année', async () => {
+  it('#30 DOB: a native date picker, nothing typed (no number pads)', async () => {
     await reachReview('Passeport', false);
-    for (const [id, label, max] of [
-      ['dob-day', 'Jour', 2],
-      ['dob-month', 'Mois', 2],
-      ['dob-year', 'Année', 4],
-    ] as const) {
-      const input = screen.getByTestId(id);
-      expect(input.props.keyboardType).toBe('number-pad');
-      expect(input.props.maxLength).toBe(max);
-      expect(screen.getAllByLabelText(label).length).toBeGreaterThan(0);
+    for (const id of ['dob-day', 'dob-month', 'dob-year']) {
+      expect(screen.queryByTestId(id)).toBeNull();
     }
+    expect(screen.getByTestId('dob').props.accessibilityRole).toBe('button');
   });
 
   it('18+ rule: an under-18 date shows the designed message and sends nothing', async () => {

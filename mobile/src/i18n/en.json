@@ -376,9 +376,7 @@
     "review": {
       "title": "Last step",
       "dateOfBirth": "Date of birth",
-      "day": "Day",
-      "month": "Month",
-      "year": "Year",
+      "dobPlaceholder": "Choose your date of birth",
       "photoPage": "{{document}}, photo page",
       "front": "{{document}}, front",
       "back": "{{document}}, back",

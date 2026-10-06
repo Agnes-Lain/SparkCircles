@@ -376,9 +376,7 @@
     "review": {
       "title": "Dernière étape",
       "dateOfBirth": "Date de naissance",
-      "day": "Jour",
-      "month": "Mois",
-      "year": "Année",
+      "dobPlaceholder": "Choisis ta date de naissance",
       "photoPage": "{{document}}, page photo",
       "front": "{{document}}, recto",
       "back": "{{document}}, verso",

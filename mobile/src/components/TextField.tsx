@@ -38,9 +38,6 @@ export type TextFieldKind =
   | 'email'
   | 'password'
   | 'newPassword'
-  | 'birthDay'
-  | 'birthMonth'
-  | 'birthYear'
   | 'number'
   | 'time'
   | 'phone'
@@ -108,24 +105,6 @@ const KIND: Record<TextFieldKind, Partial<TextInputProps>> = {
     autoCorrect: false,
     autoComplete: 'new-password',
     textContentType: 'newPassword',
-  },
-  birthDay: {
-    keyboardType: 'number-pad',
-    maxLength: 2,
-    autoComplete: 'birthdate-day',
-    textContentType: 'birthdateDay',
-  },
-  birthMonth: {
-    keyboardType: 'number-pad',
-    maxLength: 2,
-    autoComplete: 'birthdate-month',
-    textContentType: 'birthdateMonth',
-  },
-  birthYear: {
-    keyboardType: 'number-pad',
-    maxLength: 4,
-    autoComplete: 'birthdate-year',
-    textContentType: 'birthdateYear',
   },
   number: { keyboardType: 'number-pad', maxLength: 3 },
   time: { keyboardType: 'numbers-and-punctuation', maxLength: 5, autoCorrect: false },

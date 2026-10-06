@@ -20,7 +20,7 @@ import { AccountScreen } from '../account/AccountScreen';
 import { DocumentCaptureRoute, SelfieCaptureRoute } from './CaptureScreen';
 import { DocumentTypeScreen } from './DocumentTypeScreen';
 import { VerificationFlowProvider as around } from './flow';
-import { parseDateOfBirth, ReviewScreen } from './ReviewScreen';
+import { checkDateOfBirth, dateOfBirthRange, ReviewScreen } from './ReviewScreen';
 import { StatusScreen } from './StatusScreen';
 import { VerifyGateScreen } from './VerifyGateScreen';
 
@@ -130,12 +130,18 @@ async function takeAndUse() {
   await press(await screen.findByText('Utiliser cette photo'));
 }
 
+/** Backlog #30: the native date picker (iOS sheet in tests), then "OK". */
 async function fillDateOfBirth(day: string, month: string, year: string) {
+  await press(screen.getByTestId('dob'));
   await act(async () => {
-    fireEvent.changeText(screen.getByTestId('dob-day'), day);
-    fireEvent.changeText(screen.getByTestId('dob-month'), month);
-    fireEvent.changeText(screen.getByTestId('dob-year'), year);
+    fireEvent(screen.getByTestId('dob-picker'), 'onChange', {
+      nativeEvent: {
+        timestamp: new Date(Number(year), Number(month) - 1, Number(day)).getTime(),
+        utcOffset: 0,
+      },
+    });
   });
+  await press(screen.getByTestId('dob-done'));
 }
 
 /** V1 → V4 for a document type, every photo taken with the camera. */
@@ -408,15 +414,20 @@ describe('V4 Date of birth and check', () => {
     expect(mockDeleted).toContain(`file:///cache/ImageManipulator/${before}.jpg`);
   });
 
-  it.each([
-    ['', '', '', 'Ajoute ta date de naissance.'],
-    ['31', '02', '1990', 'Vérifie ta date de naissance.'],
-    ['14', '05', '2012', 'Tu dois avoir 18 ans ou plus pour vérifier ton identité.'],
-  ])('checks the date of birth before sending (%s/%s/%s)', async (day, month, year, message) => {
+  it('checks the date of birth before sending (none picked)', async () => {
     await reachReview('Passeport', false);
-    await fillDateOfBirth(day, month, year);
     await press(screen.getByText('Envoyer pour vérification'));
-    expect(screen.getByText(message)).toBeOnTheScreen();
+    expect(screen.getByText('Ajoute ta date de naissance.')).toBeOnTheScreen();
+    expect(mockVerification.submit).not.toHaveBeenCalled();
+  });
+
+  it('18+ is checked again before sending, whatever the picker allowed', async () => {
+    await reachReview('Passeport', false);
+    await fillDateOfBirth('14', '05', '2012');
+    await press(screen.getByText('Envoyer pour vérification'));
+    expect(
+      screen.getByText('Tu dois avoir 18 ans ou plus pour vérifier ton identité.'),
+    ).toBeOnTheScreen();
     expect(mockVerification.submit).not.toHaveBeenCalled();
   });
 
@@ -486,18 +497,33 @@ describe('V4 Date of birth and check', () => {
     expect(screen.getAllByText('Reprends cette photo.')).toHaveLength(1);
   });
 
-  it('QA-V3 the three date fields form one "Date de naissance" group', async () => {
+  it('QA-V3 #30 the date of birth is one native picker labelled "Date de naissance", 18+ built in', async () => {
     await reachReview('Passeport', false);
-    const group = screen.getByTestId('dob-group');
-    expect(group.props.role).toBe('group');
-    expect(group.props.accessibilityLabel).toBe('Date de naissance');
-    for (const [id, label] of [
-      ['dob-day', 'Jour'],
-      ['dob-month', 'Mois'],
-      ['dob-year', 'Année'],
-    ] as const) {
-      expect(screen.getByTestId(id).props.accessibilityLabel).toBe(label);
-    }
+    expect(screen.getByText('Date de naissance')).toBeOnTheScreen();
+    expect(
+      screen.getByRole('button', { name: 'Date de naissance, Choisis ta date de naissance' }),
+    ).toBeOnTheScreen();
+    expect(screen.queryByTestId('dob-day')).toBeNull();
+    await press(screen.getByTestId('dob'));
+    const picker = screen.getByTestId('dob-picker');
+    const now = new Date();
+    const ago = (years: number) =>
+      new Date(now.getFullYear() - years, now.getMonth(), now.getDate()).getTime();
+    expect(picker.props.date).toBe(ago(35));
+    expect(picker.props.maximumDate).toBe(ago(18));
+    expect(picker.props.minimumDate).toBe(ago(100));
+    expect(picker.props.locale).toBe('fr-FR');
+    expect(picker.props.themeVariant).toBe('light');
+    expect(picker.props.accessibilityLabel).toBe('Date de naissance');
+    await act(async () => {
+      fireEvent(picker, 'onChange', {
+        nativeEvent: { timestamp: new Date(1990, 4, 14).getTime(), utcOffset: 0 },
+      });
+    });
+    await press(screen.getByTestId('dob-done'));
+    expect(
+      screen.getByRole('button', { name: 'Date de naissance, 14 mai 1990' }),
+    ).toBeOnTheScreen();
   });
 
   it('QA-V4 422 date of birth (under 18 for the server): shows the 18+ message', async () => {
@@ -535,11 +561,17 @@ describe('V4 Date of birth and check', () => {
     expect(await screen.findByTestId('status-pending')).toBeOnTheScreen();
   });
 
-  it('parses dates the API way', () => {
+  it('#30 checks picked dates the API way', () => {
     const today = new Date(2026, 9, 4);
-    expect(parseDateOfBirth('4', '10', '2008', today)).toEqual({ value: '2008-10-04' });
-    expect(parseDateOfBirth('5', '10', '2008', today)).toEqual({ error: 'dobUnderage' });
-    expect(parseDateOfBirth('aa', '10', '1990', today)).toEqual({ error: 'dobInvalid' });
+    expect(checkDateOfBirth(new Date(2008, 9, 4), today)).toEqual({ value: '2008-10-04' });
+    expect(checkDateOfBirth(new Date(2008, 9, 5), today)).toEqual({ error: 'dobUnderage' });
+    expect(checkDateOfBirth(null, today)).toEqual({ error: 'dobBlank' });
+    expect(checkDateOfBirth(new Date(1926, 9, 3), today)).toEqual({ error: 'dobInvalid' });
+    expect(dateOfBirthRange(today)).toEqual({
+      min: new Date(1926, 9, 4),
+      max: new Date(2008, 9, 4),
+      initial: new Date(1991, 9, 4),
+    });
   });
 });
 

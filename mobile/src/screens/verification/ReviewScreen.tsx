@@ -2,9 +2,9 @@ import type { TFunction } from 'i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type Href, Redirect, useRouter } from 'expo-router';
 import { Check, CircleAlert } from 'lucide-react-native';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AccessibilityInfo, Image, Text, type TextInput, View } from 'react-native';
+import { AccessibilityInfo, Image, Text, View } from 'react-native';
 
 import { verification } from '../../api';
 import { ApiError } from '../../api/errors';
@@ -16,10 +16,11 @@ import {
 } from '../../api/verification';
 import { ME_KEY } from '../../auth/useMe';
 import { Button } from '../../components/Button';
+import { DateTimeField } from '../../components/DateTimeField';
 import { Header } from '../../components/Header';
 import { Icon } from '../../components/Icon';
 import { Notification } from '../../components/Notification';
-import { TextField } from '../../components/TextField';
+import { resolveLocale } from '../../i18n';
 import { FormScreen } from '../auth/layouts';
 import { useBack } from '../auth/useBack';
 import { useSubmitOnce } from '../auth/useSubmitOnce';
@@ -30,37 +31,50 @@ const ADULT_AGE = 18;
 
 type DobError = 'dobBlank' | 'dobInvalid' | 'dobUnderage';
 
+const OLDEST_AGE = 100;
+const DEFAULT_AGE = 35;
+
+/** The day `years` before `today`, at local midnight (what the native picker works with). */
+function yearsAgo(years: number, today: Date): Date {
+  return new Date(today.getFullYear() - years, today.getMonth(), today.getDate());
+}
+
+/** The picker's range (backlog #30): 18+ built in (max), 100 years back (min), opens on 35. */
+export function dateOfBirthRange(today: Date = new Date()) {
+  return {
+    min: yearsAgo(OLDEST_AGE, today),
+    max: yearsAgo(ADULT_AGE, today),
+    initial: yearsAgo(DEFAULT_AGE, today),
+  };
+}
+
 /**
- * The date of birth typed as day, month and year, as the API wants it (YYYY-MM-DD), or the
- * reason it can't be sent. 18+ is checked here for a quick answer; the API decides.
+ * The picked date of birth as the API wants it (YYYY-MM-DD), or the reason it can't be sent.
+ * The picker already stops at 18; 18+ is checked again here for a quick answer, and the API
+ * decides.
  */
-export function parseDateOfBirth(
-  day: string,
-  month: string,
-  year: string,
+export function checkDateOfBirth(
+  date: Date | null,
   today: Date = new Date(),
 ): { value: string } | { error: DobError } {
-  if (!day.trim() && !month.trim() && !year.trim()) return { error: 'dobBlank' };
-  if (
-    !/^\d{1,2}$/.test(day.trim()) ||
-    !/^\d{1,2}$/.test(month.trim()) ||
-    !/^\d{4}$/.test(year.trim())
-  ) {
+  if (!date) return { error: 'dobBlank' };
+  const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const { min, max } = dateOfBirthRange(today);
+  if (day.getTime() < min.getTime() || day.getTime() > today.getTime()) {
     return { error: 'dobInvalid' };
   }
-  const d = Number(day.trim());
-  const m = Number(month.trim());
-  const y = Number(year.trim());
-  const date = new Date(Date.UTC(y, m - 1, d));
-  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) {
-    return { error: 'dobInvalid' };
-  }
-  const adultOn = new Date(Date.UTC(y + ADULT_AGE, m - 1, d));
-  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
-  if (y < 1900 || date.getTime() > todayUtc) return { error: 'dobInvalid' };
-  if (adultOn.getTime() > todayUtc) return { error: 'dobUnderage' };
+  if (day.getTime() > max.getTime()) return { error: 'dobUnderage' };
   const pad = (n: number) => String(n).padStart(2, '0');
-  return { value: `${y}-${pad(m)}-${pad(d)}` };
+  return { value: `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}` };
+}
+
+/** "14 mai 1990" / "14 May 1990". */
+function formatDateOfBirth(date: Date, pickerLocale: string): string {
+  return new Intl.DateTimeFormat(pickerLocale, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
 }
 
 const PHOTO_FIELDS: Record<string, PhotoSlot> = {
@@ -95,16 +109,15 @@ function uploadProblem(error: ApiError | null) {
  * sending fails, and are erased once the server has them (M-25).
  */
 export function ReviewScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const pickerLocale = resolveLocale(i18n.language) === 'fr' ? 'fr-FR' : 'en-GB';
   const router = useRouter();
   const back = useBack('/verify/selfie');
   const queryClient = useQueryClient();
   const flow = useVerificationFlow();
-  const [day, setDay] = useState('');
-  const [month, setMonth] = useState('');
-  const [year, setYear] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [dobError, setDobError] = useState<DobError | null>(null);
-  const dayRef = useRef<TextInput>(null);
+  const dobRange = dateOfBirthRange();
 
   const showStatus = (sent: boolean) => {
     if (router.canDismiss()) router.dismissAll();
@@ -159,10 +172,9 @@ export function ReviewScreen() {
   }
 
   const send = () => {
-    const parsed = parseDateOfBirth(day, month, year);
+    const parsed = checkDateOfBirth(dateOfBirth);
     if ('error' in parsed) {
       setDobError(parsed.error);
-      dayRef.current?.focus();
       AccessibilityInfo.announceForAccessibility(t(`verify.review.${parsed.error}`));
       return;
     }
@@ -194,49 +206,24 @@ export function ReviewScreen() {
       />
 
       <View className="gap-xs">
-        <Text className="text-body text-ink-2">{t('verify.review.dateOfBirth')}</Text>
-        {/* QA-V3: the three fields form one "Date of birth" group for screen readers. */}
-        <View
-          role="group"
-          accessibilityLabel={t('verify.review.dateOfBirth')}
-          className="flex-row gap-sm"
-          testID="dob-group"
-        >
-          <View className="flex-1">
-            <TextField
-              ref={dayRef}
-              kind="birthDay"
-              label={t('verify.review.day')}
-              value={day}
-              onChangeText={setDay}
-              error={dobMessage}
-              hideErrorText
-              testID="dob-day"
-            />
-          </View>
-          <View className="flex-1">
-            <TextField
-              kind="birthMonth"
-              label={t('verify.review.month')}
-              value={month}
-              onChangeText={setMonth}
-              error={dobMessage}
-              hideErrorText
-              testID="dob-month"
-            />
-          </View>
-          <View className="flex-[1.5]">
-            <TextField
-              kind="birthYear"
-              label={t('verify.review.year')}
-              value={year}
-              onChangeText={setYear}
-              error={dobMessage}
-              hideErrorText
-              testID="dob-year"
-            />
-          </View>
-        </View>
+        {/* QA-V3: one field clearly labelled "Date de naissance" (label and spoken name). */}
+        <DateTimeField
+          mode="date"
+          label={t('verify.review.dateOfBirth')}
+          display={dateOfBirth ? formatDateOfBirth(dateOfBirth, pickerLocale) : ''}
+          placeholder={t('verify.review.dobPlaceholder')}
+          value={dateOfBirth ?? dobRange.initial}
+          onChange={(picked) => {
+            setDateOfBirth(picked);
+            setDobError(null);
+          }}
+          minimumDate={dobRange.min}
+          maximumDate={dobRange.max}
+          locale={pickerLocale}
+          error={dobMessage ?? undefined}
+          hideErrorText
+          testID="dob"
+        />
         {dobMessage ? <FieldError message={dobMessage} testID="dob-error" /> : null}
       </View>
 
