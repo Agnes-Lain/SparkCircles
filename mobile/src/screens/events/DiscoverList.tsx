@@ -314,7 +314,10 @@ export function DiscoverList({
     <Notification
       level="reminder"
       title={t('guest.states.rateTitle')}
-      caption={t('guest.states.rateBody')}
+      // A blocked connection lasts an hour (contract): no "wait a minute".
+      caption={t(
+        error.code === 'client_blocked' ? 'guest.states.blockedBody' : 'guest.states.rateBody',
+      )}
       testID="events-rate-limited"
     />
   ) : error.isOffline ? (

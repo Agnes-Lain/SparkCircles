@@ -20,9 +20,16 @@ export type SavedFilters = {
   text: string;
 };
 
+export type ReturnAction = 'join' | 'verify' | 'report' | 'wishlist';
+
 export type ReturnTarget = {
-  /** The event the guest was on, and what they wanted: join, or (verified-only) verify. */
-  event?: { id: string; then: 'join' | 'verify' };
+  /**
+   * The event the guest was on, and what they wanted: join, (verified-only) verify, report,
+   * or wishlist (the heart isn't built yet: back to the event, nothing more).
+   */
+  event?: { id: string; then: ReturnAction };
+  /** « Créer ma sortie »: the create form (V0 replaces it until the account is verified). */
+  create?: boolean;
   /** A guest tab (Cercles, Services, Voyages, Mon espace). */
   tab?: 'community' | 'market' | 'travel' | 'my-space';
   /** The Sorties search as it was (the area is already kept on the device, areaStore). */
@@ -82,8 +89,12 @@ export function takeRestoredFilters(): SavedFilters | null {
   return filters;
 }
 
-/** Where the target leads: the event (its action ready, not done), a tab, or Sorties. */
+/**
+ * Where the target leads: the event (its action ready, not done), the create form, a tab,
+ * or Sorties.
+ */
 export function returnHref(target: ReturnTarget): Href {
+  if (target.create) return '/events/new';
   if (target.event)
     return `/events/${encodeURIComponent(target.event.id)}?then=${target.event.then}`;
   if (target.tab) return `/${target.tab}`;

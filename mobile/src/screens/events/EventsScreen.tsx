@@ -80,7 +80,7 @@ function GuestEventsScreen({ tag }: { tag?: string }) {
       <GuestSignUpSheet
         visible={creating}
         action="create"
-        target={{}}
+        target={{ create: true }}
         onClose={() => setCreating(false)}
       />
     </SafeAreaView>

@@ -815,6 +815,7 @@
       "offlineEmptyBody": "Vérifie ta connexion, puis réessaie.",
       "rateTitle": "Beaucoup de recherches d'un coup",
       "rateBody": "Attends une minute, puis relance ta recherche.",
+      "blockedBody": "Réessaie un peu plus tard.",
       "failTitle": "On n'a pas pu charger les sorties",
       "failBody": "Réessaie dans un instant."
     },

@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { events } from '../../api';
 import type { ApiError } from '../../api/errors';
 import type { SparkEvent } from '../../api/events';
+import type { ReturnAction } from '../../auth/returnTo';
 import { Avatar } from '../../components/Avatar';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -93,7 +94,7 @@ function DetailSkeleton() {
  */
 export function EventDetailScreen() {
   // `then`: back from the account step (AC-15.7, AC-15.8), the action the guest wanted is
-  // ready but not done: the join sheet, or the invitation to verify.
+  // ready but not done: the join sheet, the invitation to verify, or the report sheet.
   const { id, then } = useLocalSearchParams<{ id: string; then?: string }>();
   const { t, i18n } = useTranslation();
   const locale = resolveLocale(i18n.language);
@@ -200,8 +201,13 @@ export function EventDetailScreen() {
   // Adjusted while rendering (not in an effect), once the event is known.
   if (event && !thenHandled && then && event.viewer.role !== 'guest') {
     setThenHandled(true);
-    if (then === 'join' && event.viewer.can_join) setSheet('join');
-    else if (event.viewer.join_blocker === 'verification_required') setSheet('restricted');
+    // Report reopens its sheet; wishlist only comes back here (the heart isn't built yet).
+    if (then === 'report') {
+      if (event.viewer.role !== 'host') setSheet('report');
+    } else if (then === 'join' || then === 'verify') {
+      if (then === 'join' && event.viewer.can_join) setSheet('join');
+      else if (event.viewer.join_blocker === 'verification_required') setSheet('restricted');
+    }
   }
 
   if (!event) {
@@ -926,7 +932,7 @@ export function EventDetailScreen() {
           action={guestSheet ?? 'join'}
           eventTitle={event.title}
           target={{
-            event: { id: event.id, then: lockedForGuest ? 'verify' : 'join' },
+            event: { id: event.id, then: returnAction(guestSheet, lockedForGuest) },
           }}
           onClose={() => setGuestSheet(null)}
         />
@@ -940,6 +946,12 @@ export function EventDetailScreen() {
       />
     </SafeAreaView>
   );
+}
+
+/** What the guest wanted, kept for after the account step (AC-15.7, AC-15.8). */
+function returnAction(action: GuestAction | null, lockedForGuest: boolean): ReturnAction {
+  if (action === 'report' || action === 'wishlist') return action;
+  return lockedForGuest ? 'verify' : 'join';
 }
 
 function DestructiveLink({

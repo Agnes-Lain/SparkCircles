@@ -114,6 +114,20 @@ describe('US-15 guest home (Sorties in guest mode)', () => {
     expect(screen.getByText('Crée ton compte pour proposer une sortie')).toBeOnTheScreen();
     // No event behind "create": no return-to-event promise.
     expect(screen.queryByTestId('return-promise')).toBeNull();
+    // QA guest-home BUG-3: back to the create form (V0 replaces it until verified).
+    await fireEvent.press(screen.getByTestId('guest-sheet-sign-up'));
+    expect(await screen.findByText('route:sign-up')).toBeOnTheScreen();
+    expect(returnHref(consumeReturnTo()!)).toBe('/events/new');
+  });
+
+  it('the footer « Français · English » links change the app language', async () => {
+    await openAsGuest('/');
+    await fireEvent.press(await screen.findByTestId('footer-en'));
+    await waitFor(() => expect(i18n.language).toBe('en'));
+    expect(await screen.findByText('Privacy')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('footer-fr'));
+    await waitFor(() => expect(i18n.language).toBe('fr'));
+    expect(await screen.findByText('Confidentialité')).toBeOnTheScreen();
   });
 
   it('AC-15.1 shows the compact hero once this device has seen the full one (flag on the device)', async () => {
@@ -279,6 +293,9 @@ describe('US-15 guest states', () => {
     mockEvents.search.mockRejectedValue(apiError(403, 'client_blocked'));
     await openAsGuest('/');
     expect(await screen.findByTestId('events-rate-limited')).toBeOnTheScreen();
+    // QA guest-home BUG-4: the block lasts an hour, so no "wait a minute".
+    expect(screen.getByText('Réessaie un peu plus tard.')).toBeOnTheScreen();
+    expect(screen.queryByText('Attends une minute, puis relance ta recherche.')).toBeNull();
   });
 
   it('load failure (also a refused client): « On n’a pas pu charger les sorties » with « Réessayer »', async () => {
@@ -339,6 +356,25 @@ describe('US-15 guest event detail and the sign-up prompt', () => {
     await fireEvent.press(await screen.findByTestId('more-options'));
     expect(screen.getByText('Crée ton compte pour signaler cette sortie')).toBeOnTheScreen();
     expect(screen.queryByText('Lieu dangereux')).toBeNull();
+    // QA guest-home BUG-2: the return target remembers the report.
+    await fireEvent.press(screen.getByTestId('guest-sheet-log-in'));
+    expect(await screen.findByText('route:log-in')).toBeOnTheScreen();
+    expect(returnHref(consumeReturnTo()!)).toBe(`/events/${guestEvent.id}?then=report`);
+  });
+
+  it('AC-15.7 back as a member after « Signaler »: the report sheet, not the join sheet', async () => {
+    mockEvents.get.mockResolvedValue({ event: eventFixture });
+    await openAsMember(`/events/${eventFixture.id}?then=report`);
+    expect(await screen.findByTestId('report-sheet')).toBeVisible();
+    expect(screen.queryByText('Combien de places ?')).toBeNull();
+  });
+
+  it('AC-15.7 back as a member after the wishlist heart: just the event, no sheet', async () => {
+    mockEvents.get.mockResolvedValue({ event: eventFixture });
+    await openAsMember(`/events/${eventFixture.id}?then=wishlist`);
+    expect(await screen.findByRole('header', { name: eventFixture.title! })).toBeOnTheScreen();
+    expect(screen.queryByText('Combien de places ?')).toBeNull();
+    expect(screen.queryByTestId('report-sheet')).not.toBeVisible();
   });
 
   it('AC-15.7 back as a member, the join is ready but not done (the join sheet is open)', async () => {
