@@ -73,10 +73,8 @@ describe('SessionProvider', () => {
     expect(queryClient.getQueryCache().findAll({ queryKey: ['events'] })).toEqual([]);
   });
 
-  // QA guest-home BUG-1: signing in does not refresh what the guest had cached. Marked as
-  // failing until the fix (drop or invalidate the ['events'] queries when a token arrives):
-  // remove `.failing` then.
-  it.failing('AC-15.7 signing in drops the guest view of events from the cache', async () => {
+  // QA guest-home BUG-1: a new token forgets what the guest had cached.
+  it('AC-15.7 signing in drops the guest view of events from the cache', async () => {
     const queryClient = createTestQueryClient();
     queryClient.setQueryData(eventKey(guestEvent.id), guestEvent);
     await renderSession(null, queryClient);

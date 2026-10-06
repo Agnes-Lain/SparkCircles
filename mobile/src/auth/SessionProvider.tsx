@@ -12,7 +12,10 @@ export type SignOutReason = 'logout' | 'unauthorized' | null;
 export type Session = {
   status: SessionStatus;
   reason: SignOutReason;
-  /** Store the token returned by login, sign-up confirmation or password reset. */
+  /**
+   * Store the token returned by login, sign-up confirmation or password reset, and forget
+   * every cached answer but the account the caller just stored.
+   */
   signIn(token: string): Promise<void>;
   /** Forget the token on this device (the API call to log out is made by the caller). */
   signOut(): Promise<void>;
@@ -60,10 +63,14 @@ export function SessionProvider({
   const signIn = useCallback(
     async (token: string) => {
       await tokenStore.setToken(token);
+      // A new token is a new viewer (AC-15.7): nothing cached for the guest (guest event
+      // views, guest cards) or another account may show. The account (`['me']`, ME_KEY) is
+      // kept: the caller has just stored the one returned with this token.
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'me' });
       setReason(null);
       setStatus('signedIn');
     },
-    [tokenStore],
+    [tokenStore, queryClient],
   );
 
   const signOut = useCallback(async () => {
