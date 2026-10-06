@@ -1,7 +1,4 @@
-import DateTimePicker, {
-  DateTimePickerAndroid,
-  type DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { Calendar, Clock } from 'lucide-react-native';
 import { forwardRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -62,9 +59,7 @@ export const DateTimeField = forwardRef<View, DateTimeFieldProps>(function DateT
         value,
         minimumDate,
         is24Hour,
-        onChange: (event, picked) => {
-          if (event.type === 'set' && picked) onChange(picked);
-        },
+        onValueChange: (_event, picked) => onChange(picked),
       });
       return;
     }
@@ -111,9 +106,7 @@ export const DateTimeField = forwardRef<View, DateTimeFieldProps>(function DateT
               locale={locale}
               is24Hour={is24Hour}
               accessibilityLabel={label}
-              onChange={(_event: DateTimePickerEvent, picked?: Date) => {
-                if (picked) setDraft(picked);
-              }}
+              onValueChange={(_event, picked) => setDraft(picked)}
             />
           </View>
           <Button
