@@ -6,6 +6,8 @@ import type { Me } from './types';
 
 const BASE = 'http://192.168.1.77:3000';
 
+const DEVICE_ID = '3b241101-e2bb-4255-8caf-4136c566a962';
+
 function setup({ token = 'old-token' as string | null, locale = 'fr' } = {}) {
   const tokenStore = memoryTokenStore(token);
   const fetchImpl = jest.fn<Promise<Response>, Parameters<typeof fetch>>();
@@ -15,6 +17,8 @@ function setup({ token = 'old-token' as string | null, locale = 'fr' } = {}) {
     tokenStore,
     getLocale: () => locale,
     onUnauthorized,
+    clientSignature: 'ios/1.0.0',
+    getDeviceId: async () => DEVICE_ID,
     fetchImpl: fetchImpl as unknown as typeof fetch,
     timeoutMs: 50,
   });
@@ -49,6 +53,43 @@ describe('API client', () => {
     expect(lastInit().headers['Content-Type']).toBe('application/json');
     expect(lastInit().headers.Authorization).toBeUndefined();
     expect(lastInit().body).toBe(JSON.stringify({ email: 'a@b.c' }));
+  });
+
+  describe('app signature headers (Events API contract, guest access)', () => {
+    it('sends X-SparkCircles-Client and X-SparkCircles-Device on logged-in requests', async () => {
+      const { client, fetchImpl, lastInit } = setup();
+      fetchImpl.mockResolvedValue(jsonResponse(200, meFixture));
+
+      await client.request('/me');
+
+      expect(lastInit().headers).toMatchObject({
+        'X-SparkCircles-Client': 'ios/1.0.0',
+        'X-SparkCircles-Device': DEVICE_ID,
+      });
+    });
+
+    it('sends them on anonymous requests too', async () => {
+      const { client, fetchImpl, lastInit } = setup({ token: null });
+      fetchImpl.mockResolvedValue(jsonResponse(200, { events: [] }));
+
+      await client.request('/events', { auth: false });
+
+      expect(lastInit().headers.Authorization).toBeUndefined();
+      expect(lastInit().headers['X-SparkCircles-Client']).toBe('ios/1.0.0');
+      expect(lastInit().headers['X-SparkCircles-Device']).toBe(DEVICE_ID);
+    });
+
+    it('sends them on the health check', async () => {
+      const { client, fetchImpl, lastInit } = setup();
+      fetchImpl.mockResolvedValue(jsonResponse(200));
+
+      await client.health();
+
+      expect(lastInit().headers).toEqual({
+        'X-SparkCircles-Client': 'ios/1.0.0',
+        'X-SparkCircles-Device': DEVICE_ID,
+      });
+    });
   });
 
   describe('token renewal (AC-3.4, contract §1)', () => {

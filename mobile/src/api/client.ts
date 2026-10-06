@@ -1,4 +1,5 @@
 import type { TokenStore } from '../auth/tokenStore';
+import { CLIENT_HEADER, DEVICE_HEADER } from './appSignature';
 import { ApiError, isApiErrorBody } from './errors';
 
 export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -24,6 +25,10 @@ export type ApiClientConfig = {
   getLocale: () => string;
   /** Called after a 401 `unauthorized` cleared the token: the session is over (AC-3.4, 3.6). */
   onUnauthorized?: () => void;
+  /** App signature sent on every request (X-SparkCircles-Client), e.g. `ios/1.0.0`. */
+  clientSignature?: string;
+  /** Per-install device id sent on every request (X-SparkCircles-Device). */
+  getDeviceId?: () => Promise<string>;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
 };
@@ -38,6 +43,14 @@ export function createApiClient(config: ApiClientConfig) {
   const baseUrl = config.baseUrl.replace(/\/+$/, '');
   const fetchImpl = config.fetchImpl ?? ((...args: Parameters<typeof fetch>) => fetch(...args));
   const timeoutMs = config.timeoutMs ?? 15_000;
+
+  /** The app signature headers, on every request (Events API contract, "Guest access"). */
+  async function signatureHeaders(): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {};
+    if (config.clientSignature) headers[CLIENT_HEADER] = config.clientSignature;
+    if (config.getDeviceId) headers[DEVICE_HEADER] = await config.getDeviceId();
+    return headers;
+  }
 
   async function send(
     url: string,
@@ -67,6 +80,7 @@ export function createApiClient(config: ApiClientConfig) {
     const headers: Record<string, string> = {
       Accept: 'application/json',
       'Accept-Language': config.getLocale(),
+      ...(await signatureHeaders()),
     };
     const token = auth ? await config.tokenStore.getToken() : null;
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -117,7 +131,11 @@ export function createApiClient(config: ApiClientConfig) {
 
   /** Rails health check `GET /up` (outside /api/v1): true when the API answers 200. */
   async function health(signal?: AbortSignal): Promise<true> {
-    const response = await send(`${baseUrl}/up`, { method: 'GET' }, signal);
+    const response = await send(
+      `${baseUrl}/up`,
+      { method: 'GET', headers: await signatureHeaders() },
+      signal,
+    );
     if (!response.ok) {
       throw new ApiError(
         response.status,
