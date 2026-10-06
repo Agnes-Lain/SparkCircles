@@ -25,5 +25,5 @@ export declare const fontSize: Record<
   FontSize
 >;
 export declare const spacing: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl', string>;
-export declare const boxShadow: Record<'card' | 'modal' | 'float' | 'fab', string>;
+export declare const boxShadow: Record<'card' | 'modal' | 'float' | 'fab' | 'icon-btn', string>;
 export declare const shellGradient: { stops: { offset: string; color: string }[] };

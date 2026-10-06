@@ -3,7 +3,7 @@ import type { ReactNode, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
-import { IconButton } from './IconButton';
+import { HeaderIconButton } from './HeaderIconButton';
 
 export type HeaderProps = {
   title: string;
@@ -25,9 +25,13 @@ export function Header({ title, onBack, step, intro, small = false, titleRef }: 
   return (
     <View className="gap-sm">
       {onBack || step ? (
-        <View className="-ml-3 flex-row items-center justify-between">
+        <View className="flex-row items-center justify-between">
           {onBack ? (
-            <IconButton icon={ChevronLeft} accessibilityLabel={t('common.back')} onPress={onBack} />
+            <HeaderIconButton
+              icon={ChevronLeft}
+              accessibilityLabel={t('common.back')}
+              onPress={onBack}
+            />
           ) : (
             <View />
           )}

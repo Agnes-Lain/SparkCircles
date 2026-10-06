@@ -57,6 +57,7 @@ const boxShadow = {
   modal: '0 4px 16px rgba(0,0,0,0.08)',
   float: '0 8px 32px rgba(0,0,0,0.12)',
   fab: '0 4px 14px rgba(26,26,26,0.16)', // raised centre tab (My space)
+  'icon-btn': '0 2px 8px rgba(26,26,26,0.10)', // v1.8 header icon button (back, more options)
 };
 
 /**

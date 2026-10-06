@@ -5,7 +5,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '../../components/Icon';
-import { IconButton } from '../../components/IconButton';
+import { HeaderIconButton } from '../../components/HeaderIconButton';
 
 /**
  * Layout of the form screens (mockup `signup`: S2, S5, S6, S8): on the shell gradient, 16 px side
@@ -71,8 +71,12 @@ export function MessageScreen({
     <SafeAreaView edges={['top', 'bottom']} className="flex-1" testID={testID}>
       <ScrollView contentContainerClassName="grow gap-xl px-lg pb-3xl pt-lg">
         {onBack ? (
-          <View className="-ml-3 flex-row">
-            <IconButton icon={ChevronLeft} accessibilityLabel={t('common.back')} onPress={onBack} />
+          <View className="flex-row">
+            <HeaderIconButton
+              icon={ChevronLeft}
+              accessibilityLabel={t('common.back')}
+              onPress={onBack}
+            />
           </View>
         ) : null}
         <View className="max-h-[72px] grow" />

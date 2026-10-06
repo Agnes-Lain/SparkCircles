@@ -15,7 +15,7 @@ import { useMe } from '../../auth/useMe';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
-import { IconButton } from '../../components/IconButton';
+import { HeaderIconButton } from '../../components/HeaderIconButton';
 import { IconSquare } from '../../components/IconSquare';
 import { SectionLabel } from '../../components/SettingsList';
 import { FormScreen } from '../auth/layouts';
@@ -100,8 +100,8 @@ export function VerifyGateScreen() {
 function BackRow({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
   return (
-    <View className="-ml-3 flex-row">
-      <IconButton icon={ChevronLeft} accessibilityLabel={t('common.back')} onPress={onBack} />
+    <View className="flex-row">
+      <HeaderIconButton icon={ChevronLeft} accessibilityLabel={t('common.back')} onPress={onBack} />
     </View>
   );
 }

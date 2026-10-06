@@ -334,6 +334,16 @@ function detail(event: SparkEvent) {
 }
 
 describe('E2 Event detail, participant', () => {
+  it('header: back and "⋯" are the 44 px header icon buttons (v1.8)', async () => {
+    await detail(eventFixture);
+    const more = await screen.findByTestId('more-options');
+    expect(more).toHaveProp('accessibilityLabel', "Plus d'options");
+    const back = screen.getByRole('button', { name: 'Retour' });
+    for (const button of [more, back]) {
+      expect(button).toHaveStyle({ width: 44, height: 44 });
+    }
+  });
+
   it('AC-6.1 AC-6.4 AC-4.3 before joining: area only, counts only, host and badge before the CTA', async () => {
     await detail(eventFixture);
     expect(

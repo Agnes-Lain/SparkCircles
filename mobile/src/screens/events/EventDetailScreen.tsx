@@ -24,7 +24,7 @@ import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { CategoryPill } from '../../components/CategoryPill';
 import { Icon } from '../../components/Icon';
-import { IconButton } from '../../components/IconButton';
+import { HeaderIconButton } from '../../components/HeaderIconButton';
 import { IconSquare } from '../../components/IconSquare';
 import { LanguageTag } from '../../components/LanguageTag';
 import { Notification } from '../../components/Notification';
@@ -268,8 +268,12 @@ export function EventDetailScreen() {
     }
     return (
       <SafeAreaView edges={['top', 'bottom']} className="flex-1">
-        <View className="-ml-1 flex-row px-sm">
-          <IconButton icon={ChevronLeft} accessibilityLabel={t('common.back')} onPress={back} />
+        <View className="flex-row px-lg">
+          <HeaderIconButton
+            icon={ChevronLeft}
+            accessibilityLabel={t('common.back')}
+            onPress={back}
+          />
         </View>
         {query.error ? (
           <View className="px-lg pt-md">
@@ -593,21 +597,17 @@ export function EventDetailScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1" testID="event-detail">
-      <View className="flex-row items-center justify-between px-sm">
-        <IconButton icon={ChevronLeft} accessibilityLabel={t('common.back')} onPress={back} />
+      <View className="flex-row items-center justify-between px-lg">
+        <HeaderIconButton icon={ChevronLeft} accessibilityLabel={t('common.back')} onPress={back} />
         {/* Nobody reports their own event: the host gets no "⋯" (design E7). */}
         {isHost ? null : (
-          <Pressable
+          <HeaderIconButton
             ref={moreRef}
             testID="more-options"
-            accessibilityRole="button"
+            icon={Ellipsis}
             accessibilityLabel={t('events.detail.more')}
             onPress={() => (guest ? setGuestSheet('report') : setSheet('report'))}
-            className="items-center justify-center"
-            style={{ width: MIN_TOUCH_TARGET, height: MIN_TOUCH_TARGET }}
-          >
-            <Icon icon={Ellipsis} size={22} />
-          </Pressable>
+          />
         )}
       </View>
       <ScrollView contentContainerClassName="gap-lg px-lg pb-3xl pt-sm">
