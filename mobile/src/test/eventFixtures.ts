@@ -21,6 +21,8 @@ export const eventFixture: SparkEvent = {
   join_rule: 'anyone',
   places: { total: 10, taken: 6, left: 4 },
   full: false,
+  adult_required: true,
+  approval_required: false,
   viewer: { role: 'member', joined: false, can_join: true, join_blocker: null },
   host: {
     id: '0192a1b2-0000-7000-8000-000000000009',
@@ -114,4 +116,83 @@ export const guestLockedEvent: SparkEvent = {
   places: { total: 8, taken: 6, left: 2 },
   viewer: { role: 'guest', joined: false, can_join: false, join_blocker: 'verification_required' },
   host: undefined,
+};
+
+/** §8 US-17: a drop-off event with approval, as a verified member sees it. */
+export const dropoffEvent: SparkEvent = {
+  ...eventFixture,
+  id: '8d2e3f40-5162-4c7d-8e9f-a0b1c2d3e4f5',
+  title: 'Après-midi jeux chez moi',
+  join_rule: 'verified_only',
+  adult_required: false,
+  approval_required: true,
+  viewer: { role: 'member', joined: false, can_join: true, join_blocker: null, request: null },
+};
+
+/** §8.1 The same, after the parent sent a request. */
+export const pendingDropoffEvent: SparkEvent = {
+  ...dropoffEvent,
+  viewer: {
+    role: 'member',
+    joined: false,
+    can_join: false,
+    join_blocker: 'requested',
+    request: {
+      status: 'pending',
+      closed_reason: null,
+      adults: 0,
+      children: 3,
+      places: 3,
+      requested_at: '2026-10-09T08:00:00Z',
+      expires_at: '2026-10-10T13:00:00Z',
+    },
+  },
+};
+
+/** §8.1 Accepted on a drop-off event: the address and the host's phone. */
+export const acceptedDropoffEvent: SparkEvent = {
+  ...dropoffEvent,
+  viewer: {
+    role: 'participant',
+    joined: true,
+    can_join: false,
+    join_blocker: 'joined',
+    request: null,
+  },
+  exact_address: '12 rue Oberkampf, 75011 Paris',
+  host_phone: '+33612345678',
+  phone_visible_until: '2026-10-11T15:00:00Z',
+  participants: [],
+  my_participation: {
+    adults: 0,
+    children: 3,
+    places: 3,
+    emergency_phone: '+33698765432',
+    pending_change: null,
+  },
+};
+
+/** §8.1 The host's view of the drop-off event, with requests waiting. */
+export const hostedDropoffEvent: SparkEvent = {
+  ...dropoffEvent,
+  viewer: { role: 'host', joined: false, can_join: false, join_blocker: 'host', request: null },
+  exact_address: '12 rue Oberkampf, 75011 Paris',
+  host_phone: '+33612345678',
+  phone_visible_until: '2026-10-11T15:00:00Z',
+  participants: [
+    {
+      first_name: 'Hugo',
+      last_name_initial: 'P',
+      verified: true,
+      former_member: false,
+      adults: 0,
+      children: 2,
+      emergency_phone: '+33698765432',
+    },
+  ],
+  my_participation: null,
+  visibility: 'searchable',
+  published_at: '2026-10-01T10:00:00Z',
+  cancelled_at: null,
+  pending_requests_count: 3,
 };

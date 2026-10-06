@@ -35,6 +35,13 @@ export type ApiErrorCode =
   | 'event_started'
   | 'already_reported'
   | 'search_too_broad'
+  // US-17 requests (docs/api/events.md, section 8).
+  | 'already_requested'
+  | 'request_declined'
+  | 'request_not_pending'
+  | 'request_expired'
+  | 'request_closed'
+  | 'requests_frozen'
   | 'server_error'
   // Client side: no answer from the server (offline, DNS, refused) or too slow.
   | 'network_error'

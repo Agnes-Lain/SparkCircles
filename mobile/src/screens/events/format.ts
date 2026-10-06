@@ -128,3 +128,12 @@ export function clockTime(timestamp: number): string {
   const date = new Date(timestamp);
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
+
+/** A request's deadline (US-17 pending state): "dim. 11 oct., 10 h" / "Sun 11 Oct, 10:00". */
+export function formatDeadline(iso: string, timeZone: string, locale: Locale): string {
+  const day = formatShortDay(iso, timeZone, locale);
+  const p = zonedParts(new Date(iso), timeZone);
+  if (locale === 'en') return `${day}, ${pad(p.hour)}:${pad(p.minute)}`;
+  const clock = p.minute ? `${p.hour} h ${pad(p.minute)}` : `${p.hour} h`;
+  return `${day.charAt(0).toLowerCase()}${day.slice(1)}, ${clock}`;
+}

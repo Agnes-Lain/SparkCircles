@@ -61,6 +61,11 @@ export const mockEvents: MockedEvents = {
   join: jest.fn(),
   changePlaces: jest.fn(),
   leave: jest.fn(),
+  withdrawRequest: jest.fn(),
+  requests: jest.fn(),
+  acceptRequest: jest.fn(),
+  declineRequest: jest.fn(),
+  acceptAll: jest.fn(),
   report: jest.fn(),
 };
 

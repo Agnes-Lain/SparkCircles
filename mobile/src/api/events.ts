@@ -11,7 +11,27 @@ export type EventStatus = 'draft' | 'published' | 'suspended' | 'cancelled' | 'p
 export type JoinRule = 'anyone' | 'verified_only';
 export type ViewerRole = 'guest' | 'member' | 'participant' | 'host';
 export type JoinBlocker =
-  'account_required' | 'verification_required' | 'full' | 'closed' | 'host' | 'joined';
+  | 'account_required'
+  | 'verification_required'
+  | 'full'
+  | 'closed'
+  | 'host'
+  | 'joined'
+  // §8 US-17: a pending request; no new request after a decline.
+  | 'requested'
+  | 'declined';
+/** §8.1 The viewer's own request (US-17), never anyone else's. */
+export type RequestStatus = 'pending' | 'declined' | 'expired' | 'closed';
+export type ClosedReason = 'full' | 'cancelled' | 'verification';
+export type MyRequest = {
+  status: RequestStatus;
+  closed_reason: ClosedReason | null;
+  adults: number;
+  children: number;
+  places: number;
+  requested_at: string | null;
+  expires_at: string | null;
+};
 /** AC-16.1 The language the host wrote the event in. */
 export type EventLanguage = 'fr' | 'en';
 export type AgeBand = '0-2' | '3-5' | '6-8' | '9-12' | '13+';
@@ -36,9 +56,25 @@ export type EventParticipant = {
   former_member: boolean;
   adults: number;
   children: number;
+  /** §8.1 host only, until `phone_visible_until` (E.164). */
+  emergency_phone?: string;
 };
 
-export type Participation = { adults: number; children: number; places: number };
+/** §8.1 Extra places asked while the accepted ones stay booked (AC-17.21). */
+export type PendingChange = {
+  adults: number;
+  children: number;
+  places: number;
+  expires_at: string | null;
+};
+
+export type Participation = {
+  adults: number;
+  children: number;
+  places: number;
+  emergency_phone?: string | null;
+  pending_change?: PendingChange | null;
+};
 
 /** §2 The event object. */
 export type SparkEvent = {
@@ -62,11 +98,17 @@ export type SparkEvent = {
   join_rule: JoinRule;
   places: { total: number | null; taken: number; left: number };
   full: boolean;
+  /** §8.1 US-17 (every audience): false = a drop-off event. */
+  adult_required: boolean;
+  /** §8.1 joining sends a request the host approves ("Sur demande"). */
+  approval_required: boolean;
   viewer: {
     role: ViewerRole;
     joined: boolean;
     can_join: boolean;
     join_blocker: JoinBlocker | null;
+    /** §8.1 the viewer's own request; null for guests and when there is none. */
+    request?: MyRequest | null;
   };
   /** §2.2 / §2.3: guests get `{ verified }` only, members the full host. */
   host?: EventHost;
@@ -74,8 +116,13 @@ export type SparkEvent = {
   exact_address?: string;
   participants?: EventParticipant[];
   my_participation?: Participation | null;
+  /** §8.1 drop-off: the host's phone (host; accepted participants until `phone_visible_until`). */
+  host_phone?: string;
+  phone_visible_until?: string | null;
   /** §2.4 host only. */
   visibility?: 'searchable';
+  /** §8.1 host only. */
+  pending_requests_count?: number;
   published_at?: string | null;
   cancelled_at?: string | null;
 };
@@ -131,14 +178,61 @@ export type EventParams = {
   tags?: string[];
   join_rule?: JoinRule;
   language?: EventLanguage;
+  adult_required?: boolean;
+  approval_required?: boolean;
+  host_phone?: string | null;
 };
 
-export type PlacesParams = { adults: number; children: number };
+export type PlacesParams = {
+  adults: number;
+  children: number;
+  /** §8.2 drop-off: required with 0 adults. */
+  emergency_phone?: string;
+  /** §8.2 drop-off: "I stay responsible for my child" ticked. */
+  responsibility_acknowledged?: boolean;
+};
+
+/** §8.3 A request waiting for the host. */
+export type HostRequest = {
+  id: string;
+  first_name: string | null;
+  last_name_initial: string | null;
+  verified: boolean;
+  former_member: boolean;
+  extra: boolean;
+  adults: number;
+  children: number;
+  places: number;
+  current_places: number;
+  requested_at: string | null;
+  expires_at: string | null;
+};
+
+/** §8.3 A decided request ("Terminées"). */
+export type DoneRequest = {
+  id: string;
+  first_name: string | null;
+  last_name_initial: string | null;
+  verified: boolean;
+  former_member: boolean;
+  status: 'accepted' | 'declined' | 'withdrawn' | 'expired' | 'closed';
+  closed_reason: ClosedReason | null;
+  places: number;
+  decided_at: string | null;
+};
+
+export type RequestList = {
+  places_left: number;
+  frozen: boolean;
+  requests: HostRequest[];
+  done: DoneRequest[];
+};
 
 /** React Query keys. Everything about events starts with `events`, so one call refreshes all. */
 export const EVENTS_KEY = ['events'] as const;
 export const EVENT_OPTIONS_KEY = ['events', 'options'] as const;
 export const eventKey = (id: string) => ['events', 'detail', id] as const;
+export const eventRequestsKey = (id: string) => ['events', 'requests', id] as const;
 export const eventSearchKey = (search: EventSearch) => ['events', 'search', search] as const;
 export const myEventsKey = (role: 'host' | 'participant', when: 'upcoming' | 'past') =>
   ['events', 'mine', role, when] as const;
@@ -235,6 +329,38 @@ export function eventsApi(client: Client) {
       client.request<void>(`/events/${encodeURIComponent(id)}/participation`, {
         method: 'DELETE',
       }),
+
+    /** §8.2 DELETE /events/:id/participation/request: withdraws the pending request. */
+    withdrawRequest: (id: string) =>
+      client.request<{ event: SparkEvent }>(
+        `/events/${encodeURIComponent(id)}/participation/request`,
+        { method: 'DELETE' },
+      ),
+
+    /** §8.3 GET /events/:id/requests (host only). */
+    requests: (id: string, signal?: AbortSignal) =>
+      client.request<RequestList>(`/events/${encodeURIComponent(id)}/requests`, { signal }),
+
+    /** §8.3 POST /events/:id/requests/:request_id/accept */
+    acceptRequest: (id: string, requestId: string) =>
+      client.request<{ event: SparkEvent }>(
+        `/events/${encodeURIComponent(id)}/requests/${encodeURIComponent(requestId)}/accept`,
+        { method: 'POST' },
+      ),
+
+    /** §8.3 POST /events/:id/requests/:request_id/decline */
+    declineRequest: (id: string, requestId: string) =>
+      client.request<{ event: SparkEvent }>(
+        `/events/${encodeURIComponent(id)}/requests/${encodeURIComponent(requestId)}/decline`,
+        { method: 'POST' },
+      ),
+
+    /** §8.3 POST /events/:id/requests/accept_all */
+    acceptAll: (id: string) =>
+      client.request<{ accepted: number; closed: number; event: SparkEvent }>(
+        `/events/${encodeURIComponent(id)}/requests/accept_all`,
+        { method: 'POST' },
+      ),
 
     /** §3 POST /events/:id/reports */
     report: (id: string, reason: ReportReason, details?: string) =>

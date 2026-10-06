@@ -14,7 +14,9 @@ import {
   type EventSearch,
   EVENTS_KEY,
   eventKey,
+  eventRequestsKey,
   eventSearchKey,
+  type RequestList,
   myEventsKey,
   type SparkEvent,
 } from '../../api/events';
@@ -30,12 +32,50 @@ export function useEventOptions() {
 
 const nextPage = (last: EventPage) => last.pagination.next_page ?? undefined;
 
+/**
+ * US-17 (AC-17.9, AC-17.12): phone numbers are never kept in list pages (they are shown
+ * on the detail only), and the detail drops them once the 24-hour window is over.
+ */
+export function withoutPhones(event: SparkEvent): SparkEvent {
+  const { host_phone: _phone, participants, my_participation: mine, ...rest } = event;
+  const result: SparkEvent = { ...rest };
+  if (participants)
+    result.participants = participants.map(({ emergency_phone: _e, ...person }) => person);
+  if (mine !== undefined) {
+    if (mine) {
+      const { emergency_phone: _own, ...kept } = mine;
+      result.my_participation = kept;
+    } else {
+      result.my_participation = mine;
+    }
+  }
+  return result;
+}
+
+/** The event as the cache may keep it: phones only inside their visibility window. */
+export function withinPhoneWindow(event: SparkEvent, now: Date = new Date()): SparkEvent {
+  const until = event.phone_visible_until ? new Date(event.phone_visible_until).getTime() : null;
+  const over = until !== null && until <= now.getTime();
+  if (!over && event.status !== 'cancelled') return event;
+  // The host keeps their own number (erased at the 90-day purge, AC-17.12).
+  const scrubbed = withoutPhones(event);
+  return event.viewer.role === 'host' && event.host_phone
+    ? { ...scrubbed, host_phone: event.host_phone }
+    : scrubbed;
+}
+
+const pageWithoutPhones = (page: EventPage): EventPage => ({
+  ...page,
+  events: page.events.map(withoutPhones),
+});
+
 /** `GET /events`, soonest first, page after page (contract "Pagination"). */
 export function useEventSearch(search: EventSearch, enabled: boolean) {
   return useInfiniteQuery<EventPage, ApiError, InfiniteData<EventPage>, readonly unknown[], number>(
     {
       queryKey: eventSearchKey(search),
-      queryFn: ({ pageParam, signal }) => events().search(search, pageParam, signal),
+      queryFn: async ({ pageParam, signal }) =>
+        pageWithoutPhones(await events().search(search, pageParam, signal)),
       initialPageParam: 1,
       getNextPageParam: nextPage,
       enabled,
@@ -48,7 +88,8 @@ export function useMyEvents(role: 'host' | 'participant', when: 'upcoming' | 'pa
   return useInfiniteQuery<EventPage, ApiError, InfiniteData<EventPage>, readonly unknown[], number>(
     {
       queryKey: myEventsKey(role, when),
-      queryFn: ({ pageParam, signal }) => events().mine(role, when, pageParam, signal),
+      queryFn: async ({ pageParam, signal }) =>
+        pageWithoutPhones(await events().mine(role, when, pageParam, signal)),
       initialPageParam: 1,
       getNextPageParam: nextPage,
     },
@@ -68,7 +109,7 @@ export function useEvent(id: string) {
       try {
         const { event } = await events().get(id, signal);
         stripIfCancelled(client, event);
-        return event;
+        return withinPhoneWindow(event);
       } catch (error) {
         if (error instanceof ApiError && (error.status === 403 || error.status === 404))
           purgeEvent(client, id);
@@ -76,6 +117,16 @@ export function useEvent(id: string) {
       }
     },
     enabled: Boolean(id),
+  });
+}
+
+/** US-17 `GET /events/:id/requests`: the host's request list (AC-17.15 to AC-17.20). */
+export function useEventRequests(id: string) {
+  return useQuery<RequestList, ApiError>({
+    queryKey: eventRequestsKey(id),
+    queryFn: ({ signal }) => events().requests(id, signal),
+    enabled: Boolean(id),
+    staleTime: 0,
   });
 }
 
@@ -90,7 +141,7 @@ export async function freshEvent(client: QueryClient, id: string) {
       queryFn: async ({ signal }) => {
         const { event } = await events().get(id, signal);
         stripIfCancelled(client, event);
-        return event;
+        return withinPhoneWindow(event);
       },
       staleTime: 0,
     });
@@ -103,7 +154,7 @@ export async function freshEvent(client: QueryClient, id: string) {
 
 /** Puts the event a mutation returned in the cache and refreshes every list (AC-1.8). */
 export function storeEvent(client: QueryClient, event: SparkEvent) {
-  client.setQueryData(eventKey(event.id), event);
+  client.setQueryData(eventKey(event.id), withinPhoneWindow(event));
   stripIfCancelled(client, event);
   refreshLists(client);
 }
@@ -117,7 +168,7 @@ export function refreshEvents(client: QueryClient, id?: string) {
 /**
  * AC-5.4, AC-6.3 (QA BUG-1): after a leave, the exact address, the participants and my
  * places leave the cache at once (not only when a refetch answers), then everything is
- * fetched again.
+ * fetched again. US-17: the phone numbers go with them (AC-17.12).
  */
 export function forgetParticipation(client: QueryClient, id: string) {
   client.setQueryData<SparkEvent>(eventKey(id), (event) =>
@@ -146,13 +197,15 @@ export function purgeEvent(client: QueryClient, id: string) {
   stripFromLists(client, id);
 }
 
-/** The event as a non-participant sees it: no exact address, participants or places. */
+/** The event as a non-participant sees it: no exact address, participants, places or phone. */
 function withoutInsiderDetails(event: SparkEvent): SparkEvent {
   if (event.viewer.role === 'host') return event;
   const {
     exact_address: _address,
     participants: _people,
     my_participation: _mine,
+    host_phone: _phone,
+    phone_visible_until: _until,
     ...rest
   } = event;
   return rest;
