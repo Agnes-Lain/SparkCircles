@@ -186,6 +186,26 @@ RSpec.describe EventMailer do
       expect_private(mail)
     end
 
+    it "E-A in English: extra places read \"2 more places\"" do
+      dropoff.host.update!(locale: "en")
+      one = { "user" => guest, "request" => true, "places" => 1, "total" => 2 }
+      two = { "user" => guest, "request" => true, "places" => 2, "total" => 3 }
+      single = described_class.host_activity(dropoff, [ two ], places_left: 8, places_total: 8, waiting: 1)
+      expect(text(single)).to include("Léa D. asks for 2 more places (3 in total).")
+      digest = described_class.host_activity(dropoff, [ one, two ], places_left: 8, places_total: 8, waiting: 2)
+      expect(text(digest)).to include("- Léa D. asks for 1 more place (2 in total)", "- Léa D. asks for 2 more places (3 in total)")
+    end
+
+    it "AC-17.21 E-C for extra places says the places already booked don't change" do
+      mail = described_class.request_declined(dropoff, guest, extra_places: true)
+      expect(text(mail)).to include("L'organisateur ne peut pas donner suite à ta demande pour « Après-midi jeux ».",
+                                    "Tes places déjà réservées ne changent pas.")
+      expect(text(described_class.request_declined(dropoff, guest))).not_to include("déjà réservées")
+      guest.update!(locale: "en")
+      expect(text(described_class.request_declined(dropoff, guest, extra_places: true)))
+        .to include("Your places already booked don't change.")
+    end
+
     it "E-D expired and E-E closed as full, in English too" do
       guest.update!(locale: "en")
       expect(described_class.request_expired(dropoff, guest).subject).to eq("Your request for “Après-midi jeux” has expired")

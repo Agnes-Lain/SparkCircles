@@ -361,9 +361,13 @@ en:
     request_received:
       subject: "New request for “%{title}”"
       line: "%{guest} asks for %{places} on your event."
-      more_line: "%{guest} asks for %{places} more (%{total} in total)."
+      more_line:
+        one: "%{guest} asks for %{count} more place (%{total} in total)."
+        other: "%{guest} asks for %{count} more places (%{total} in total)."
       digest: "%{guest} asks for %{places}"
-      more_digest: "%{guest} asks for %{places} more (%{total} in total)"
+      more_digest:
+        one: "%{guest} asks for %{count} more place (%{total} in total)"
+        other: "%{guest} asks for %{count} more places (%{total} in total)"
       waiting_single:
         one: "You have %{count} request waiting. Unanswered requests expire 48 hours after they were sent."
         other: "You have %{count} requests waiting. Unanswered requests expire 48 hours after they were sent."
@@ -383,6 +387,7 @@ en:
       lines:
         - "The host can't take your request for “%{title}”."
         - "You can look at other events near you."
+      extra_places: "Your places already booked don't change."
       action: "See other events"
     request_expired:
       subject: "Your request for “%{title}” has expired"

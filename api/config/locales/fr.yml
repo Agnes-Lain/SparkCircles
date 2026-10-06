@@ -371,9 +371,13 @@ fr:
     request_received:
       subject: "Nouvelle demande pour « %{title} »"
       line: "%{guest} demande %{places} pour ta sortie."
-      more_line: "%{guest} demande %{places} de plus (%{total} au total)."
+      more_line:
+        one: "%{guest} demande %{places} de plus (%{total} au total)."
+        other: "%{guest} demande %{places} de plus (%{total} au total)."
       digest: "%{guest} demande %{places}"
-      more_digest: "%{guest} demande %{places} de plus (%{total} au total)"
+      more_digest:
+        one: "%{guest} demande %{places} de plus (%{total} au total)"
+        other: "%{guest} demande %{places} de plus (%{total} au total)"
       waiting_single:
         one: "Tu as %{count} demande en attente. Sans réponse, chaque demande expire 48 h après son envoi."
         other: "Tu as %{count} demandes en attente. Sans réponse, chaque demande expire 48 h après son envoi."
@@ -393,6 +397,7 @@ fr:
       lines:
         - "L'organisateur ne peut pas donner suite à ta demande pour « %{title} »."
         - "Tu peux regarder d'autres sorties près de chez toi."
+      extra_places: "Tes places déjà réservées ne changent pas."
       action: "Voir d'autres sorties"
     request_expired:
       subject: "Ta demande pour « %{title} » a expiré"

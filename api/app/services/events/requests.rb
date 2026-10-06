@@ -36,12 +36,13 @@ module Events
     def decline!(participation_id)
       decide do
         participation = find_waiting!(participation_id)
-        if participation.pending?
-          participation.update!(status: "declined", emergency_phone: nil, decided_at: Time.current)
-        else
+        extra_places = !participation.pending?
+        if extra_places
           participation.update!(pending_adults: nil, pending_children: nil, requested_at: nil)
+        else
+          participation.update!(status: "declined", emergency_phone: nil, decided_at: Time.current)
         end
-        @emails << [ :request_declined, participation.user, {} ]
+        @emails << [ :request_declined, participation.user, { extra_places: extra_places } ]
         Notifications.request_resolved(@event, participation.user)
         participation
       end

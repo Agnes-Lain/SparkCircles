@@ -48,8 +48,9 @@ class EventMailer < ApplicationMailer
   end
 
   # E-C: neutral, no host name, no reason.
-  def request_declined(event, user)
-    request_closed(event, user, "request_declined", "events")
+  # `extra_places`: a request for more places; the places already booked stay (AC-17.21).
+  def request_declined(event, user, extra_places: false)
+    request_closed(event, user, "request_declined", "events", extra: extra_places ? "extra_places" : nil)
   end
 
   # E-D
@@ -105,9 +106,11 @@ class EventMailer < ApplicationMailer
 
   private
 
-  def request_closed(event, user, key, path)
+  def request_closed(event, user, key, path, extra: nil)
     with_recipient(user, event: event) do
-      deliver(user, t("event_mailer.#{key}.subject", title: subject_title(event)), t("event_mailer.#{key}.lines", title: event.title),
+      lines = t("event_mailer.#{key}.lines", title: event.title).dup
+      lines.insert(1, t("event_mailer.#{key}.#{extra}")) if extra
+      deliver(user, t("event_mailer.#{key}.subject", title: subject_title(event)), lines,
               action: [ "event_mailer.#{key}.action", app_link(path) ])
     end
   end
@@ -189,11 +192,12 @@ class EventMailer < ApplicationMailer
     [ t("event_mailer.host_activity.digest.intro"), *items ]
   end
 
-  # "Sofia R. demande 3 places", or "… 2 places de plus (3 au total)" for extra places.
+  # "Sofia R. demande 3 places", or "… 2 places de plus (3 au total)" ("2 more places") for extra places.
   def request_line(entry, form)
     guest = entry["user"].display_name
     if entry["total"]
-      t("event_mailer.request_received.more_#{form}", guest: guest, places: places(entry["places"]), total: entry["total"])
+      t("event_mailer.request_received.more_#{form}", guest: guest, count: entry["places"], places: places(entry["places"]),
+                                                     total: entry["total"])
     else
       t("event_mailer.request_received.#{form}", guest: guest, places: places(entry["places"]))
     end
