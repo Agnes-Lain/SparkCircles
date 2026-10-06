@@ -21,17 +21,24 @@ describe('events API client (docs/api/events.md)', () => {
   it('AC-3.2 sends only the filters that are set, categories comma-separated', () => {
     expect(
       searchQuery(
-        { area: 'paris-11', radius_km: 5, category: ['sport', 'music'], from: '2026-10-10' },
+        { area: ['paris-11'], radius_km: 5, category: ['sport', 'music'], from: '2026-10-10' },
         2,
       ),
     ).toBe('area=paris-11&radius_km=5&category=sport%2Cmusic&from=2026-10-10&page=2');
     expect(searchQuery({ radius_km: 5, q: '' }, 1)).toBe('page=1');
   });
 
+  it('multi-area: several areas as area[], "Tout Paris" as no area at all', () => {
+    expect(searchQuery({ area: ['paris-11', 'paris-20'], radius_km: 2 }, 1)).toBe(
+      'area%5B%5D=paris-11&area%5B%5D=paris-20&radius_km=2&page=1',
+    );
+    expect(searchQuery({ area: [], radius_km: 2 }, 1)).toBe('page=1');
+  });
+
   it('AC-3.10 searches a tag without its "#"', async () => {
     const { api, fetchImpl, last } = setup();
     fetchImpl.mockResolvedValue(jsonResponse(200, { events: [], pagination: {} }));
-    await api.search({ area: 'paris-11', tag: 'foot' }, 1);
+    await api.search({ area: ['paris-11'], tag: 'foot' }, 1);
     expect(last().url).toBe('http://api.test/api/v1/events?area=paris-11&tag=foot&page=1');
   });
 

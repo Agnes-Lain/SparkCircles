@@ -68,6 +68,7 @@ export const eventOptionsFixture: EventOptions = {
   areas: [
     { key: 'paris-11', label: 'Paris 11e', city: 'Paris' },
     { key: 'paris-12', label: 'Paris 12e', city: 'Paris' },
+    { key: 'paris-20', label: 'Paris 20e', city: 'Paris' },
   ],
   age_bands: ['0-2', '3-5', '6-8', '9-12', '13+'],
   report_reasons: [

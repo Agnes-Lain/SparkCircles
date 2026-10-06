@@ -29,7 +29,7 @@ import { MIN_TOUCH_TARGET } from '../../theme/a11y';
 import { colorValue, shadows } from '../../theme/colors';
 import { fontSize } from '../../theme/tokens';
 import { BadgeSheet } from '../account/BadgeSheet';
-import { AreaSheet } from './AreaSheet';
+import { AreaSheet, areaSummary } from './AreaSheet';
 import { readArea, saveArea } from './areaStore';
 import { CATEGORIES, CATEGORY_ICON } from './categories';
 import { DateSheet } from './DateSheet';
@@ -42,6 +42,9 @@ import { useEventOptions, useEventSearch } from './queries';
 const TIME_ZONE = 'Europe/Paris';
 const SEARCH_DEBOUNCE_MS = 400;
 const SEARCH_HEIGHT = 48;
+/** BUG-6: pages fetched on their own while none has a visible event (hosts are re-checked
+ *  per page, so a page can be empty while `next_page` is set). */
+export const MAX_EMPTY_PAGES = 5;
 
 type DateFilter = { mode: 'today' | 'weekend' } | { mode: 'pick'; date: string } | null;
 
@@ -59,6 +62,7 @@ export function groupByDay(
   for (const event of events) {
     if (seen.has(event.id)) continue; // a page boundary can repeat an event
     seen.add(event.id);
+    if (!event.starts_at) continue; // search lists published events only, always dated
     const day = zonedDate(event.starts_at, event.time_zone);
     if (day !== lastDay) {
       rows.push({ kind: 'day', key: `day-${day}`, label: label(event.starts_at, event.time_zone) });
@@ -92,7 +96,8 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
   const options = useEventOptions();
 
   const [areaLoaded, setAreaLoaded] = useState(false);
-  const [area, setArea] = useState<string | null>(null);
+  // No arrondissement = "Tout Paris", the default (PM decision 2026-10-06).
+  const [areas, setAreas] = useState<string[]>([]);
   const [radius, setRadius] = useState(0);
   const [areaSheet, setAreaSheetState] = useState(false);
   const [sheetKey, setSheetKey] = useState(0);
@@ -118,10 +123,9 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
 
   useEffect(() => {
     void readArea().then((stored) => {
-      setArea(stored.area);
+      setAreas(stored.areas);
       setRadius(stored.radius);
       setAreaLoaded(true);
-      if (!stored.area) setAreaSheet(true);
     });
   }, []);
 
@@ -142,17 +146,17 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
             ? { from: dateFilter.date, to: dateFilter.date }
             : {};
     return {
-      area: area ?? undefined,
-      radius_km: radius || undefined,
+      area: areas.length ? areas : undefined,
+      radius_km: areas.length && radius ? radius : undefined,
       category: categories.length ? categories : undefined,
       ...dates,
       age_band: ageBand ?? undefined,
       tag: typed.tag ?? (filterTag || undefined),
       q: typed.q,
     };
-  }, [area, radius, categories, dateFilter, today, ageBand, filterTag, debounced]);
+  }, [areas, radius, categories, dateFilter, today, ageBand, filterTag, debounced]);
 
-  const query = useEventSearch(search, areaLoaded && Boolean(area));
+  const query = useEventSearch(search, areaLoaded);
   const events = useMemo(
     () => query.data?.pages.flatMap((page) => page.events) ?? [],
     [query.data],
@@ -162,20 +166,30 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
     [events, locale],
   );
 
+  // BUG-6: an empty page with a next page: fetch on, up to MAX_EMPTY_PAGES pages.
+  const pageCount = query.data?.pages.length ?? 0;
+  const autoFetching =
+    events.length === 0 && Boolean(query.hasNextPage) && pageCount < MAX_EMPTY_PAGES;
+  useEffect(() => {
+    if (autoFetching && !query.isFetching && !query.isError) void query.fetchNextPage();
+  }, [autoFetching, query]);
+
+  // The distance counts only from chosen arrondissements ("Tout Paris" has no centre).
+  const distance = areas.length ? radius : 0;
   const activeCount =
     categories.length +
     (dateFilter ? 1 : 0) +
-    (radius > 0 ? 1 : 0) +
+    (distance > 0 ? 1 : 0) +
     (ageBand ? 1 : 0) +
     (filterTag ? 1 : 0);
   const filtering =
     activeCount > 0 || Boolean(textSearch(debounced).q || textSearch(debounced).tag);
 
-  const changeArea = useCallback(
-    (key: string) => {
-      setArea(key);
+  const changeAreas = useCallback(
+    (keys: string[]) => {
+      setAreas(keys);
       setAreaSheet(false);
-      void saveArea({ area: key, radius });
+      void saveArea({ areas: keys, radius });
     },
     [radius],
   );
@@ -183,9 +197,9 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
   const changeRadius = useCallback(
     (km: number) => {
       setRadius(km);
-      void saveArea({ area, radius: km });
+      void saveArea({ areas, radius: km });
     },
-    [area],
+    [areas],
   );
 
   const clearAll = () => {
@@ -198,9 +212,10 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
     changeRadius(0);
   };
 
-  // "Widen my area": the next distance step, then the area sheet once at the largest.
+  // "Widen my area": the next distance step, then the area sheet once at the largest (or
+  // at once on "Tout Paris", which has no distance).
   const widen = () => {
-    const next = RADIUS_CHOICES.find((km) => km > radius);
+    const next = areas.length ? RADIUS_CHOICES.find((km) => km > radius) : undefined;
     if (next) changeRadius(next);
     else setAreaSheet(true);
   };
@@ -214,8 +229,7 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
     setBadgeOpener(ref);
   };
 
-  const areaLabel =
-    options.data?.areas.find((a) => a.key === area)?.label ?? (area ? '' : t('events.area.none'));
+  const areaChip = areaSummary(areas, options.data?.areas, t);
 
   const error = query.error;
   const errorNotice = error ? (
@@ -257,13 +271,15 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
         <Pressable
           testID="area-selector"
           accessibilityRole="button"
-          accessibilityLabel={`${t('events.area.change')}, ${areaLabel}`}
+          accessibilityLabel={areaChip.a11y}
           onPress={() => setAreaSheet(true)}
           className="flex-row items-center gap-xs rounded-md border-[1.5px] border-ink-3 bg-surface px-md"
           style={{ height: SEARCH_HEIGHT }}
         >
           <Icon icon={MapPin} size={18} color="ink-2" />
-          <Text className="text-body font-medium text-ink">{areaLabel}</Text>
+          <Text className="shrink text-body font-medium text-ink" numberOfLines={1}>
+            {areaChip.label}
+          </Text>
           <Icon icon={ChevronDown} size={16} color="ink-2" />
         </Pressable>
         <Pressable
@@ -368,7 +384,7 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
         <FilterChip
           label={t('events.filters.button')}
           icon={SlidersHorizontal}
-          selected={radius > 0 || Boolean(ageBand) || Boolean(filterTag)}
+          selected={distance > 0 || Boolean(ageBand) || Boolean(filterTag)}
           onPress={() => setFiltersSheet(true)}
           testID="filters-button"
         />
@@ -387,11 +403,11 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
     </View>
   );
 
-  const showSkeleton = (!areaLoaded || (Boolean(area) && query.isPending)) && !error;
+  const showSkeleton = (!areaLoaded || query.isPending || autoFetching) && !error;
 
   const empty = showSkeleton ? (
     <EventListSkeleton />
-  ) : error || !area ? null : filtering ? (
+  ) : error ? null : filtering ? (
     <EmptyState
       title={t('events.empty.filteredTitle')}
       body={t('events.empty.filteredBody')}
@@ -468,14 +484,15 @@ export function DiscoverList({ initialTag }: { initialTag?: string }) {
         key={`area-${sheetKey}`}
         visible={areaSheet}
         areas={options.data?.areas}
-        current={area}
-        onChoose={changeArea}
+        current={areas}
+        onApply={changeAreas}
         onClose={() => setAreaSheet(false)}
       />
       <FiltersSheet
         key={`filters-${sheetKey}`}
         visible={filtersSheet}
-        value={{ radius, ageBand, tag: filterTag }}
+        value={{ radius: distance, ageBand, tag: filterTag }}
+        withDistance={areas.length > 0}
         onApply={(filters: SheetFilters) => {
           changeRadius(filters.radius);
           setAgeBand(filters.ageBand);

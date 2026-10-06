@@ -432,13 +432,17 @@
       "clear": "Effacer la recherche"
     },
     "area": {
-      "change": "Changer de zone",
-      "none": "Choisis une zone",
       "sheetTitle": "Où cherches-tu des sorties ?",
-      "sheetBody": "Choisis une ville ou un quartier. Nous n'utilisons jamais ta position, et tu peux changer quand tu veux.",
-      "searchLabel": "Ville ou quartier",
-      "use": "Utiliser cette zone",
-      "required": "Choisis une zone pour continuer.",
+      "sheetBody": "Choisis un ou plusieurs arrondissements, ou tout Paris. Nous n'utilisons jamais ta position, et tu peux changer quand tu veux.",
+      "group": "Zone",
+      "all": "Tout Paris",
+      "clear": "Effacer",
+      "see": "Voir les sorties",
+      "selected_one": "{{count}} arrondissement sélectionné",
+      "selected_other": "{{count}} arrondissements sélectionnés",
+      "cleared": "Sélection effacée, tout Paris",
+      "summaryMany": "{{count}} arrondissements",
+      "chipA11y": "Zone : {{areas}}. Modifier la zone",
       "distance": "{{area}} · à {{distance}} km de ta zone",
       "distanceOnly": "À {{distance}} km de ta zone"
     },
@@ -594,11 +598,13 @@
       "hostOnHoldBody": "Ton identité n'est plus vérifiée : personne ne peut s'inscrire. Vérifie-la à nouveau avant le début pour la relancer.",
       "hostOnHoldCaption": "La modification est suspendue. Si la sortie commence avant, elle est annulée.",
       "hostCancelledTitle": "Tu as annulé cette sortie",
-      "hostCancelledBody": "Les participants ont été prévenus par e-mail. Pour vous retrouver, crée une nouvelle sortie.",
+      "hostCancelledBody": "Les participants ont été prévenus par e-mail. Pour les retrouver, crée une nouvelle sortie.",
       "createNew": "Créer une nouvelle sortie",
       "online": "Ta sortie est en ligne",
       "draftSaved": "Brouillon enregistré",
-      "searchTag": "Chercher #{{tag}}"
+      "searchTag": "Chercher #{{tag}}",
+      "agesFrom": "Conseillé à partir de {{min}} ans",
+      "agesUpTo": "Conseillé jusqu'à {{max}} ans"
     },
     "join": {
       "title": "Combien de places ?",
@@ -649,7 +655,6 @@
       "dateError": "Choisis un jour qui n'est pas passé.",
       "start": "Début",
       "end": "Fin",
-      "timeFormat": "Indique une heure comme 15:00.",
       "timeError": "La fin doit être après le début.",
       "area": "Quartier",
       "areaPlaceholder": "Ville ou quartier",
@@ -673,7 +678,7 @@
       "readOnly": "Ne peut plus changer après la publication.",
       "optional": "{{label}} (facultatif)",
       "description": "Description",
-      "descriptionPlaceholder": "Que ferez-vous ? Que faut-il apporter ?",
+      "descriptionPlaceholder": "Que vas-tu proposer ? Que faut-il apporter ?",
       "age": "Âge conseillé",
       "ageFrom": "De",
       "ageTo": "À",
@@ -707,7 +712,16 @@
       "leaveTitle": "Quitter sans enregistrer ?",
       "leaveConfirm": "Quitter",
       "draftStaysTitle": "Ta sortie reste en brouillon",
-      "draftStaysBody": "Ton identité n'est plus vérifiée. Vérifie-la à nouveau pour publier."
+      "draftStaysBody": "Ton identité n'est plus vérifiée. Vérifie-la à nouveau pour publier.",
+      "missing": "À compléter : {{fields}}.",
+      "notEditable": "Cette sortie ne peut plus être modifiée.",
+      "keptCaption": "Ce que tu as écrit est conservé. Vérifie ta connexion et réessaie.",
+      "datePlaceholder": "Choisis un jour",
+      "timePlaceholder": "Choisis une heure",
+      "pickerHint": "Ouvre le sélecteur",
+      "pickerDone": "OK",
+      "tagNamed": "#{{tag}} : {{message}}",
+      "timeRequired": "Choisis l'heure de début et de fin."
     },
     "mine": {
       "upcoming": "À venir",
@@ -716,6 +730,12 @@
       "going": "J'y vais",
       "emptyTitle": "Pas encore de sortie ici",
       "emptyBody": "Rejoins une sortie ou crée la tienne."
-    }
+    },
+    "untitled": "Sortie sans titre",
+    "noDate": "Pas encore de date",
+    "noArea": "Pas encore de zone",
+    "noPlaces": "Places pas encore indiquées",
+    "loading": "Chargement des sorties",
+    "loadingEvent": "Chargement de la sortie"
   }
 }

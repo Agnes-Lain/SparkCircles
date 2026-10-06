@@ -24,15 +24,18 @@ export function normaliseTag(text: string): string {
   return text.trim().replace(/^#+/, '').toLowerCase();
 }
 
-/** E1d Filters (AC-3.2): distance, child age, tag. Applied with the Primary. */
+/** E1d Filters (AC-3.2): distance, child age, tag. Applied with the Primary. The distance
+ *  is offered only from chosen arrondissements ("Tout Paris" has no centre). */
 export function FiltersSheet({
   visible,
   value,
+  withDistance = true,
   onApply,
   onClose,
 }: {
   visible: boolean;
   value: SheetFilters;
+  withDistance?: boolean;
   onApply: (filters: SheetFilters) => void;
   onClose: () => void;
 }) {
@@ -45,20 +48,22 @@ export function FiltersSheet({
       <Text accessibilityRole="header" className="text-h2 text-ink">
         {t('events.filters.button')}
       </Text>
-      <View className="gap-sm">
-        <SectionLabel>{t('events.filters.distance')}</SectionLabel>
-        <View className="flex-row flex-wrap gap-sm">
-          {RADIUS_CHOICES.map((km) => (
-            <FilterChip
-              key={km}
-              label={t('events.filters.km', { count: km })}
-              selected={draft.radius === km}
-              onPress={() => setDraft((d) => ({ ...d, radius: d.radius === km ? 0 : km }))}
-              testID={`radius-${km}`}
-            />
-          ))}
+      {withDistance ? (
+        <View className="gap-sm">
+          <SectionLabel>{t('events.filters.distance')}</SectionLabel>
+          <View className="flex-row flex-wrap gap-sm">
+            {RADIUS_CHOICES.map((km) => (
+              <FilterChip
+                key={km}
+                label={t('events.filters.km', { count: km })}
+                selected={draft.radius === km}
+                onPress={() => setDraft((d) => ({ ...d, radius: d.radius === km ? 0 : km }))}
+                testID={`radius-${km}`}
+              />
+            ))}
+          </View>
         </View>
-      </View>
+      ) : null}
       <View className="gap-sm">
         <SectionLabel>{t('events.filters.age')}</SectionLabel>
         <View className="flex-row flex-wrap gap-sm">

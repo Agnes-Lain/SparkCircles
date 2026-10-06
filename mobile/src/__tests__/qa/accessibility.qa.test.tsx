@@ -94,12 +94,8 @@ describe('QA Skeleton and reduced motion (section 13, P6)', () => {
 
 describe('QA copy (section 19, CLAUDE.md tone)', () => {
   it('French uses "tu", never "vous"', () => {
-    // Approved Events copy where "vous" is a plural (the host and the participants, or the
-    // host's own party), not a formal "you" (docs/design/events.md E5, E9).
-    const plural = [/Que ferez-vous \?/, /Pour vous retrouver,/];
-    const offenders = strings(fr).filter(
-      (s) => /\b(vous|votre|vos)\b/i.test(s) && !plural.some((p) => p.test(s)),
-    );
+    // No exception any more (QA BUG-2, PM decision 2026-10-06).
+    const offenders = strings(fr).filter((s) => /\b(vous|votre|vos)\b/i.test(s));
     expect(offenders).toEqual([]);
   });
 
@@ -109,14 +105,14 @@ describe('QA copy (section 19, CLAUDE.md tone)', () => {
     copy.forEach((s) => {
       const words = s.split(/\s+/);
       // After the first word of each sentence, only the brand name, "API", "ID", the English
-      // pronoun "I" and the language names may be capitalised (copy with several sentences
+      // pronoun "I", the language names and the city name ("Tout Paris") may be capitalised (copy with several sentences
       // starts each one with a capital).
       words.forEach((w, i) => {
         if (i === 0 || /[.!?:]$/.test(words[i - 1] ?? '') || !/^[A-ZÀ-Ý]/.test(w)) return;
         // The badge's own name, as the design writes it: "Your Verified badge", "ton badge Vérifié".
         const badgeName = /^(Verified|Vérifié)[.,]?$/.test(w);
         if (badgeName && (words[i + 1] === 'badge' || words[i - 1] === 'badge')) return;
-        expect(w).toMatch(/^(SparkCircles|API|ID\b|I\b|I'm|OK|Français|English)/);
+        expect(w).toMatch(/^(SparkCircles|API|ID\b|I\b|I'm|OK|Français|English|Paris\b)/);
       });
     });
   });

@@ -432,13 +432,17 @@
       "clear": "Clear search"
     },
     "area": {
-      "change": "Change area",
-      "none": "Choose an area",
       "sheetTitle": "Where do you look for outings?",
-      "sheetBody": "Choose a city or neighborhood. We never use your location, and you can change it any time.",
-      "searchLabel": "City or neighborhood",
-      "use": "Use this area",
-      "required": "Choose an area to continue.",
+      "sheetBody": "Choose one or more arrondissements, or all of Paris. We never use your location, and you can change it any time.",
+      "group": "Area",
+      "all": "All of Paris",
+      "clear": "Clear",
+      "see": "See events",
+      "selected_one": "{{count}} area selected",
+      "selected_other": "{{count}} areas selected",
+      "cleared": "Selection cleared, all of Paris",
+      "summaryMany": "{{count}} arrondissements",
+      "chipA11y": "Area: {{areas}}. Change area",
       "distance": "{{area}} · {{distance}} km from your area",
       "distanceOnly": "{{distance}} km from your area"
     },
@@ -598,7 +602,9 @@
       "createNew": "Create a new event",
       "online": "Your event is online",
       "draftSaved": "Draft saved",
-      "searchTag": "Search #{{tag}}"
+      "searchTag": "Search #{{tag}}",
+      "agesFrom": "Suggested from age {{min}}",
+      "agesUpTo": "Suggested up to age {{max}}"
     },
     "join": {
       "title": "How many places?",
@@ -649,7 +655,6 @@
       "dateError": "Choose a day that hasn't passed.",
       "start": "Start",
       "end": "End",
-      "timeFormat": "Enter a time like 15:00.",
       "timeError": "The end must be after the start.",
       "area": "Area",
       "areaPlaceholder": "City or neighborhood",
@@ -707,7 +712,16 @@
       "leaveTitle": "Leave without saving?",
       "leaveConfirm": "Leave",
       "draftStaysTitle": "Your event stays a draft",
-      "draftStaysBody": "Your identity is no longer verified. Verify it again to publish."
+      "draftStaysBody": "Your identity is no longer verified. Verify it again to publish.",
+      "missing": "Still to fill in: {{fields}}.",
+      "notEditable": "This event can't be changed any more.",
+      "keptCaption": "What you typed is kept. Check your connection and try again.",
+      "datePlaceholder": "Choose a day",
+      "timePlaceholder": "Choose a time",
+      "pickerHint": "Opens the picker",
+      "pickerDone": "Done",
+      "tagNamed": "#{{tag}}: {{message}}",
+      "timeRequired": "Choose the start and end times."
     },
     "mine": {
       "upcoming": "Upcoming",
@@ -716,6 +730,12 @@
       "going": "I'm going",
       "emptyTitle": "No events here yet",
       "emptyBody": "Join an event or create your own."
-    }
+    },
+    "untitled": "Untitled event",
+    "noDate": "No date yet",
+    "noArea": "No area yet",
+    "noPlaces": "Places not set yet",
+    "loading": "Loading events",
+    "loadingEvent": "Loading the event"
   }
 }

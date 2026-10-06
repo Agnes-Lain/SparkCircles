@@ -43,19 +43,20 @@ export type SparkEvent = {
   id: string;
   kind: 'family_hosted';
   status: EventStatus;
-  title: string;
+  /** A draft saves whatever was typed (BUG-8): these are null on a draft until filled in. */
+  title: string | null;
   description: string | null;
-  category: CategoryKey;
+  category: CategoryKey | null;
   tags: string[];
-  starts_at: string;
-  ends_at: string;
+  starts_at: string | null;
+  ends_at: string | null;
   time_zone: string;
-  area: { key: string; label: string };
+  area: { key: string; label: string } | null;
   distance_km: number | null;
   age_min: number | null;
   age_max: number | null;
   join_rule: JoinRule;
-  places: { total: number; taken: number; left: number };
+  places: { total: number | null; taken: number; left: number };
   full: boolean;
   viewer: {
     role: ViewerRole;
@@ -98,7 +99,8 @@ export type EventOptions = {
 
 /** §3 GET /events filters (the page is added by the list). */
 export type EventSearch = {
-  area?: string;
+  /** Arrondissement keys; none = "Tout Paris" (no area filter for members). */
+  area?: string[];
   radius_km?: number;
   category?: CategoryKey[];
   from?: string;
@@ -112,12 +114,12 @@ export type EventSearch = {
 export type EventParams = {
   title?: string;
   description?: string;
-  category?: CategoryKey;
-  starts_at?: string;
-  ends_at?: string;
-  area?: string;
+  category?: CategoryKey | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  area?: string | null;
   exact_address?: string;
-  places_total?: number;
+  places_total?: number | null;
   age_min?: number | null;
   age_max?: number | null;
   tags?: string[];
@@ -140,8 +142,11 @@ export function searchQuery(search: EventSearch, page: number): string {
   const add = (key: string, value: string | number | undefined) => {
     if (value !== undefined && value !== '') params.push([key, String(value)]);
   };
-  add('area', search.area);
-  if (search.area && search.radius_km) add('radius_km', search.radius_km);
+  // One area as `area=paris-11`, several as `area[]=paris-11&area[]=paris-20` (contract).
+  const areas = search.area ?? [];
+  if (areas.length === 1) add('area', areas[0]);
+  else areas.forEach((key) => add('area[]', key));
+  if (areas.length && search.radius_km) add('radius_km', search.radius_km);
   if (search.category?.length) add('category', search.category.join(','));
   add('from', search.from);
   add('to', search.to);

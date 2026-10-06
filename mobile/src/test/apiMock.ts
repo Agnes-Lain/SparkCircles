@@ -80,6 +80,11 @@ export function resetApiMock() {
   Object.values(mockAccount).forEach((fn) => fn.mockReset());
   Object.values(mockVerification).forEach((fn) => fn.mockReset());
   Object.values(mockEvents).forEach((fn) => fn.mockReset());
+  // The Sorties tab searches at once ("Tout Paris" by default): an empty page unless a test
+  // says otherwise.
+  const empty = { events: [], pagination: { page: 1, per_page: 20, next_page: null } };
+  mockEvents.search.mockResolvedValue(empty);
+  mockEvents.mine.mockResolvedValue(empty);
   mockHealth.mockReset().mockResolvedValue(true);
   mockAuth.logOut.mockResolvedValue(undefined);
 }

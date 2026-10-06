@@ -1,46 +1,83 @@
-import { Search } from 'lucide-react-native';
+import type { TFunction } from 'i18next';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Text, View } from 'react-native';
+import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 
 import type { EventOptions } from '../../api/events';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
-import { Icon } from '../../components/Icon';
-import { RadioRow } from '../../components/RadioRow';
+import { Checkbox } from '../../components/Checkbox';
 import { Skeleton } from '../../components/Skeleton';
-import { TextField } from '../../components/TextField';
+
+type Areas = EventOptions['areas'];
 
 /** Lower-case without accents, to match "paris 11" with "Paris 11e". */
 export function fold(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }
 
+/** "Paris 11e" → "11e" (the second and later names in the chip summary). */
+const short = (area: Areas[number]) =>
+  area.label.startsWith(`${area.city} `) ? area.label.slice(area.city.length + 1) : area.label;
+
 /**
- * Mounted afresh each time it opens (the parent changes its `key`), so it starts from the
- * current area.
+ * E1c area chip summary: "Tout Paris", "Paris 11e", "Paris 11e, 20e" (2 max), then
+ * "3 arrondissements"; the spoken label always reads the full list
+ * ("Zone : Paris 11e, 12e, 20e. Modifier la zone").
+ */
+export function areaSummary(
+  keys: string[],
+  areas: Areas | undefined,
+  t: TFunction,
+): { label: string; a11y: string } {
+  // Areas in the list order (1er to 20e), whatever order they were ticked in.
+  const chosen = (areas ?? []).filter((area) => keys.includes(area.key));
+  if (!chosen.length) {
+    const all = t('events.area.all');
+    return { label: all, a11y: t('events.area.chipA11y', { areas: all }) };
+  }
+  const list = [chosen[0]!.label, ...chosen.slice(1).map(short)].join(', ');
+  const label = chosen.length <= 2 ? list : t('events.area.summaryMany', { count: chosen.length });
+  return { label, a11y: t('events.area.chipA11y', { areas: list }) };
+}
+
+/**
+ * E1c Choose areas (AC-3.3, PM decision 2026-10-06): a multi-select sheet. "Tout Paris" is
+ * ticked when no arrondissement is; ticking it clears them; unticking the last one goes back
+ * to it. Sticky "Effacer" (back to "Tout Paris") and "Voir les sorties". No GPS.
  *
- * E1c Choose area (AC-3.3): asked once, changeable any time from the area selector. No GPS:
- * a radio list of the areas from `GET /event_options`, filtered by what is typed.
+ * Mounted afresh each time it opens (the parent changes its `key`), so it starts from the
+ * current choice.
  */
 export function AreaSheet({
   visible,
   areas,
   current,
-  onChoose,
+  onApply,
   onClose,
 }: {
   visible: boolean;
-  areas: EventOptions['areas'] | undefined;
-  current: string | null;
-  onChoose: (area: string) => void;
+  areas: Areas | undefined;
+  current: string[];
+  onApply: (areas: string[]) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState<string | null>(current);
-
-  const shown = (areas ?? []).filter((area) => fold(area.label).includes(fold(query)));
+  const [selected, setSelected] = useState<string[]>(current);
+  // "2 arrondissements sélectionnés", "Tout Paris", "Sélection effacée, tout Paris".
+  const announce = (text: string) => AccessibilityInfo.announceForAccessibility(text);
+  const choose = (next: string[]) => {
+    setSelected(next);
+    announce(
+      next.length ? t('events.area.selected', { count: next.length }) : t('events.area.all'),
+    );
+  };
+  const toggle = (key: string) =>
+    choose(selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key]);
+  const clear = () => {
+    setSelected([]);
+    announce(t('events.area.cleared'));
+  };
 
   return (
     <BottomSheet visible={visible} onClose={onClose} testID="area-sheet">
@@ -50,22 +87,23 @@ export function AreaSheet({
         </Text>
         <Text className="text-body text-ink-2">{t('events.area.sheetBody')}</Text>
       </View>
-      <TextField
-        label={t('events.area.searchLabel')}
-        value={query}
-        onChangeText={setQuery}
-        leading={<Icon icon={Search} size={18} color="ink-2" />}
-        testID="area-search"
-      />
-      <ScrollView style={{ maxHeight: 280 }} keyboardShouldPersistTaps="handled">
-        <View accessibilityRole="radiogroup">
+      <ScrollView style={{ maxHeight: 320 }}>
+        <View role="group" accessibilityLabel={t('events.area.group')}>
+          <Checkbox
+            label={t('events.area.all')}
+            accessibilityLabel={t('events.area.all')}
+            checked={selected.length === 0}
+            onChange={() => choose([])}
+            testID="area-all"
+          />
           {areas
-            ? shown.map((area) => (
-                <RadioRow
+            ? areas.map((area) => (
+                <Checkbox
                   key={area.key}
                   label={area.label}
-                  selected={selected === area.key}
-                  onPress={() => setSelected(area.key)}
+                  accessibilityLabel={area.label}
+                  checked={selected.includes(area.key)}
+                  onChange={() => toggle(area.key)}
                   testID={`area-${area.key}`}
                 />
               ))
@@ -76,17 +114,29 @@ export function AreaSheet({
               ))}
         </View>
       </ScrollView>
-      <View className="gap-xs">
-        <Button
-          size="large"
-          label={t('events.area.use')}
-          disabled={!selected}
-          onPress={() => selected && onChoose(selected)}
-          testID="area-use"
-        />
-        {!selected ? (
-          <Text className="text-center text-caption text-ink-3">{t('events.area.required')}</Text>
+      <View className="gap-sm border-t-[0.5px] border-border-soft pt-md">
+        {selected.length ? (
+          <Text className="text-caption text-ink-2" testID="area-count">
+            {t('events.area.selected', { count: selected.length })}
+          </Text>
         ) : null}
+        <View className="flex-row gap-sm">
+          <View className="flex-1">
+            <Button
+              variant="ghost"
+              label={t('events.area.clear')}
+              onPress={clear}
+              testID="area-clear"
+            />
+          </View>
+          <View className="flex-[1.6]">
+            <Button
+              label={t('events.area.see')}
+              onPress={() => onApply(selected)}
+              testID="area-use"
+            />
+          </View>
+        </View>
       </View>
     </BottomSheet>
   );
