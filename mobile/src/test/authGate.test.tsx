@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import * as SecureStore from 'expo-secure-store';
-import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 
 import i18n from '../i18n';
 import { secureTokenStore, TOKEN_KEY } from '../auth/tokenStore';
@@ -46,7 +46,9 @@ describe('auth gate (M-9)', () => {
 
     // v1.7: the app opens on Sorties (Events).
     expect(await screen.findByRole('header', { name: 'Sorties' })).toBeOnTheScreen();
-    expect(screen.getAllByRole('tab')).toHaveLength(5);
+    // The tab bar (Sorties also has its own "À découvrir / Mes sorties" segments).
+    const tabBar = screen.getByTestId('tab-bar');
+    expect(within(tabBar).getAllByRole('tab')).toHaveLength(5);
     expect(screen.getByRole('tab', { name: 'Sorties' })).toBeSelected();
     expect(app.getPathname()).toBe('/');
   });

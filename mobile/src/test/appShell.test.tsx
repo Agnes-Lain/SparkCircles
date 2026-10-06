@@ -1,4 +1,4 @@
-import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { fireEvent, renderRouter, screen, within } from 'expo-router/testing-library';
 
 import i18n from '../i18n';
 import { TestProviders } from './render';
@@ -32,7 +32,9 @@ describe('app shell', () => {
     await renderShell();
 
     expect(await screen.findByRole('header', { name: 'Sorties' })).toBeOnTheScreen();
-    expect(screen.getAllByRole('tab')).toHaveLength(5);
+    // The tab bar (Sorties also has its own "À découvrir / Mes sorties" segments).
+    const tabBar = screen.getByTestId('tab-bar');
+    expect(within(tabBar).getAllByRole('tab')).toHaveLength(5);
     expect(screen.getByRole('tab', { name: 'Sorties' })).toBeSelected();
   });
 
