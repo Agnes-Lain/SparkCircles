@@ -10,7 +10,7 @@ RSpec.describe "Events: what each audience sees", type: :request do
   let(:participant) { create(:user, first_name: "Thomas", last_name: "Renard") }
 
   COMMON_KEYS = %w[id kind status title description category language tags starts_at ends_at time_zone area distance_km
-                   age_min age_max join_rule places full viewer].freeze
+                   age_min age_max join_rule places full adult_required approval_required viewer].freeze
 
   def get_event(target, headers)
     get "/api/v1/events/#{target.id}", headers: headers
@@ -103,7 +103,7 @@ RSpec.describe "Events: what each audience sees", type: :request do
       expect(data["exact_address"]).to eq("12 rue Oberkampf, 75011 Paris")
       expect(data["participants"]).to eq([ { "first_name" => "Thomas", "last_name_initial" => "R", "verified" => false,
                                              "former_member" => false, "adults" => 1, "children" => 2 } ])
-      expect(data["my_participation"]).to eq("adults" => 1, "children" => 2, "places" => 3)
+      expect(data["my_participation"]).to eq("adults" => 1, "children" => 2, "places" => 3, "emergency_phone" => nil, "pending_change" => nil)
       expect(data["viewer"]).to include("role" => "participant", "joined" => true, "join_blocker" => "joined")
       expect(data).not_to have_key("visibility")
     end

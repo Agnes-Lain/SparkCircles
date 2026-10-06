@@ -80,6 +80,20 @@ paris = ActiveSupport::TimeZone["Europe/Paris"]
   raise "Seed event #{title} invalid: #{event.errors.full_messages.join(', ')}" unless event.published?
 end
 
+# US-17: a drop-off event with host approval (Claire hosts, Karim can send a request). The
+# phone number is fictional.
+dropoff = Event.find_or_initialize_by(host: claire, title: "Après-midi jeux chez moi")
+if dropoff.new_record? || dropoff.ended?
+  starts_at = paris.now.to_date.advance(days: 5).then { |day| paris.local(day.year, day.month, day.day, 15) }
+  dropoff.assign_attributes(category: "playdates", area: "paris-11", exact_address: "8 rue de la Roquette, 75011 Paris",
+                            places_total: 6, adult_required: false, approval_required: true, age_min: 4, age_max: 8,
+                            host_phone: "06 01 02 03 04", tags: %w[jeux], starts_at: starts_at, ends_at: starts_at + 3.hours,
+                            description: "Jeux de société et goûter. Tu peux me confier tes enfants pour l'après-midi.")
+  dropoff.status = "draft" unless dropoff.persisted?
+  dropoff.status == "draft" ? dropoff.publish! : dropoff.update!(status: "published")
+  raise "Seed event #{dropoff.title} invalid: #{dropoff.errors.full_messages.join(', ')}" unless dropoff.published?
+end
+
 puts "Seeded: admin@, verified@, verified-paris@ and pending@sparkcircles.localhost, and #{Event.listed.count} upcoming events."
 if created.empty?
   puts "The accounts already existed: they keep their current password."

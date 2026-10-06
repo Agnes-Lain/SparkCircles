@@ -23,6 +23,20 @@ FactoryBot.define do
       join_rule { "verified_only" }
     end
 
+    # US-17: a drop-off event (accompanying adult optional), approval on by default.
+    trait :dropoff do
+      adult_required { false }
+      approval_required { true }
+      join_rule { "verified_only" }
+      age_min { 4 }
+      age_max { 8 }
+      host_phone { "06 12 34 56 78" }
+    end
+
+    trait :with_approval do
+      approval_required { true }
+    end
+
     trait :suspended do
       status { "suspended" }
       suspension_reason { "host_unverified" }
@@ -44,6 +58,15 @@ FactoryBot.define do
     association :user, factory: %i[user verified]
     adults { 1 }
     children { 1 }
-    after(:create) { |participation| participation.event.increment!(:places_taken, participation.requested_places) }
+    status { "accepted" }
+    after(:create) do |participation|
+      participation.event.increment!(:places_taken, participation.requested_places) if participation.accepted?
+    end
+
+    # US-17: a request waiting for the host, no places held.
+    trait :pending do
+      status { "pending" }
+      requested_at { Time.current }
+    end
   end
 end

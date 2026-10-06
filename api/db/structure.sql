@@ -186,7 +186,18 @@ CREATE TABLE public.event_participations (
     places integer GENERATED ALWAYS AS ((adults + children)) STORED,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT event_participations_counts_check CHECK (((adults >= 1) AND (children >= 0) AND ((adults + children) <= 100)))
+    status character varying DEFAULT 'accepted'::character varying NOT NULL,
+    closed_reason character varying,
+    requested_at timestamp(6) without time zone,
+    decided_at timestamp(6) without time zone,
+    pending_adults integer,
+    pending_children integer,
+    emergency_phone text,
+    responsibility_acknowledged_at timestamp(6) without time zone,
+    CONSTRAINT event_participations_closed_reason_check CHECK (((closed_reason IS NULL) OR ((closed_reason)::text = ANY ((ARRAY['full'::character varying, 'cancelled'::character varying, 'verification'::character varying])::text[])))),
+    CONSTRAINT event_participations_counts_check CHECK (((adults >= 0) AND (children >= 0) AND (((adults + children) >= 1) AND ((adults + children) <= 100)))),
+    CONSTRAINT event_participations_pending_counts_check CHECK ((((pending_adults IS NULL) = (pending_children IS NULL)) AND ((pending_adults IS NULL) OR ((pending_adults >= 0) AND (pending_children >= 0) AND (((pending_adults + pending_children) >= 1) AND ((pending_adults + pending_children) <= 100)))))),
+    CONSTRAINT event_participations_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'accepted'::character varying, 'declined'::character varying, 'withdrawn'::character varying, 'expired'::character varying, 'closed'::character varying])::text[])))
 );
 
 
@@ -204,7 +215,7 @@ CREATE TABLE public.event_reports (
     resolved_by_id uuid,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT event_reports_reason_check CHECK (((reason)::text = ANY ((ARRAY['dangerous_place'::character varying, 'suspicious_host'::character varying, 'inappropriate_content'::character varying, 'inappropriate_tag'::character varying, 'other'::character varying])::text[])))
+    CONSTRAINT event_reports_reason_check CHECK (((reason)::text = ANY (ARRAY[('dangerous_place'::character varying)::text, ('suspicious_host'::character varying)::text, ('inappropriate_content'::character varying)::text, ('inappropriate_tag'::character varying)::text, ('other'::character varying)::text])))
 );
 
 
@@ -242,18 +253,22 @@ CREATE TABLE public.events (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     language character varying DEFAULT 'fr'::character varying NOT NULL,
+    adult_required boolean DEFAULT true NOT NULL,
+    approval_required boolean DEFAULT false NOT NULL,
+    host_phone text,
     CONSTRAINT events_age_range_check CHECK ((((age_min IS NULL) OR ((age_min >= 0) AND (age_min <= 17))) AND ((age_max IS NULL) OR ((age_max >= 0) AND (age_max <= 17))) AND ((age_min IS NULL) OR (age_max IS NULL) OR (age_min <= age_max)))),
-    CONSTRAINT events_category_check CHECK (((category)::text = ANY ((ARRAY['sport'::character varying, 'outdoors'::character varying, 'board_games'::character varying, 'video_games'::character varying, 'crafts'::character varying, 'music'::character varying, 'shows'::character varying, 'books'::character varying, 'workshops'::character varying, 'playdates'::character varying, 'other'::character varying])::text[]))),
+    CONSTRAINT events_category_check CHECK (((category)::text = ANY (ARRAY[('sport'::character varying)::text, ('outdoors'::character varying)::text, ('board_games'::character varying)::text, ('video_games'::character varying)::text, ('crafts'::character varying)::text, ('music'::character varying)::text, ('shows'::character varying)::text, ('books'::character varying)::text, ('workshops'::character varying)::text, ('playdates'::character varying)::text, ('other'::character varying)::text]))),
     CONSTRAINT events_description_length_check CHECK (((description IS NULL) OR (char_length(description) <= 1000))),
-    CONSTRAINT events_join_rule_check CHECK (((join_rule)::text = ANY ((ARRAY['anyone'::character varying, 'verified_only'::character varying])::text[]))),
+    CONSTRAINT events_dropoff_join_rule_check CHECK ((adult_required OR ((join_rule)::text = 'verified_only'::text))),
+    CONSTRAINT events_join_rule_check CHECK (((join_rule)::text = ANY (ARRAY[('anyone'::character varying)::text, ('verified_only'::character varying)::text]))),
     CONSTRAINT events_language_check CHECK (((language)::text = ANY ((ARRAY['fr'::character varying, 'en'::character varying])::text[]))),
     CONSTRAINT events_places_taken_check CHECK (((places_taken >= 0) AND ((places_total IS NULL) OR (places_taken <= places_total)))),
     CONSTRAINT events_places_total_check CHECK (((places_total IS NULL) OR ((places_total >= 1) AND (places_total <= 100)))),
     CONSTRAINT events_required_unless_draft_check CHECK ((((status)::text = 'draft'::text) OR ((title IS NOT NULL) AND (category IS NOT NULL) AND (starts_at IS NOT NULL) AND (ends_at IS NOT NULL) AND (area IS NOT NULL)))),
-    CONSTRAINT events_source_check CHECK (((source)::text = ANY ((ARRAY['hosted'::character varying, 'open_data'::character varying])::text[]))),
+    CONSTRAINT events_source_check CHECK (((source)::text = ANY (ARRAY[('hosted'::character varying)::text, ('open_data'::character varying)::text]))),
     CONSTRAINT events_source_fields_check CHECK (((((source)::text = 'hosted'::text) AND (host_id IS NOT NULL) AND (((status)::text = 'draft'::text) OR ((exact_address IS NOT NULL) AND (places_total IS NOT NULL)))) OR (((source)::text = 'open_data'::text) AND (external_id IS NOT NULL) AND (source_url IS NOT NULL)))),
-    CONSTRAINT events_status_check CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'published'::character varying, 'suspended'::character varying, 'cancelled'::character varying, 'past'::character varying])::text[]))),
-    CONSTRAINT events_suspension_reason_check CHECK (((suspension_reason IS NULL) OR ((suspension_reason)::text = ANY ((ARRAY['host_unverified'::character varying, 'admin'::character varying])::text[])))),
+    CONSTRAINT events_status_check CHECK (((status)::text = ANY (ARRAY[('draft'::character varying)::text, ('published'::character varying)::text, ('suspended'::character varying)::text, ('cancelled'::character varying)::text, ('past'::character varying)::text]))),
+    CONSTRAINT events_suspension_reason_check CHECK (((suspension_reason IS NULL) OR ((suspension_reason)::text = ANY (ARRAY[('host_unverified'::character varying)::text, ('admin'::character varying)::text])))),
     CONSTRAINT events_tags_count_check CHECK ((cardinality(tags) <= 5)),
     CONSTRAINT events_time_order_check CHECK ((ends_at > starts_at)),
     CONSTRAINT events_title_length_check CHECK (((char_length((title)::text) >= 1) AND (char_length((title)::text) <= 80))),
@@ -271,7 +286,7 @@ CREATE TABLE public.guest_access_events (
     ip_hash character varying(32) NOT NULL,
     endpoint character varying(100) NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT guest_access_events_kind_check CHECK (((kind)::text = ANY ((ARRAY['rate_limited'::character varying, 'blocked'::character varying, 'client_refused'::character varying])::text[])))
+    CONSTRAINT guest_access_events_kind_check CHECK (((kind)::text = ANY (ARRAY[('rate_limited'::character varying)::text, ('blocked'::character varying)::text, ('client_refused'::character varying)::text])))
 );
 
 
@@ -289,7 +304,7 @@ CREATE TABLE public.pending_event_notifications (
     throttle_until timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT pending_event_notifications_kind_check CHECK (((kind)::text = ANY ((ARRAY['host_activity'::character varying, 'event_changed'::character varying, 'host_status'::character varying])::text[]))),
+    CONSTRAINT pending_event_notifications_kind_check CHECK (((kind)::text = ANY (ARRAY[('host_activity'::character varying)::text, ('event_changed'::character varying)::text, ('host_status'::character varying)::text]))),
     CONSTRAINT pending_event_notifications_subject_check CHECK (((event_id IS NULL) <> (host_id IS NULL)))
 );
 
@@ -542,6 +557,13 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.verifications
     ADD CONSTRAINT verifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_on_event_id_status_requested_at_7ab2fcabe9; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_on_event_id_status_requested_at_7ab2fcabe9 ON public.event_participations USING btree (event_id, status, requested_at);
 
 
 --
@@ -971,6 +993,7 @@ ALTER TABLE ONLY public.event_reports
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261007090000'),
 ('20261006180000'),
 ('20261006150000'),
 ('20261006120000'),

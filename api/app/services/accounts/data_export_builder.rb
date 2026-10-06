@@ -54,6 +54,7 @@ module Accounts
         category: event.category, language: event.language, tags: event.tags, starts_at: iso(event.starts_at), ends_at: iso(event.ends_at),
         time_zone: event.time_zone, area: event.area, exact_address: event.exact_address,
         age_min: event.age_min, age_max: event.age_max, join_rule: event.join_rule, visibility: event.visibility,
+        adult_required: event.adult_required, approval_required: event.approval_required, host_phone: event.host_phone,
         places_total: event.places_total, places_taken: event.places_taken,
         created_at: iso(event.created_at), published_at: iso(event.published_at),
         suspended_at: iso(event.suspended_at), cancelled_at: iso(event.cancelled_at)
@@ -66,6 +67,9 @@ module Accounts
         event_id: event.id, event_title: event.title, event_starts_at: iso(event.starts_at),
         event_ends_at: iso(event.ends_at), event_area: event.area,
         adults: participation.adults, children: participation.children, places: participation.requested_places,
+        status: participation.status, requested_at: iso(participation.requested_at), decided_at: iso(participation.decided_at),
+        emergency_phone: participation.emergency_phone,
+        responsibility_acknowledged_at: iso(participation.responsibility_acknowledged_at),
         joined_at: iso(participation.created_at), updated_at: iso(participation.updated_at)
       }
     end

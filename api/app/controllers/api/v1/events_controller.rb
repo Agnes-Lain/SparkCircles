@@ -43,6 +43,7 @@ module Api
         @event = current_user.hosted_events.build(event_params)
         # AC-16.1: no language sent → the app's language (Accept-Language), changeable later.
         @event.language = I18n.locale.to_s if params.dig(:event, :language).blank?
+        preset_approval
         saved = ActiveModel::Type::Boolean.new.cast(params[:publish]) ? @event.publish! : @event.save
         return render_validation_errors(@event) unless saved
 
@@ -60,11 +61,15 @@ module Api
           raise ::Events::Error.new(:event_not_editable) unless @event.editable?
 
           before = ::Events::Notifications.snapshot(@event)
-          @event.update(event_params)
+          @event.assign_attributes(event_params)
+          preset_approval if @event.draft?
+          @event.save
         end
         return render_validation_errors(@event) unless updated
 
         ::Events::Notifications.event_edited(@event, before)
+        # AC-17.18: fewer places can fill the event; the requests still waiting are closed.
+        ::Events::Requests.new(@event).close_if_full if @event.published? && @event.full?
 
         render_event
       rescue ActiveRecord::CheckViolation => e
@@ -106,7 +111,16 @@ module Api
 
       def event_params
         params.require(:event).permit(:title, :description, :category, :starts_at, :ends_at, :area, :exact_address,
-                                      :places_total, :age_min, :age_max, :join_rule, :language, tags: [])
+                                      :places_total, :age_min, :age_max, :join_rule, :language, :adult_required,
+                                      :approval_required, :host_phone, tags: [])
+      end
+
+      # AC-17.8: approval is on by default for a drop-off event unless the host chose.
+      def preset_approval
+        return unless @event.dropoff? && @event.will_save_change_to_adult_required?
+        return if params[:event].respond_to?(:key?) && params[:event].key?(:approval_required)
+
+        @event.approval_required = true
       end
 
       def render_event(status: :ok)

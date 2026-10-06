@@ -20,5 +20,15 @@ json.age_max event.age_max
 json.join_rule event.join_rule
 json.places({ total: event.places_total, taken: event.places_taken, left: event.places_left })
 json.full event.full?
+# US-17 (every audience, guests included): a drop-off event shows its notice (AC-17.5,
+# AC-17.24); "approval required" shows the "On request" badge.
+json.adult_required event.adult_required
+json.approval_required event.approval_required
+# AC-17.14, AC-17.24: only the viewer's own request, never anyone else's (guests: none).
+request = viewer.request(event)
 json.viewer({ role: viewer.audience(event).to_s, joined: viewer.participation(event).present?, can_join: blocker.nil?,
-              join_blocker: blocker&.to_s })
+              join_blocker: blocker&.to_s,
+              request: request && { status: request.status, closed_reason: request.closed_reason, adults: request.adults,
+                                    children: request.children, places: request.requested_places,
+                                    requested_at: request.requested_at&.utc&.iso8601,
+                                    expires_at: request.expires_at&.utc&.iso8601 } })
