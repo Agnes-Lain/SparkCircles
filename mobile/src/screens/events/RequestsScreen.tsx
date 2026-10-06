@@ -34,6 +34,9 @@ import { isDropoff } from './dropoff';
 import { partyText, personName } from './presenters';
 import { refreshEvents, storeEvent, useEvent, useEventRequests } from './queries';
 
+/** "Terminées" shows this many rows, then « Voir les N autres » (design 3.5). */
+export const DONE_FOLD = 5;
+
 type Sheet = null | { kind: 'decline'; request: HostRequest } | { kind: 'acceptAll' };
 
 /** "Envoyée il y a 2 h" / "Envoyée hier" (requests live 48 hours at most). */
@@ -68,6 +71,7 @@ export function RequestsScreen() {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [failed, setFailed] = useState(false);
   const [now] = useState(() => Date.now());
+  const [showAllDone, setShowAllDone] = useState(false);
 
   const after = (updated: SparkEvent) => {
     storeEvent(queryClient, updated);
@@ -204,7 +208,10 @@ export function RequestsScreen() {
               <Text className="text-caption text-ink-2" testID="requests-caption">
                 {requests.length >= 2 && !allFit(requests, left)
                   ? t('events.dropoff.cannotAcceptAll')
-                  : t('events.dropoff.listCaption', { count: asked, left })}
+                  : t('events.dropoff.listCaption', {
+                      count: asked,
+                      remaining: t('events.dropoff.placesRemaining', { count: left }),
+                    })}
               </Text>
             </View>
             {requests.map((request) => (
@@ -234,9 +241,19 @@ export function RequestsScreen() {
         {done.length ? (
           <View className="gap-sm" testID="requests-done">
             <SectionLabel>{t('events.dropoff.doneTitle')}</SectionLabel>
-            {done.map((item) => (
+            {(showAllDone ? done : done.slice(0, DONE_FOLD)).map((item) => (
               <DoneRow key={item.id} item={item} />
             ))}
+            {!showAllDone && done.length > DONE_FOLD ? (
+              <View className="items-start">
+                <TextLink
+                  quiet
+                  label={t('events.dropoff.doneMore', { count: done.length - DONE_FOLD })}
+                  onPress={() => setShowAllDone(true)}
+                  testID="requests-done-more"
+                />
+              </View>
+            ) : null}
           </View>
         ) : null}
       </ScrollView>

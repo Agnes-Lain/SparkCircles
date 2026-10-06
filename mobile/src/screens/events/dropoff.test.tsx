@@ -384,6 +384,51 @@ describe('US-17 host request list', () => {
     expect(screen.getByTestId('decline-r1')).toBeDisabled();
   });
 
+  it('design 3.5 "Terminées" shows 5 rows, then « Voir les N autres »', async () => {
+    const done = Array.from({ length: 8 }, (_, i) => ({
+      id: `d${i}`,
+      first_name: `Parent${i}`,
+      last_name_initial: 'P',
+      verified: true,
+      former_member: false,
+      status: 'declined' as const,
+      closed_reason: null,
+      places: 1,
+      decided_at: '2026-10-09T09:00:00Z',
+    }));
+    mockEvents.requests.mockResolvedValue(list({ done }));
+    await open(`/events/${eid}/requests`);
+    expect(await screen.findByTestId('done-d4')).toBeOnTheScreen();
+    expect(screen.queryByTestId('done-d5')).toBeNull();
+    await fireEvent.press(screen.getByText('Voir les 3 autres'));
+    expect(await screen.findByTestId('done-d7')).toBeOnTheScreen();
+    expect(screen.queryByTestId('requests-done-more')).toBeNull();
+  });
+
+  it('the decline sheet is neutral and plurals agree (Q-3, Q-8)', async () => {
+    mockEvents.requests.mockResolvedValue({
+      ...list({ places_left: 5 }),
+      requests: [{ ...list().requests[0]!, places: 1 }],
+    });
+    await open(`/events/${eid}/requests`);
+    expect(await screen.findByTestId('requests-caption')).toHaveTextContent(
+      "1 place demandée, 5 restantes. Dans l'ordre d'arrivée.",
+    );
+    await fireEvent.press(screen.getByTestId('decline-r1'));
+    expect(
+      await screen.findByText(
+        "La personne reçoit un message neutre : tu ne peux pas donner suite. Aucun motif n'est affiché.",
+      ),
+    ).toBeOnTheScreen();
+    expect(i18n.t('events.dropoff.placesRemaining', { count: 1 })).toBe('1 restante');
+    expect(i18n.t('events.dropoff.acceptAllPartial', { count: 1 })).toBe(
+      '1 acceptée, les autres sont closes : la sortie est complète.',
+    );
+    expect(i18n.t('events.dropoff.declineBody', { lng: 'en' })).toBe(
+      "They get a neutral message: you can't take the request. No reason is shown.",
+    );
+  });
+
   it('empty: the 📬 state', async () => {
     mockEvents.requests.mockResolvedValue(list({ requests: [] }));
     await open(`/events/${eid}/requests`);
