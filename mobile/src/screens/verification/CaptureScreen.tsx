@@ -173,7 +173,7 @@ export function CaptureScreen({ slot, retake = false }: { slot: PhotoSlot; retak
   };
 
   return (
-    <FormScreen testID={`verify-capture-${slot}`}>
+    <FormScreen flat testID={`verify-capture-${slot}`}>
       <Header
         small
         title={preview ? t('verify.capture.checkTitle') : title}

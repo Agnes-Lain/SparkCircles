@@ -17,7 +17,7 @@ export function PlaceholderScreen({
   headerRight?: ReactNode;
 }) {
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-shell">
+    <SafeAreaView edges={['top']} className="flex-1">
       <ScrollView contentContainerClassName="px-lg pb-3xl pt-xl">
         <View className="flex-row items-center justify-between gap-md">
           <Text accessibilityRole="header" className="flex-1 text-h1 text-ink">

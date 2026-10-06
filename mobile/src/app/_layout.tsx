@@ -2,7 +2,14 @@ import '../../global.css';
 import '../i18n';
 
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack, useRootNavigationState, useRouter, useSegments } from 'expo-router';
+import {
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+  useRootNavigationState,
+  useRouter,
+  useSegments,
+} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -14,11 +21,18 @@ import { GateContext } from '../auth/GateContext';
 import { SessionProvider } from '../auth/SessionProvider';
 import { useMe } from '../auth/useMe';
 import { useSession } from '../auth/useSession';
+import { ScreenBackground } from '../components/ScreenBackground';
 import { ToastProvider } from '../components/ToastProvider';
 import { changeAppLanguage, restoreLocale } from '../i18n/localeStore';
 import { colorValue } from '../theme/colors';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+// Screens are transparent so the one fixed shell gradient (ScreenBackground) shows through.
+const TRANSPARENT_THEME = {
+  ...DefaultTheme,
+  colors: { ...DefaultTheme.colors, background: colorValue('transparent') },
+};
 
 /**
  * The auth gate (proposal M-9). No token: Welcome (or Log in after a refused token). A token:
@@ -61,15 +75,19 @@ function RootNavigator() {
 
   return (
     <GateContext.Provider value={state}>
-      <ToastProvider aboveTabBar={state === 'ready' && route === '(tabs)'}>
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colorValue('shell') },
-          }}
-        />
-      </ToastProvider>
+      <ThemeProvider value={TRANSPARENT_THEME}>
+        <ToastProvider aboveTabBar={state === 'ready' && route === '(tabs)'}>
+          {/* dark-content over the gradient (contrast rule 8). */}
+          <StatusBar style="dark" />
+          <ScreenBackground />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colorValue('transparent') },
+            }}
+          />
+        </ToastProvider>
+      </ThemeProvider>
     </GateContext.Provider>
   );
 }

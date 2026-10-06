@@ -13,7 +13,7 @@ export function UnreachableScreen() {
   return (
     <SafeAreaView
       edges={['top', 'bottom']}
-      className="flex-1 justify-center bg-shell px-lg"
+      className="flex-1 justify-center px-lg"
       testID="unreachable-screen"
     >
       <UnreachableNotification onRetry={() => void me.refetch()} retrying={me.isFetching} />

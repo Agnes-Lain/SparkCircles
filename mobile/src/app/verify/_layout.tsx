@@ -10,7 +10,7 @@ export default function VerifyLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: colorValue('shell') },
+          contentStyle: { backgroundColor: colorValue('transparent') },
         }}
       />
     </VerificationFlowProvider>

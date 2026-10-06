@@ -12,7 +12,7 @@ import { Skeleton } from '../../components/Skeleton';
 export function LinkPending({ children }: { children?: ReactNode }) {
   const { t } = useTranslation();
   return (
-    <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-shell px-lg pb-3xl pt-lg">
+    <SafeAreaView edges={['top', 'bottom']} className="flex-1 px-lg pb-3xl pt-lg">
       <View className="h-[72px]" />
       <View
         accessible

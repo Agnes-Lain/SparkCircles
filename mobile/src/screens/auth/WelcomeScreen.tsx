@@ -16,7 +16,7 @@ export function WelcomeScreen() {
   const other = currentLocale() === 'fr' ? 'en' : 'fr';
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-shell px-lg pb-3xl">
+    <SafeAreaView edges={['top', 'bottom']} className="flex-1 px-lg pb-3xl">
       <View className="flex-row justify-end">
         <TextLink
           small

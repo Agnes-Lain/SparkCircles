@@ -8,14 +8,27 @@ import { Icon } from '../../components/Icon';
 import { IconButton } from '../../components/IconButton';
 
 /**
- * Layout of the form screens (mockup `signup`: S2, S5, S6, S8): Shell background, 16 px side
+ * Layout of the form screens (mockup `signup`: S2, S5, S6, S8): on the shell gradient, 16 px side
  * padding, 24 px between sections, 48 px at the bottom. The keyboard never covers the
  * focused field: on iOS the scroll view adds the keyboard's height to its insets and scrolls
  * the field into view; Android resizes the window (Expo's default) and does the same.
  */
-export function FormScreen({ children, testID }: { children: ReactNode; testID?: string }) {
+export function FormScreen({
+  children,
+  testID,
+  flat = false,
+}: {
+  children: ReactNode;
+  testID?: string;
+  /** Camera capture screens keep their own flat Shell background (design system v1.6). */
+  flat?: boolean;
+}) {
   return (
-    <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-shell" testID={testID}>
+    <SafeAreaView
+      edges={['top', 'bottom']}
+      className={flat ? 'flex-1 bg-shell' : 'flex-1'}
+      testID={testID}
+    >
       <ScrollView
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
@@ -55,7 +68,7 @@ export function MessageScreen({
 }) {
   const { t } = useTranslation();
   return (
-    <SafeAreaView edges={['top', 'bottom']} className="flex-1 bg-shell" testID={testID}>
+    <SafeAreaView edges={['top', 'bottom']} className="flex-1" testID={testID}>
       <ScrollView contentContainerClassName="grow gap-xl px-lg pb-3xl pt-lg">
         {onBack ? (
           <View className="-ml-3 flex-row">
