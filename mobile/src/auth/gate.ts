@@ -48,6 +48,14 @@ export const LINK_ROUTES = [
 ];
 
 /**
+ * App links of the event emails (`Dev::OpenAppController::PATHS` in the API): `events`
+ * (Sorties, and `events/<uuid>` the detail), `my-events` (Mes sorties) and `verification`
+ * (V0 or V5). Members only: unlike LINK_ROUTES they keep the logged-out gate, because guest
+ * browsing (US-15) comes in its own release. A logged-out phone lands on Welcome.
+ */
+export const EVENT_LINK_ROUTES = ['events', 'my-events', 'verification'];
+
+/**
  * A8 Account closed: shown while the closed account's token stops working, and kept after the
  * device is signed out, until "OK".
  */
@@ -68,9 +76,18 @@ const ALLOWED: Record<Exclude<GateState, 'loading'>, string[]> = {
   // S9 "I don't accept" leads to Close my account (A7).
   terms: ['terms-updated', 'close-account', ACCOUNT_CLOSED],
   unreachable: ['unreachable'],
-  // The tabs, My account (A1–A8; `my-data` is also the "your data is ready" email link) and
-  // identity verification (V0–V5).
-  ready: ['(tabs)', 'account', 'my-data', 'close-account', ACCOUNT_CLOSED, 'verify'],
+  // The tabs, My account (A1–A8; `my-data` is also the "your data is ready" email link),
+  // identity verification (V0–V5) and Events (detail, create, edit), with the app links of the
+  // event emails: `events`, `events/<id>`, `my-events` and `verification`.
+  ready: [
+    '(tabs)',
+    'account',
+    'my-data',
+    'close-account',
+    ACCOUNT_CLOSED,
+    'verify',
+    ...EVENT_LINK_ROUTES,
+  ],
 };
 
 /** The route name the gate reasons about: the tab group, or the screen's own name. */

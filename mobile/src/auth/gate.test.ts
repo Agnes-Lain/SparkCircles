@@ -1,6 +1,6 @@
 import { closingMe, meFixture, termsMe, unconfirmedMe } from '../test/fixtures';
 import { ApiError } from '../api/errors';
-import { gateState, homeFor, isAllowed, LINK_ROUTES, routeName } from './gate';
+import { EVENT_LINK_ROUTES, gateState, homeFor, isAllowed, LINK_ROUTES, routeName } from './gate';
 import { maskEmail } from './pendingEmail';
 import { formatDate } from '../i18n/format';
 
@@ -44,6 +44,16 @@ describe('auth gate rules (M-9, contract §1 "Account gates")', () => {
     expect(isAllowed('ready', routeName(['verify', 'review']))).toBe(true);
     expect(isAllowed('unconfirmed', 'verify')).toBe(false);
     expect(isAllowed('signedOut', 'verify')).toBe(false);
+  });
+
+  it('AC-1.4 opens the event email links (events, events/<id>, my-events, verification) for members only', () => {
+    expect(EVENT_LINK_ROUTES).toEqual(['events', 'my-events', 'verification']);
+    expect(isAllowed('ready', routeName(['events', '[id]']))).toBe(true);
+    expect(isAllowed('ready', routeName(['events', 'new']))).toBe(true);
+    expect(isAllowed('ready', 'my-events')).toBe(true);
+    expect(isAllowed('ready', 'verification')).toBe(true);
+    // US-15 guest browsing is a later release: the logged-out gate stays.
+    EVENT_LINK_ROUTES.forEach((route) => expect(isAllowed('signedOut', route)).toBe(false));
   });
 
   it('names routes by their screen, the tabs as one group', () => {
