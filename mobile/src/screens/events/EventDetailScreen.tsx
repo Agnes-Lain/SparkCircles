@@ -43,6 +43,18 @@ import { useBack } from '../auth/useBack';
 import { CATEGORY_ICON } from './categories';
 import { ConfirmSheet } from './ConfirmSheet';
 import { Confetti } from './Confetti';
+import {
+  DropoffLine,
+  DropoffNotice,
+  HostPhoneCard,
+  HostRequestsCard,
+  isDropoff,
+  OnRequestBadge,
+  PendingBadge,
+  PhoneLink,
+  RequestNote,
+} from './dropoff';
+import { displayPhone } from './phone';
 import { clockTime, formatKm, formatLongDay, formatTime } from './format';
 import { JoinSheet } from './JoinSheet';
 import { hasEnded, partyText, personName, placesText, statusBadge, titleText } from './presenters';
@@ -111,6 +123,8 @@ export function EventDetailScreen() {
     setSheetState(next);
   };
   const [badgeOpen, setBadgeOpen] = useState(false);
+  // US-17: the phone windows are checked against the moment the page opened.
+  const [openedAt] = useState(() => Date.now());
   const [burst, setBurst] = useState(0);
   const [celebrate] = useState(takeCelebration);
   const badgeRef = useRef<View>(null);
@@ -131,6 +145,27 @@ export function EventDetailScreen() {
       // Not a participant any more (left elsewhere): the address goes too (BUG-1, BUG-3).
       if (error.code === 'not_joined') forgetParticipation(queryClient, id!);
       else onRefused(error);
+    },
+  });
+  // AC-17.14: a pending request is withdrawn with no confirmation (it is reversible).
+  const withdraw = useMutation<void, ApiError, void>({
+    mutationFn: () => events().leave(id!),
+    onSuccess: () => {
+      refreshEvents(queryClient, id!);
+      showToast(t('events.dropoff.withdrawn'));
+    },
+    onError: (error) => onRefused(error),
+  });
+  // AC-17.21: the request for extra places, withdrawn; the accepted places stay.
+  const withdrawExtra = useMutation<{ event: SparkEvent }, ApiError, void>({
+    mutationFn: () => events().withdrawRequest(id!),
+    onSuccess: (data) => {
+      storeEvent(queryClient, data.event);
+      showToast(t('events.dropoff.withdrawn'));
+    },
+    onError: (error) => {
+      refreshEvents(queryClient, id!);
+      onRefused(error);
     },
   });
   const cancel = useMutation<{ event: SparkEvent }, ApiError, void>({
@@ -184,12 +219,19 @@ export function EventDetailScreen() {
   }
 
   // A refusal closes the sheet and shows on the page.
-  const failed = leave.error ?? cancel.error ?? remove.error ?? publish.error;
+  const failed =
+    leave.error ??
+    cancel.error ??
+    remove.error ??
+    publish.error ??
+    withdraw.error ??
+    withdrawExtra.error;
   const actionError =
     failed &&
     !isRefusal(failed) &&
     failed.code !== 'not_joined' &&
-    failed.code !== 'validation_failed'
+    failed.code !== 'validation_failed' &&
+    failed.code !== 'request_not_pending'
       ? failed
       : null;
 
@@ -275,6 +317,13 @@ export function EventDetailScreen() {
   const date = event.starts_at ? formatLongDay(event.starts_at, event.time_zone, locale) : null;
   const title = titleText(event, t);
   const participants = event.participants ?? [];
+  // US-17
+  const dropoff = isDropoff(event);
+  const approval = event.approval_required;
+  const request = guest ? null : (event.viewer.request ?? null);
+  const pendingChange = event.my_participation?.pending_change ?? null;
+  const phonesShown =
+    !event.phone_visible_until || new Date(event.phone_visible_until).getTime() > openedAt;
 
   const verify = () => {
     close();
@@ -387,14 +436,34 @@ export function EventDetailScreen() {
     bar = null;
   } else if (joined && event.my_participation) {
     const going = (
-      <View className="items-center">
+      <View className="items-center gap-sm">
         <Badge
           kind="badge-green"
           label={t('events.detail.going', { count: event.my_participation.places })}
           testID="going-badge"
         />
+        {pendingChange ? (
+          // AC-17.21: the extra places wait for the host; the accepted ones stay booked.
+          <View
+            className="flex-row items-center gap-sm rounded-md bg-sunny-light px-md"
+            testID="extra-pending"
+          >
+            <Text className="flex-1 text-caption text-ink">
+              {t('events.dropoff.extraPending', {
+                count: pendingChange.places - event.my_participation.places,
+              })}
+            </Text>
+            <TextLink
+              small
+              label={t('events.dropoff.withdrawShort')}
+              onPress={() => withdrawExtra.mutate()}
+              testID="withdraw-extra"
+            />
+          </View>
+        ) : null}
       </View>
     );
+    if (approval && event.status !== 'suspended') barCaption = t('events.dropoff.extraHint');
     bar =
       event.status === 'suspended' ? (
         <>
@@ -425,15 +494,43 @@ export function EventDetailScreen() {
           </View>
         </>
       );
+  } else if (request?.status === 'pending') {
+    // AC-17.14: one state at a time; withdrawing needs no confirmation.
+    bar = (
+      <>
+        <PendingBadge places={request.places} />
+        <View className="items-center">
+          <TextLink
+            quiet
+            label={t('events.dropoff.withdraw')}
+            onPress={() => withdraw.mutate()}
+            disabled={withdraw.isPending}
+            testID="withdraw-request"
+          />
+        </View>
+      </>
+    );
+  } else if (request?.status === 'declined') {
+    // AC-17.16: neutral, and no new request on this event (PM decision).
+    bar = (
+      <Button
+        size="large"
+        label={t('events.detail.seeOthers')}
+        onPress={seeOthers}
+        testID="declined-see-others"
+      />
+    );
   } else if (guest && !(event.full || event.viewer.join_blocker === 'full')) {
     // AC-15.4, AC-15.5: the join opens the sign-up prompt (verified-only: sign up and verify).
     barCaption = lockedForGuest
-      ? t('events.detail.verifiedOnlyCaption')
+      ? dropoff
+        ? t('events.dropoff.guestCaption')
+        : t('events.detail.verifiedOnlyCaption')
       : t('events.detail.joinCaption');
     bar = (
       <Button
         size="large"
-        label={t('events.detail.join')}
+        label={lockedForGuest && dropoff ? t('events.dropoff.guestCta') : t('events.detail.join')}
         onPress={() => setGuestSheet(lockedForGuest ? 'verifiedOnly' : 'join')}
         testID="guest-join"
       />
@@ -463,11 +560,18 @@ export function EventDetailScreen() {
       />
     );
   } else if (event.viewer.can_join) {
-    barCaption = t('events.detail.joinCaption');
+    // AC-17.14: with approval the CTA sends a request; an expired one can be sent again.
+    barCaption = approval ? t('events.dropoff.requestCaption') : t('events.detail.joinCaption');
     bar = (
       <Button
         size="large"
-        label={t('events.detail.join')}
+        label={
+          request?.status === 'expired'
+            ? t('events.dropoff.newRequest')
+            : approval
+              ? t('events.dropoff.sendRequest')
+              : t('events.detail.join')
+        }
         onPress={() => setSheet('join')}
         testID="join"
       />
@@ -482,7 +586,7 @@ export function EventDetailScreen() {
         taken: event.places.taken,
         total,
         left: event.places.left,
-      })
+      }) + (approval ? ` ${t('events.dropoff.pendingNoPlaces')}` : '')
     : placesText(event, t);
   const full = event.full || event.places.left <= 0;
   const filled = total > 0 ? event.places.taken / total : 0;
@@ -585,6 +689,26 @@ export function EventDetailScreen() {
           </View>
         </View>
 
+        {/* AC-17.5, AC-17.24: under the title, above the time and the CTA, guests too. */}
+        {dropoff ? (
+          isHost ? (
+            <DropoffLine label={t('events.dropoff.noticeTitle')} testID="detail-dropoff-line" />
+          ) : (
+            <DropoffNotice
+              title={t('events.dropoff.detailTitle')}
+              body={t('events.dropoff.detailBody')}
+              testID="detail-dropoff-notice"
+            />
+          )
+        ) : null}
+
+        {isHost && approval && event.status !== 'draft' && event.status !== 'cancelled' ? (
+          <HostRequestsCard
+            count={event.pending_requests_count ?? 0}
+            onOpen={() => router.push(`/events/${event.id}/requests`)}
+          />
+        ) : null}
+
         {event.starts_at && event.ends_at && date ? (
           <View accessible className="gap-xs">
             <Text className="text-data text-ink">
@@ -600,6 +724,9 @@ export function EventDetailScreen() {
         ) : (
           <Text className="text-body font-medium text-ink-2">{t('events.noDate')}</Text>
         )}
+
+        {/* Design 3.4: the parent's request state, one at a time (never for guests). */}
+        {request && !joined && event.status !== 'cancelled' ? <RequestNote event={event} /> : null}
 
         <Card testID="where">
           <SectionLabel>{t('events.detail.where')}</SectionLabel>
@@ -647,6 +774,11 @@ export function EventDetailScreen() {
             </View>
           )}
         </Card>
+
+        {/* AC-17.9: accepted parents of a drop-off event, right under the address. */}
+        {dropoff && joined && !isHost && event.status !== 'cancelled' ? (
+          <HostPhoneCard event={event} now={new Date(openedAt)} />
+        ) : null}
 
         {guest ? (
           // US-15 table: no name, initial or avatar; a verified-only event, no host at all.
@@ -724,6 +856,7 @@ export function EventDetailScreen() {
           <View className="flex-row items-center gap-xs">
             <Icon icon={Users} size={16} color="ink-2" />
             <Text className="flex-1 text-body font-medium text-ink">{placesLine}</Text>
+            {approval && !isHost ? <OnRequestBadge testID="detail-on-request" /> : null}
             {!isHost && status && ['almostFull', 'full'].includes(status.key) ? (
               <Badge kind={status.kind} label={status.label} />
             ) : null}
@@ -795,6 +928,20 @@ export function EventDetailScreen() {
                     <Text className="text-caption text-ink-2">
                       {partyText(person.adults, person.children, t)}
                     </Text>
+                    {/* AC-17.10: the emergency number, host only, after accepting. */}
+                    {isHost && person.emergency_phone && phonesShown ? (
+                      <View testID="participant-emergency">
+                        <Text className="text-caption text-ink-2">
+                          {t('events.dropoff.emergencyRow')}
+                        </Text>
+                        <PhoneLink
+                          phone={person.emergency_phone}
+                          accessibilityLabel={t('events.dropoff.callEmergency', {
+                            number: displayPhone(person.emergency_phone),
+                          })}
+                        />
+                      </View>
+                    ) : null}
                   </View>
                   {person.former_member ? null : person.verified ? (
                     <Badge kind="badge-green" label={t('events.badge.verified')} />
@@ -805,6 +952,11 @@ export function EventDetailScreen() {
               ))}
               {isHost ? (
                 <Text className="text-caption text-ink-3">{t('events.detail.ownParty')}</Text>
+              ) : null}
+              {isHost && dropoff && phonesShown ? (
+                <Text className="text-caption text-ink-3">
+                  {t('events.dropoff.emergencyCaption')}
+                </Text>
               ) : null}
             </>
           ) : (
@@ -826,10 +978,16 @@ export function EventDetailScreen() {
         change={sheet === 'change'}
         onClose={close}
         onVerify={verify}
-        onJoined={(_, places) => {
+        onJoined={(updated, places) => {
           const changing = sheet === 'change';
           close();
-          if (changing) {
+          // AC-17.14: a request is not a join yet: a toast, no confetti.
+          if (
+            updated.viewer.request?.status === 'pending' ||
+            updated.my_participation?.pending_change
+          ) {
+            showToast(t('events.dropoff.requestSent'));
+          } else if (changing) {
             showToast(t('common.saved'));
           } else {
             showToast(t('events.join.success', { count: places }));

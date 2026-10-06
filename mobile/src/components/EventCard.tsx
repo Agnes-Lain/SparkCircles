@@ -1,4 +1,4 @@
-import { Calendar, Lock, MapPin, ShieldCheck, Users } from 'lucide-react-native';
+import { Calendar, Clock, Lock, MapPin, ShieldCheck, Users } from 'lucide-react-native';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
@@ -6,6 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 import type { SparkEvent } from '../api/events';
 import { resolveLocale } from '../i18n';
 import { CATEGORY_ICON } from '../screens/events/categories';
+import { DropoffLine, isDropoff, OnRequestBadge } from '../screens/events/dropoff';
 import {
   personName,
   placesText,
@@ -60,13 +61,16 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
   // badge and the locked call to action instead.
   const guest = event.viewer.role === 'guest';
   const locked = guest && event.join_rule === 'verified_only';
+  const dropoff = isDropoff(event);
+  // Design 3.2: the card's name starts "Sortie entre familles, dépôt d'enfants, …".
+  const type = dropoff ? `${t('events.type')}, ${t('events.dropoff.cardA11y')}` : t('events.type');
   const showBadge = guest
     ? !locked && Boolean(host?.verified)
     : Boolean(host && !host.former_member && host.verified && !isHost);
 
   const guestLabel = guest
     ? [
-        t('guest.card.a11y', { type: t('events.type'), title, when, where, places }),
+        t('guest.card.a11y', { type, title, when, where, places }),
         locked
           ? `${t('guest.card.verifiedOnly')}, ${t('guest.card.lockedCta')}`
           : showBadge
@@ -80,7 +84,7 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
   const label = [
     guestLabel ??
       t('events.card.a11y', {
-        type: t('events.type'),
+        type,
         title,
         when,
         where,
@@ -92,6 +96,7 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
     event.language && event.language !== locale
       ? t(`events.language.a11y.${event.language}`)
       : null,
+    event.approval_required ? t('events.dropoff.onRequest') : null,
     status?.label,
   ]
     .filter(Boolean)
@@ -121,6 +126,12 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
         <Text numberOfLines={2} className="text-h3 text-ink" style={{ paddingRight: HEART_SLOT }}>
           {title}
         </Text>
+        {dropoff ? (
+          <DropoffLine
+            label={t('events.dropoff.cardLine')}
+            testID={`event-card-dropoff-${event.id}`}
+          />
+        ) : null}
         <View className="flex-row items-center gap-xs">
           <Icon icon={Calendar} size={18} color="ink-2" />
           <Text className="text-h3 text-ink">{when}</Text>
@@ -191,6 +202,12 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
           <View className="flex-row items-center gap-xs">
             <Icon icon={Users} size={16} color="ink-2" />
             <Text className="flex-1 text-body font-medium text-ink">{places}</Text>
+            {event.approval_required ? (
+              <OnRequestBadge testID={`event-card-on-request-${event.id}`} />
+            ) : null}
+            {status?.key === 'requestSent' ? (
+              <Icon icon={Clock} size={14} color="sunny-dark" />
+            ) : null}
             {status ? <Badge kind={status.kind} label={status.label} /> : null}
           </View>
           <View

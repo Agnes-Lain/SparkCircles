@@ -75,6 +75,12 @@ export function statusBadge(
   if (event.status === 'draft') return badge('badge-neutral', 'draft');
   if (mine && event.viewer.role === 'host') return badge('badge-green', 'published');
   if (event.viewer.joined) return badge('badge-green', 'going');
+  // US-17 (design 3.4, "Mes sorties"): the viewer's own request.
+  const request = event.viewer.request;
+  if (request?.status === 'pending')
+    return { kind: 'badge-yellow', key: 'requestSent', label: t('events.dropoff.mineRequestSent') };
+  if (mine && request)
+    return { kind: 'badge-neutral', key: 'requestClosed', label: t('events.dropoff.mineClosed') };
   if (event.full || event.places.left <= 0) return badge('badge-neutral', 'full');
   if (event.places.left <= 3) return badge('badge-yellow', 'almostFull');
   return null;
