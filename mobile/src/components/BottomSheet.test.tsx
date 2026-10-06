@@ -1,10 +1,10 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { useRef, useState } from 'react';
-import { AccessibilityInfo, Text, type View } from 'react-native';
+import { AccessibilityInfo, Dimensions, StyleSheet, Text, type View } from 'react-native';
 
 import i18n from '../i18n';
-import { renderWithProviders } from '../test/render';
-import { BottomSheet } from './BottomSheet';
+import { renderWithProviders, SAFE_AREA_METRICS } from '../test/render';
+import { BottomSheet, SHEET_TOP_MARGIN } from './BottomSheet';
 import { Button } from './Button';
 
 // The test renderer has no native tags: give the opener one.
@@ -49,5 +49,38 @@ describe('BottomSheet (design system section 10)', () => {
     expect(focus).toHaveBeenCalledWith(42);
     expect(mockFindNodeHandle).toHaveBeenLastCalledWith(expect.anything());
     focus.mockRestore();
+  });
+
+  it('keeps the sheet below the status bar: max height is the screen minus the top inset', async () => {
+    await renderWithProviders(
+      <BottomSheet visible onClose={() => {}} testID="sheet">
+        <Text>Contenu</Text>
+      </BottomSheet>,
+    );
+    const style = StyleSheet.flatten(screen.getByTestId('sheet').props.style);
+    expect(style.maxHeight).toBe(
+      Dimensions.get('window').height - SAFE_AREA_METRICS.insets.top - SHEET_TOP_MARGIN,
+    );
+  });
+
+  it('scrolls its content (taps reach buttons with the keyboard up) and pins the footer', async () => {
+    const onPress = jest.fn();
+    await renderWithProviders(
+      <BottomSheet
+        visible
+        onClose={() => {}}
+        footer={<Button label="Envoyer" onPress={onPress} />}
+        testID="sheet"
+      >
+        <Text>Contenu</Text>
+      </BottomSheet>,
+    );
+    const scroll = screen.getByTestId('sheet-scroll');
+    expect(scroll.props.keyboardShouldPersistTaps).toBe('handled');
+    expect(screen.getByText('Contenu')).toBeOnTheScreen();
+    // The footer sits outside the scrolling content, so it stays visible.
+    expect(screen.getByTestId('sheet-footer')).not.toContainElement(screen.getByText('Contenu'));
+    await fireEvent.press(screen.getByRole('button', { name: 'Envoyer' }));
+    expect(onPress).toHaveBeenCalled();
   });
 });
