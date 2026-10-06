@@ -42,6 +42,12 @@ en:
         other: "Only %{count} places left."
       event_started: "This event has already started."
       already_reported: "You've already reported this event. Our team is on it."
+      already_requested: "Your request is already sent."
+      request_declined: "The host can't take your request."
+      request_not_pending: "This request isn't waiting anymore."
+      request_expired: "This request has expired."
+      request_closed: "This request is closed."
+      requests_frozen: "Requests are frozen and can't be decided until it resumes."
       search_too_broad: "Choose an area, or type at least 3 characters."
       client_not_allowed: "Open SparkCircles in the app to see events."
       client_blocked: "Too many requests from this connection. Try again later or log in."
@@ -352,3 +358,41 @@ en:
         other:
           - "You're verified again: your %{count} upcoming events are visible and open for sign-ups again. The families who joined were told."
       action: "See my events"
+    request_received:
+      subject: "New request for “%{title}”"
+      line: "%{guest} asks for %{places} on your event."
+      more_line: "%{guest} asks for %{places} more (%{total} in total)."
+      digest: "%{guest} asks for %{places}"
+      more_digest: "%{guest} asks for %{places} more (%{total} in total)"
+      waiting_single:
+        one: "You have %{count} request waiting. Unanswered requests expire 48 hours after they were sent."
+        other: "You have %{count} requests waiting. Unanswered requests expire 48 hours after they were sent."
+      waiting:
+        one: "You have %{count} request waiting."
+        other: "You have %{count} requests waiting."
+      action: "See the requests"
+    request_accepted:
+      subject: "Your request is accepted: “%{title}”"
+      lines:
+        - "Good news: your request is accepted. You have %{places} for “%{title}”, on %{date}, in %{area}."
+        - "Open the app to see the exact address."
+      dropoff: "Remember to agree on pick-up, meals, medication and allergies with the host. Their contact is in the app."
+      action: "See the event"
+    request_declined:
+      subject: "Your request for “%{title}”"
+      lines:
+        - "The host can't take your request for “%{title}”."
+        - "You can look at other events near you."
+      action: "See other events"
+    request_expired:
+      subject: "Your request for “%{title}” has expired"
+      lines:
+        - "The host didn't answer in time, so your request has expired."
+        - "If there are places left, you can ask again."
+      action: "See the event"
+    request_closed_full:
+      subject: "“%{title}” is full"
+      lines:
+        - "The event is now full, so your request is closed."
+        - "Nothing was booked for you."
+      action: "See other events"

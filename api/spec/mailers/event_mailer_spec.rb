@@ -137,8 +137,67 @@ RSpec.describe EventMailer do
     expect(described_class.event_cancelled(event, guest).subject).to eq("« Une très longue sortie au parc avec des… » est annulée")
   end
 
+  describe "US-17 requests (AC-17.25)" do
+    let(:dropoff) do
+      create(:event, :dropoff, host: host, title: "Après-midi jeux", area: "paris-11", places_total: 8,
+                               starts_at: Time.zone.parse("2026-10-17 14:30"), ends_at: Time.zone.parse("2026-10-17 16:30"))
+    end
+
+    def expect_no_phone(mail)
+      [ text(mail), html(mail) ].each { |body| expect(body).not_to include("612345678", "06 12", "+33") }
+    end
+
+    it "E-A a single request tells the host the places asked and the requests waiting" do
+      mail = described_class.host_activity(dropoff, [ { "user" => guest, "request" => true, "places" => 3 } ],
+                                           places_left: 8, places_total: 8, waiting: 2)
+      expect(mail.subject).to eq("Nouvelle demande pour « Après-midi jeux »")
+      expect(text(mail)).to include("Léa D. demande 3 places pour ta sortie.",
+                                    "Tu as 2 demandes en attente. Sans réponse, chaque demande expire 48 h après son envoi.",
+                                    "Voir les demandes:")
+      expect_private(mail)
+      expect_no_phone(mail)
+    end
+
+    it "E-A joins the digest with a line per request, extra places included" do
+      karim = create(:user, first_name: "Karim", last_name: "Rahmani")
+      entries = [ { "user" => guest, "request" => true, "places" => 3 }, { "user" => karim, "from" => 0, "to" => 2 },
+                  { "user" => create(:user, first_name: "Inès", last_name: "Moreau"), "request" => true, "places" => 2, "total" => 3 } ]
+      mail = described_class.host_activity(dropoff, entries, places_left: 6, places_total: 8, waiting: 2)
+      expect(mail.subject).to eq("3 nouveautés pour « Après-midi jeux »")
+      expect(text(mail)).to include("- Léa D. demande 3 places", "- Karim R. a rejoint (2 places)",
+                                    "- Inès M. demande 2 places de plus (3 au total)", "Tu as 2 demandes en attente.")
+    end
+
+    it "E-B accepted: places, date and area, the drop-off reminder, never the address or a phone" do
+      mail = described_class.request_accepted(dropoff, guest, places: 3)
+      expect(mail.subject).to eq("Ta demande est acceptée : « Après-midi jeux »")
+      expect(text(mail)).to include("Tu as 3 places pour « Après-midi jeux », le samedi 17 oct., 14 h 30, à Paris 11e.",
+                                    "Ouvre l'application pour voir l'adresse exacte.",
+                                    "Pense à convenir avec l'organisateur de la récupération")
+      expect_private(mail)
+      expect_no_phone(mail)
+    end
+
+    it "E-C declined is neutral: no host name, no reason" do
+      mail = described_class.request_declined(dropoff, guest)
+      expect(mail.subject).to eq("Ta demande pour « Après-midi jeux »")
+      expect(text(mail)).to include("L'organisateur ne peut pas donner suite à ta demande pour « Après-midi jeux ».")
+      expect(text(mail)).not_to include("Camille")
+      expect_private(mail)
+    end
+
+    it "E-D expired and E-E closed as full, in English too" do
+      guest.update!(locale: "en")
+      expect(described_class.request_expired(dropoff, guest).subject).to eq("Your request for “Après-midi jeux” has expired")
+      full = described_class.request_closed_full(dropoff, guest)
+      expect(full.subject).to eq("“Après-midi jeux” is full")
+      expect(text(full)).to include("The event is now full, so your request is closed.", "Nothing was booked for you.")
+      expect_no_phone(full)
+    end
+  end
+
   it "has a French and an English preview for every email, none with an address" do
-    expect(EventMailerPreview.emails.size).to eq(14)
+    expect(EventMailerPreview.emails.size).to eq(20)
     %w[fr en].each do |locale|
       EventMailerPreview.emails.each do |name|
         mail = EventMailerPreview.call(name, locale: locale)

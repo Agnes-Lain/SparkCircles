@@ -12,7 +12,11 @@ module Events
   # - E4 to E7 hold and resume: one email per participant for all of a host's events, one
   #   per host; a hold undone before sending sends nothing. A back-office suspension sends
   #   E4 to participants only (the host's E5 is about verification).
-  # - E3, E3b cancellations: sent at once, never batched.
+  # - E3, E3b cancellations: sent at once, never batched. Requesters whose pending request
+  #   the cancellation closed get the neutral E3b (US-17, PM decision 2026-10-06).
+  # - US-17 requests: a new request joins the host's E1 digest (E-A); accepted, declined,
+  #   expired and closed-as-full go to the parent at once (E-B to E-E), an expiry found
+  #   during quiet hours waits for 08:00. Requests closed for lost verification send nothing.
   # - Quiet hours 22:00 to 08:00 Paris for everything batched, except E2 for an event
   #   starting within 24 hours and anything about an event starting before 08:00.
   #
@@ -36,25 +40,62 @@ module Events
 
       update_batch(:host_activity, event: event) do |batch|
         entries = batch.payload.fetch("entries", [])
-        entry = entries.find { |item| item["user_id"] == user.id }
+        entry = entries.find { |item| item["user_id"] == user.id && !item["request"] }
         entry ? entry["to"] = to : entries << { "user_id" => user.id, "from" => from, "to" => to }
-        batch.payload = { "entries" => entries.reject { |item| item["from"] == item["to"] } }
+        batch.payload = batch.payload.merge("entries" => entries.reject { |item| !item["request"] && item["from"] == item["to"] })
         batch.deliver_at ||= [ Time.current + HOST_ACTIVITY_WINDOW, batch.throttle_until ].compact.max
       end
+    end
+
+    # E-A (AC-17.25): a request joins the host's digest. `places` is what is asked (the
+    # extra places for an accepted participant, with the new `total`).
+    def request_received(event, user, places:, total: nil)
+      return if event.host.nil?
+
+      update_batch(:host_activity, event: event) do |batch|
+        entries = batch.payload.fetch("entries", []).reject { |item| item["user_id"] == user.id && item["request"] }
+        entries << { "user_id" => user.id, "request" => true, "places" => places, "total" => total }.compact
+        batch.payload = batch.payload.merge("entries" => entries)
+        batch.deliver_at ||= [ Time.current + HOST_ACTIVITY_WINDOW, batch.throttle_until ].compact.max
+      end
+    end
+
+    # A request decided, withdrawn, expired or closed before the digest went out leaves it.
+    def request_resolved(event, user)
+      batch = PendingEventNotification.find_by(kind: "host_activity", event_id: event.id)
+      return unless batch
+
+      batch.with_lock do
+        entries = batch.payload.fetch("entries", [])
+        kept = entries.reject { |item| item["user_id"] == user.id && item["request"] }
+        batch.update!(payload: batch.payload.merge("entries" => kept)) if kept.size != entries.size
+      end
+    end
+
+    # E-B to E-E, to the parent at once. `kind`: :request_accepted, :request_declined,
+    # :request_expired or :request_closed_full.
+    def request_decided(kind, event, user, **options)
+      return if user.closed? || !user.confirmed?
+
+      mail = EventMailer.public_send(kind, event, user, **options)
+      wait = kind == :request_expired ? deferred_until_morning(event) : nil
+      wait ? mail.deliver_later(wait_until: wait) : mail.deliver_later
     end
 
     # E1, AC-8.5, AC-8.6 and erasure: the participant is gone for a reason the host is not
     # told. Their entry leaves the batch (no id kept): a net join drops out, anything else
     # becomes one anonymous "left" in the count.
-    def participant_removed(event, user)
+    # `held`: whether the person held places (a request alone leaves no trace).
+    def participant_removed(event, user, held: true)
       return if event.host_id.nil?
 
       update_batch(:host_activity, event: event) do |batch|
         entries = batch.payload.fetch("entries", [])
-        entry = entries.find { |item| item["user_id"] == user.id }
+        mine = entries.select { |item| item["user_id"] == user.id }
+        entry = mine.find { |item| !item["request"] }
         removed = batch.payload.fetch("removed", 0)
-        removed += 1 unless entry && entry["from"].zero?
-        batch.payload = { "entries" => entries - [ entry ], "removed" => removed }
+        removed += 1 if held && !(entry && entry["from"].zero?)
+        batch.payload = { "entries" => entries - mine, "removed" => removed }
         batch.deliver_at ||= [ Time.current + HOST_ACTIVITY_WINDOW, batch.throttle_until ].compact.max
       end
     end
@@ -64,7 +105,11 @@ module Events
       PendingEventNotification.where(kind: "host_activity")
                               .where("payload -> 'entries' @> ?::jsonb", [ { user_id: user.id } ].to_json)
                               .includes(:event).find_each do |batch|
-        participant_removed(batch.event, user) if batch.event
+        next unless batch.event
+
+        mine = batch.payload.fetch("entries", []).select { |item| item["user_id"] == user.id }
+        held = mine.any? { |item| !item["request"] } || EventParticipation.accepted.exists?(event_id: batch.event_id, user_id: user.id)
+        participant_removed(batch.event, user, held: held)
       end
     end
 
@@ -110,6 +155,7 @@ module Events
       PendingEventNotification.where(event_id: event.id).delete_all
       forget_status(event)
       recipients(event).each { |user| EventMailer.event_cancelled(event, user, neutral: neutral).deliver_later }
+      requesters_closed_by_cancellation(event).each { |user| EventMailer.event_cancelled(event, user, neutral: true).deliver_later }
     end
 
     # ---- Delivery (DeliverEventNotificationsJob) ----
@@ -127,6 +173,14 @@ module Events
       end
     end
 
+    # Quiet hours for a single parent email: 08:00 unless the event starts before then.
+    def deferred_until_morning(event, now = Time.current)
+      return nil unless QuietHours.quiet?(now)
+
+      morning = QuietHours.next_morning(now)
+      event.starts_at && event.starts_at < morning ? nil : morning
+    end
+
     def deferred_until(batch, now = Time.current)
       return nil unless QuietHours.quiet?(now)
 
@@ -141,16 +195,23 @@ module Events
     def deliver_host_activity(batch)
       event = batch.event
       people = active_users(batch)
+      waiting = event.all_participations.awaiting_host.pluck(:user_id).to_set
       removed = batch.payload.fetch("removed", 0)
       entries = batch.payload.fetch("entries", []).filter_map do |entry|
         person = people[entry["user_id"]]
+        if entry["request"]
+          # Only requests still waiting (E-A); never the adults/children split.
+          next unless person && waiting.include?(person.id)
+
+          next { "user" => person, "request" => true, "places" => entry["places"], "total" => entry["total"] }
+        end
         removed += 1 if person.nil? && entry["from"].positive?
         person && { "user" => person, "from" => entry["from"], "to" => entry["to"] }
       end
       count = entries.size + removed
       if count.positive? && event.host && notifiable_host?(event.host) && (event.published? || event.suspended?) && !event.ended?
         EventMailer.host_activity(event, entries, removed: removed, places_left: event.places_left,
-                                                  places_total: event.places_total).deliver_later
+                                                  places_total: event.places_total, waiting: waiting.size).deliver_later
         batch.throttle_until = Time.current + BUSY_EVENT_GAP if count > 1
       end
       batch.update!(payload: {}, deliver_at: nil)
@@ -241,6 +302,11 @@ module Events
     def recipients(event)
       User.where(id: event.participations.select(:user_id)).where.not(id: event.host_id)
           .where(closed_at: nil).where.not(confirmed_at: nil).order(:id).to_a
+    end
+
+    def requesters_closed_by_cancellation(event)
+      User.where(id: event.all_participations.where(status: "closed", closed_reason: "cancelled").select(:user_id))
+          .where.not(id: event.host_id).where(closed_at: nil).where.not(confirmed_at: nil).order(:id).to_a
     end
 
     def active_users(batch)

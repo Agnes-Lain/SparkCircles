@@ -15,25 +15,51 @@ class EventMailer < ApplicationMailer
   MAX_LISTED_TITLES = 3
   SUBJECT_TITLE = 40
 
-  # E1. `entries`: [{ "user", "from", "to" }] net places per participant (0 = not joined).
+  # E1. `entries`: [{ "user", "from", "to" }] net places per participant (0 = not joined),
+  # and US-17 requests [{ "user", "request" => true, "places", "total" }] (E-A).
   # `removed`: people gone for a reason the host is not told (closure, erasure, revoked
-  # verification), shown as an anonymous count only.
-  def host_activity(event, entries, places_left:, places_total:, removed: 0)
+  # verification), shown as an anonymous count only. `waiting`: requests still waiting.
+  def host_activity(event, entries, places_left:, places_total:, removed: 0, waiting: 0)
     host = event.host
     with_recipient(host, event: event) do
       single = entries.size == 1 && removed.zero?
+      request = single && entries.first["request"]
       lines = single ? single_activity(entries.first) : digest_activity(entries, removed)
-      lines << (places_left.zero? ? t("event_mailer.full") : t("event_mailer.places_left", count: places_left, total: places_total))
-      subject =
-        if single
-          entry = entries.first
-          t("event_mailer.host_activity.#{activity_kind(entry)}.subject", guest: entry["user"].display_name,
-                                                                         title: subject_title(event))
-        else
-          t("event_mailer.host_activity.digest.subject", count: entries.size + removed, title: subject_title(event))
-        end
-      deliver(host, subject, lines, action: [ "event_mailer.host_activity.action", app_link("events/#{event.id}") ])
+      if request
+        lines << t("event_mailer.request_received.waiting_single", count: waiting)
+      else
+        lines << (places_left.zero? ? t("event_mailer.full") : t("event_mailer.places_left", count: places_left, total: places_total))
+        lines << t("event_mailer.request_received.waiting", count: waiting) if waiting.positive?
+      end
+      action = waiting.positive? ? "event_mailer.request_received.action" : "event_mailer.host_activity.action"
+      deliver(host, host_activity_subject(event, entries, removed, single), lines, action: [ action, app_link("events/#{event.id}") ])
     end
+  end
+
+  # E-B (AC-17.16, AC-17.25): never the address, never a phone number.
+  def request_accepted(event, user, places:)
+    with_recipient(user, event: event) do
+      lines = t("event_mailer.request_accepted.lines", places: places(places), title: event.title,
+                                                       date: event_time(event.starts_at, event), area: area_label(event.area)).dup
+      lines << t("event_mailer.request_accepted.dropoff") if event.dropoff?
+      deliver(user, t("event_mailer.request_accepted.subject", title: subject_title(event)), lines,
+              action: [ "event_mailer.request_accepted.action", app_link("events/#{event.id}") ])
+    end
+  end
+
+  # E-C: neutral, no host name, no reason.
+  def request_declined(event, user)
+    request_closed(event, user, "request_declined", "events")
+  end
+
+  # E-D
+  def request_expired(event, user)
+    request_closed(event, user, "request_expired", "events/#{event.id}")
+  end
+
+  # E-E: neutral.
+  def request_closed_full(event, user)
+    request_closed(event, user, "request_closed_full", "events")
   end
 
   # E2. `before` and `after` are Events::Notifications.snapshot hashes (no address).
@@ -78,6 +104,21 @@ class EventMailer < ApplicationMailer
   end
 
   private
+
+  def request_closed(event, user, key, path)
+    with_recipient(user, event: event) do
+      deliver(user, t("event_mailer.#{key}.subject", title: subject_title(event)), t("event_mailer.#{key}.lines", title: event.title),
+              action: [ "event_mailer.#{key}.action", app_link(path) ])
+    end
+  end
+
+  def host_activity_subject(event, entries, removed, single)
+    return t("event_mailer.host_activity.digest.subject", count: entries.size + removed, title: subject_title(event)) unless single
+
+    entry = entries.first
+    key = entry["request"] ? "request_received" : "host_activity.#{activity_kind(entry)}"
+    t("event_mailer.#{key}.subject", guest: entry["user"].display_name, title: subject_title(event))
+  end
 
   def participant_status(user, events, key)
     events = events.sort_by(&:starts_at)
@@ -127,12 +168,16 @@ class EventMailer < ApplicationMailer
 
   def single_activity(entry)
     guest = entry["user"].display_name
+    return [ request_line(entry, "line") ] if entry["request"]
+
     [ t("event_mailer.host_activity.#{activity_kind(entry)}.line", guest: guest, from: entry["from"], to: entry["to"],
                                                                      places: places(entry["to"])) ]
   end
 
   def digest_activity(entries, removed)
     items = entries.first(MAX_DIGEST_LINES).map do |entry|
+      next { item: request_line(entry, "digest") } if entry["request"]
+
       kind = activity_kind(entry)
       count = kind == "leave" ? entry["from"] : entry["to"]
       { item: t("event_mailer.host_activity.digest.#{kind}", guest: entry["user"].display_name,
@@ -142,6 +187,16 @@ class EventMailer < ApplicationMailer
     items << { item: t("event_mailer.host_activity.digest.more", count: extra) } if extra.positive?
     items << { item: t("event_mailer.host_activity.digest.removed", count: removed) } if removed.positive?
     [ t("event_mailer.host_activity.digest.intro"), *items ]
+  end
+
+  # "Sofia R. demande 3 places", or "… 2 places de plus (3 au total)" for extra places.
+  def request_line(entry, form)
+    guest = entry["user"].display_name
+    if entry["total"]
+      t("event_mailer.request_received.more_#{form}", guest: guest, places: places(entry["places"]), total: entry["total"])
+    else
+      t("event_mailer.request_received.#{form}", guest: guest, places: places(entry["places"]))
+    end
   end
 
   def change_lines(before, after, zone)

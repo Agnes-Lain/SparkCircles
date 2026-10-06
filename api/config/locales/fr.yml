@@ -56,6 +56,12 @@ fr:
         other: "Il ne reste que %{count} places."
       event_started: "Cette sortie a déjà commencé."
       already_reported: "Tu as déjà signalé cette sortie. Notre équipe s'en occupe."
+      already_requested: "Ta demande est déjà envoyée."
+      request_declined: "L'organisateur ne peut pas donner suite à ta demande."
+      request_not_pending: "Cette demande n'est plus en attente."
+      request_expired: "Cette demande a expiré."
+      request_closed: "Cette demande est close."
+      requests_frozen: "Les demandes sont gelées et ne peuvent pas être traitées avant la reprise."
       search_too_broad: "Choisis un quartier, ou tape au moins 3 caractères."
       client_not_allowed: "Ouvre SparkCircles dans l'application pour voir les sorties."
       client_blocked: "Trop de demandes depuis cette connexion. Réessaie plus tard ou connecte-toi."
@@ -362,3 +368,41 @@ fr:
         other:
           - "Te voilà vérifié de nouveau : tes %{count} sorties à venir sont visibles et ouvertes aux inscriptions. Les familles inscrites ont été prévenues."
       action: "Voir mes sorties"
+    request_received:
+      subject: "Nouvelle demande pour « %{title} »"
+      line: "%{guest} demande %{places} pour ta sortie."
+      more_line: "%{guest} demande %{places} de plus (%{total} au total)."
+      digest: "%{guest} demande %{places}"
+      more_digest: "%{guest} demande %{places} de plus (%{total} au total)"
+      waiting_single:
+        one: "Tu as %{count} demande en attente. Sans réponse, chaque demande expire 48 h après son envoi."
+        other: "Tu as %{count} demandes en attente. Sans réponse, chaque demande expire 48 h après son envoi."
+      waiting:
+        one: "Tu as %{count} demande en attente."
+        other: "Tu as %{count} demandes en attente."
+      action: "Voir les demandes"
+    request_accepted:
+      subject: "Ta demande est acceptée : « %{title} »"
+      lines:
+        - "Bonne nouvelle : ta demande est acceptée. Tu as %{places} pour « %{title} », le %{date}, à %{area}."
+        - "Ouvre l'application pour voir l'adresse exacte."
+      dropoff: "Pense à convenir avec l'organisateur de la récupération, des repas, des médicaments et des allergies. Son contact est dans l'application."
+      action: "Voir la sortie"
+    request_declined:
+      subject: "Ta demande pour « %{title} »"
+      lines:
+        - "L'organisateur ne peut pas donner suite à ta demande pour « %{title} »."
+        - "Tu peux regarder d'autres sorties près de chez toi."
+      action: "Voir d'autres sorties"
+    request_expired:
+      subject: "Ta demande pour « %{title} » a expiré"
+      lines:
+        - "L'organisateur n'a pas répondu à temps, ta demande a expiré."
+        - "S'il reste des places, tu peux refaire une demande."
+      action: "Voir la sortie"
+    request_closed_full:
+      subject: "« %{title} » est complète"
+      lines:
+        - "La sortie est maintenant complète : ta demande est close."
+        - "Rien n'a été réservé pour toi."
+      action: "Voir d'autres sorties"

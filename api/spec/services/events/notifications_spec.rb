@@ -329,4 +329,44 @@ RSpec.describe Events::Notifications do
       expect(mails.map(&:to).flatten).to contain_exactly(lea.email, host.email)
     end
   end
+  describe "US-17 requests (AC-17.25)" do
+    let(:event) { create(:event, :with_approval, host: host, title: "Football au parc", starts_at: 3.days.from_now.change(hour: 14)) }
+
+    it "E-A a request joins the host's 15-minute digest; a request withdrawn before it goes out is dropped" do
+      join(lea, adults: 1, children: 2)
+      join(karim)
+      Events::Participations.new(event.reload, karim).withdraw!
+      run_until(paris("10:16"))
+      expect(mails_to(host).size).to eq(1)
+      expect(mails_to(host).first.subject).to eq("Nouvelle demande pour « Football au parc »")
+      expect(all_bodies).to include("Léa D. demande 3 places pour ta sortie.", "Tu as 1 demande en attente.")
+      expect(all_bodies).not_to include("Karim")
+    end
+
+    it "E-B the parent hears at once when accepted, never with a phone or the address" do
+      join(lea)
+      Events::Requests.new(event.reload).accept!(EventParticipation.find_by(user: lea).id)
+      perform_enqueued_jobs(at: Time.current)
+      expect(mails_to(lea).map(&:subject)).to eq([ "Ta demande est acceptée : « Football au parc »" ])
+      expect(all_bodies).not_to include("Oberkampf")
+    end
+
+    it "E-D an expiry found during quiet hours waits for 08:00" do
+      join(lea)
+      travel_to(paris("23:00") + 2.days)
+      ExpireEventRequestsJob.perform_now
+      perform_enqueued_jobs(at: Time.current)
+      expect(mails_to(lea).map(&:subject)).not_to include(a_string_including("a expiré"))
+      run_until(paris("08:01") + 3.days)
+      expect(mails_to(lea).map(&:subject)).to include("Ta demande pour « Football au parc » a expiré")
+    end
+
+    it "AC-17.22 a request closed for lost verification sends nothing" do
+      locked = create(:event, :dropoff, host: host)
+      Events::Participations.new(locked, lea).join!(adults: 1, children: 1, acknowledged: true)
+      lea.update!(verification_status: "not_verified", verification_expires_on: nil)
+      perform_enqueued_jobs(at: Time.current)
+      expect(mails_to(lea)).to be_empty
+    end
+  end
 end

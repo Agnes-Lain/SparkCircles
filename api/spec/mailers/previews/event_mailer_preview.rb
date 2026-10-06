@@ -10,6 +10,21 @@ class EventMailerPreview < ActionMailer::Preview
     EventMailer.host_activity(event, entries, places_left: 0, places_total: 8)
   end
 
+  # US-17 (E-A to E-E): requests and the host's decisions. No phone, address or children's data.
+  def request_received
+    EventMailer.host_activity(event, [ request(guest, 3) ], places_left: 6, places_total: 8, waiting: 2)
+  end
+
+  def request_received_digest
+    entries = [ request(guest, 3), entry(person("Karim", "Rahmani"), 1, 0), request(person("Inès", "Moreau"), 2, total: 3) ]
+    EventMailer.host_activity(event, entries, places_left: 4, places_total: 8, waiting: 2)
+  end
+
+  def request_accepted = EventMailer.request_accepted(event(dropoff: true), guest, places: 3)
+  def request_declined = EventMailer.request_declined(event, guest)
+  def request_expired = EventMailer.request_expired(event, guest)
+  def request_closed_full = EventMailer.request_closed_full(event, guest)
+
   def event_changed
     before = snapshot(title: "Pique-nique au parc", starts_at: event.starts_at - 1.hour, area: "paris-11")
     after = snapshot(title: event.title, starts_at: event.starts_at, area: "paris-12", places_total: 10)
@@ -40,10 +55,10 @@ class EventMailerPreview < ActionMailer::Preview
   def host = @host ||= person("Camille", "Dupont")
   def guest = @guest ||= person("Léa", "Durand")
 
-  def event(title: "Football au parc pour les 6-10 ans", days: 4)
+  def event(title: "Football au parc pour les 6-10 ans", days: 4, dropoff: false)
     Event.new(id: SecureRandom.uuid, host: host, title: title, area: "paris-12", category: "sport", time_zone: "Europe/Paris",
               starts_at: days.days.from_now.change(hour: 14, min: 30), ends_at: days.days.from_now.change(hour: 16, min: 30),
-              places_total: 8)
+              places_total: 8, adult_required: !dropoff)
   end
 
   def several_events
@@ -52,6 +67,7 @@ class EventMailerPreview < ActionMailer::Preview
   end
 
   def entry(user, from, to) = { "user" => user, "from" => from, "to" => to }
+  def request(user, places, total: nil) = { "user" => user, "request" => true, "places" => places, "total" => total }.compact
 
   def snapshot(**overrides)
     { "title" => event.title, "starts_at" => event.starts_at.utc.iso8601, "ends_at" => event.ends_at.utc.iso8601,
