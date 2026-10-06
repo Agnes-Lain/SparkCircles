@@ -103,6 +103,9 @@ class Event < ApplicationRecord
   def listed? = hosted? && published? && !ended? && host_in_good_standing?
   def joinable? = listed?
   def host_in_good_standing? = host.present? && host.verified? && !host.closed?
+  # AC-17.23, AC-8.2: no decision on requests while suspended, or once the host's
+  # verification has lapsed (even before the daily job suspends the event).
+  def requests_frozen? = suspended? || (published? && !host_in_good_standing?)
   def places_left = [ places_total.to_i - places_taken, 0 ].max
   def full? = hosted? && places_left.zero?
   def verified_only? = join_rule == "verified_only"

@@ -378,10 +378,60 @@ RSpec.describe "Events: drop-off and host approval", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
+    it "accept all and decline follow the same guard: frozen when suspended, refused when cancelled" do
+      join(other_parent, approval)
+      approval.suspend!("admin")
+      post "/api/v1/events/#{approval.id}/requests/accept_all", headers: auth_headers(host)
+      expect(error_code).to eq("requests_frozen")
+      decline(approval, parent)
+      expect(error_code).to eq("requests_frozen")
+      approval.resume!
+      approval.update_columns(status: "cancelled")
+      post "/api/v1/events/#{approval.id}/requests/accept_all", headers: auth_headers(host)
+      expect(error_code).to eq("event_not_editable")
+      expect(approval.reload.places_taken).to eq(0)
+    end
+
     it "cancelling closes them and the requesters get the neutral cancellation email" do
       expect { post "/api/v1/events/#{approval.id}/cancel", headers: auth_headers(host) }
         .to have_enqueued_mail(EventMailer, :event_cancelled).with(approval, parent, neutral: true)
       expect(row(parent, approval)).to have_attributes(status: "closed", closed_reason: "cancelled")
+    end
+  end
+
+  describe "AC-8.2 a host whose verification expires today, before the daily job" do
+    before do
+      join_dropoff(parent)
+      join_dropoff(other_parent)
+      host.update_columns(verification_expires_on: Date.current)
+    end
+
+    it "can't accept: the event is suspended at once and the requests are frozen" do
+      accept(dropoff, parent)
+      expect(response).to have_http_status(:conflict)
+      expect(error_code).to eq("requests_frozen")
+      expect(row(parent, dropoff).status).to eq("pending")
+      expect(dropoff.reload).to have_attributes(status: "suspended", suspension_reason: "host_unverified")
+      expect(show(dropoff, auth_headers(parent))).not_to have_key("host_phone")
+    end
+
+    it "can't accept all, and the request list shows them frozen" do
+      expect(requests_of(dropoff)["frozen"]).to be(true)
+      post "/api/v1/events/#{dropoff.id}/requests/accept_all", headers: auth_headers(host)
+      expect(error_code).to eq("requests_frozen")
+      expect(dropoff.reload.places_taken).to eq(0)
+    end
+
+    it "the expiry job leaves the frozen requests waiting" do
+      travel 49.hours
+      ExpireEventRequestsJob.perform_now
+      expect(row(parent, dropoff).status).to eq("pending")
+    end
+
+    it "a host who renewed in time still decides" do
+      host.update_columns(verification_expires_on: Date.current + 1.year)
+      accept(dropoff, parent)
+      expect(response).to have_http_status(:ok)
     end
   end
 

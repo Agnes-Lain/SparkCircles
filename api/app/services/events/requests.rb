@@ -18,7 +18,7 @@ module Events
     # An overdue request is expired (and a requester who lost verification closed) and
     # committed before the refusal is returned.
     def accept!(participation_id)
-      outcome = run do
+      outcome = decide do
         participation = find_waiting!(participation_id)
         code = settle(participation)
         next code if code
@@ -34,7 +34,7 @@ module Events
 
     # AC-17.16: no reason; the parent gets a neutral message and can't ask again (PM decision).
     def decline!(participation_id)
-      run do
+      decide do
         participation = find_waiting!(participation_id)
         if participation.pending?
           participation.update!(status: "declined", emergency_phone: nil, decided_at: Time.current)
@@ -48,8 +48,10 @@ module Events
     end
 
     # AC-17.20: in order of arrival, stopping when places run out; the rest follow AC-17.18.
+    # Same guard as a single decision (AC-17.23, AC-8.2).
     def accept_all!
-      run do
+      decide do
+        ensure_decidable!
         accepted = 0
         waiting.each do |participation|
           next if settle(participation)
@@ -68,8 +70,11 @@ module Events
     end
 
     # AC-17.19: called by ExpireEventRequestsJob for overdue requests of published events.
+    # Frozen requests (AC-17.23, including a host whose verification just lapsed) wait.
     def expire_overdue
       run do
+        next if @event.requests_frozen?
+
         waiting.each { |participation| settle(participation) }
       end
     end
@@ -87,10 +92,26 @@ module Events
 
     def waiting = @event.all_participations.awaiting_host.arrival_order.includes(:user).to_a
 
-    def find_waiting!(participation_id)
-      raise Error.new(:requests_frozen) if @event.suspended?
-      raise Error.new(:event_not_editable) unless @event.published? && !@event.started?
+    # A host decision (accept, decline, accept all). A host no longer in good standing
+    # (verification expired today, before the daily job) gets the suspension rules at once
+    # (AC-8.2): their events are suspended, committed, then the decision is refused.
+    def decide(&)
+      if @event.published? && @event.host && !@event.host_in_good_standing?
+        HostStatusSync.new(@event.host).call
+        @event.reload
+      end
+      run(&)
+    end
 
+    # AC-17.23: nothing is decided on a suspended (frozen), cancelled, ended or started event,
+    # nor by a host who isn't verified (AC-8.2).
+    def ensure_decidable!
+      raise Error.new(:requests_frozen) if @event.requests_frozen?
+      raise Error.new(:event_not_editable) unless @event.published? && !@event.started?
+    end
+
+    def find_waiting!(participation_id)
+      ensure_decidable!
       participation = @event.all_participations.find(participation_id)
       raise Error.new(:request_not_pending) unless participation.awaiting_host?
 

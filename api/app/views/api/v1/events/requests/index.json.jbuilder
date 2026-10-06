@@ -1,7 +1,7 @@
 # US-17 host request list (AC-17.15, AC-17.16, AC-17.20, AC-17.23): first name, initial,
 # badge and counts only; no phone number before accepting, no children's names or ages.
 json.places_left @event.places_left
-json.frozen @event.suspended?
+json.frozen @event.requests_frozen?
 json.requests @waiting do |participation|
   json.partial! "api/v1/events/requests/person", user: participation.user
   json.id participation.id
