@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Check, Flag } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { events } from '../../api';
 import type { ApiError } from '../../api/errors';
@@ -90,67 +90,66 @@ export function ReportSheet({
           </View>
         </View>
       ) : (
-        <ScrollView style={{ maxHeight: 560 }} keyboardShouldPersistTaps="handled">
-          <View className="gap-md">
-            <View className="gap-xs">
-              <Text accessibilityRole="header" className="text-h2 text-ink">
-                {t('events.report.action')}
-              </Text>
-              <Text className="text-body text-ink-2">{t('events.report.body')}</Text>
-            </View>
-            {failed ? (
-              <Notification
-                level="error"
-                title={
-                  mutation.error?.code === 'rate_limited'
-                    ? t('rateLimited.title')
-                    : t('errors.unreachable.title')
-                }
-                caption={
-                  mutation.error?.code === 'rate_limited'
-                    ? t('rateLimited.wait')
-                    : t('errors.unreachable.caption')
-                }
-                testID="report-error"
-              />
-            ) : null}
-            <View accessibilityRole="radiogroup">
-              {(options.data?.report_reasons ?? []).map((item) => (
-                <RadioRow
-                  key={item.key}
-                  label={item.label}
-                  selected={reason === item.key}
-                  onPress={() => setReason(item.key)}
-                  testID={`reason-${item.key}`}
-                />
-              ))}
-            </View>
-            <TextField
-              label={t('events.report.details')}
-              value={details}
-              onChangeText={setDetails}
-              multiline
-              maxLength={limit}
-              helper={`${details.length}/${limit}`}
-              testID="report-details"
-            />
-            <View className="gap-xs">
-              <Button
-                size="large"
-                label={t('events.report.send')}
-                disabled={!reason}
-                loading={mutation.isPending}
-                onPress={() => mutation.mutate()}
-                testID="report-send"
-              />
-              {!reason ? (
-                <Text className="text-center text-caption text-ink-3">
-                  {t('events.report.chooseReason')}
-                </Text>
-              ) : null}
-            </View>
+        // The sheet scrolls its content and keeps it above the keyboard.
+        <View className="gap-md">
+          <View className="gap-xs">
+            <Text accessibilityRole="header" className="text-h2 text-ink">
+              {t('events.report.action')}
+            </Text>
+            <Text className="text-body text-ink-2">{t('events.report.body')}</Text>
           </View>
-        </ScrollView>
+          {failed ? (
+            <Notification
+              level="error"
+              title={
+                mutation.error?.code === 'rate_limited'
+                  ? t('rateLimited.title')
+                  : t('errors.unreachable.title')
+              }
+              caption={
+                mutation.error?.code === 'rate_limited'
+                  ? t('rateLimited.wait')
+                  : t('errors.unreachable.caption')
+              }
+              testID="report-error"
+            />
+          ) : null}
+          <View accessibilityRole="radiogroup">
+            {(options.data?.report_reasons ?? []).map((item) => (
+              <RadioRow
+                key={item.key}
+                label={item.label}
+                selected={reason === item.key}
+                onPress={() => setReason(item.key)}
+                testID={`reason-${item.key}`}
+              />
+            ))}
+          </View>
+          <TextField
+            label={t('events.report.details')}
+            value={details}
+            onChangeText={setDetails}
+            multiline
+            maxLength={limit}
+            helper={`${details.length}/${limit}`}
+            testID="report-details"
+          />
+          <View className="gap-xs">
+            <Button
+              size="large"
+              label={t('events.report.send')}
+              disabled={!reason}
+              loading={mutation.isPending}
+              onPress={() => mutation.mutate()}
+              testID="report-send"
+            />
+            {!reason ? (
+              <Text className="text-center text-caption text-ink-3">
+                {t('events.report.chooseReason')}
+              </Text>
+            ) : null}
+          </View>
+        </View>
       )}
     </BottomSheet>
   );

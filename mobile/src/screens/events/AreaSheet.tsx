@@ -90,7 +90,7 @@ export function AreaSheet({
         </Text>
         {guest ? null : <Text className="text-body text-ink-2">{t('events.area.sheetBody')}</Text>}
       </View>
-      <ScrollView style={{ maxHeight: 320 }}>
+      <ScrollView style={{ maxHeight: 320 }} nestedScrollEnabled>
         <View role="group" accessibilityLabel={t('events.area.group')}>
           <Checkbox
             label={t('events.area.all')}

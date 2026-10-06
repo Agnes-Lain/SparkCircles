@@ -223,9 +223,38 @@ export function JoinSheet({
   });
 
   const host = event.host;
+  // Sticky footer: the CTA stays above the keyboard while the emergency phone is typed.
+  const cta = (
+    <View className="gap-xs">
+      <Button
+        size="large"
+        label={ctaLabel}
+        disabled={blocked}
+        loading={mutation.isPending}
+        accessibilityHint={blocked ? t('events.dropoff.tickToContinue') : undefined}
+        onPress={() => {
+          setProblem(null);
+          const checked = checkPhone();
+          if (checked === false) return;
+          mutation.mutate(checked);
+        }}
+        testID="join-confirm"
+      />
+      {blocked ? (
+        <Text className="text-center text-caption text-ink-3" testID="join-tick-caption">
+          {t('events.dropoff.tickToContinue')}
+        </Text>
+      ) : null}
+    </View>
+  );
 
   return (
-    <BottomSheet visible={visible} onClose={onClose} testID="join-sheet">
+    <BottomSheet
+      visible={visible}
+      onClose={onClose}
+      footer={step === 'form' ? cta : undefined}
+      testID="join-sheet"
+    >
       {step === 'full' ? (
         <View className="gap-lg" testID="join-full">
           <View className="gap-xs">
@@ -383,27 +412,6 @@ export function JoinSheet({
               </Text>
             </View>
           ) : null}
-          <View className="gap-xs">
-            <Button
-              size="large"
-              label={ctaLabel}
-              disabled={blocked}
-              loading={mutation.isPending}
-              accessibilityHint={blocked ? t('events.dropoff.tickToContinue') : undefined}
-              onPress={() => {
-                setProblem(null);
-                const checked = checkPhone();
-                if (checked === false) return;
-                mutation.mutate(checked);
-              }}
-              testID="join-confirm"
-            />
-            {blocked ? (
-              <Text className="text-center text-caption text-ink-3" testID="join-tick-caption">
-                {t('events.dropoff.tickToContinue')}
-              </Text>
-            ) : null}
-          </View>
         </View>
       )}
     </BottomSheet>

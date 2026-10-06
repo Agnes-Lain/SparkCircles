@@ -1,7 +1,16 @@
 import { CircleAlert, Eye, EyeOff } from 'lucide-react-native';
-import { type ReactNode, type Ref, useState } from 'react';
+import { type ReactNode, type Ref, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, TextInput, type TextInputProps, View } from 'react-native';
+import {
+  InputAccessoryView,
+  Keyboard,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  type TextInputProps,
+  View,
+} from 'react-native';
 
 import { MIN_TOUCH_TARGET } from '../theme/a11y';
 import { colorValue } from '../theme/colors';
@@ -137,12 +146,19 @@ const KIND: Record<TextFieldKind, Partial<TextInputProps>> = {
   },
 };
 
+/** iOS number and phone pads have no Return key: these fields get a "Done" bar above them. */
+function needsDoneBar(kind: TextFieldKind) {
+  const keyboard = KIND[kind].keyboardType;
+  return Platform.OS === 'ios' && (keyboard === 'phone-pad' || keyboard === 'number-pad');
+}
+
 /**
  * Text input with its visible label, helper and error (design system section 8). Errors
  * say what to do and are part of the field's accessibility label, so screen readers read
  * them every time they reach the field, even with hints turned off (QA BUG-A05); the
  * screen moves focus to the first field in error and announces it. Password fields have an
- * eye toggle.
+ * eye toggle. On iOS, number and phone fields get a "Done" bar to hide their keypad (Android
+ * has the back gesture).
  */
 export function TextField({
   label,
@@ -169,6 +185,8 @@ export function TextField({
   const [focused, setFocused] = useState(false);
   const isPassword = kind === 'password' || kind === 'newPassword';
   const [hidden, setHidden] = useState(true);
+  const accessoryId = `textfield-done-${useId()}`;
+  const doneBar = needsDoneBar(kind);
   const border = error ? 'border-error-dark' : focused ? 'border-green-dark' : 'border-ink-3';
 
   return (
@@ -209,6 +227,7 @@ export function TextField({
           style={multiline ? MULTILINE_TEXT : INPUT_TEXT}
           {...KIND[kind]}
           {...(maxLength ? { maxLength } : {})}
+          {...(doneBar ? { inputAccessoryViewID: accessoryId } : {})}
         />
         {trailing}
         {isPassword ? (
@@ -232,6 +251,23 @@ export function TextField({
         </View>
       ) : helper ? (
         <Text className="text-caption text-ink-3">{helper}</Text>
+      ) : null}
+      {doneBar ? (
+        <InputAccessoryView nativeID={accessoryId} backgroundColor={colorValue('shell')}>
+          <View className="flex-row justify-end border-t border-ink-3 px-sm">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('common.hideKeyboard')}
+              onPress={Keyboard.dismiss}
+              hitSlop={4}
+              className="items-center justify-center px-md"
+              style={{ minHeight: MIN_TOUCH_TARGET, minWidth: MIN_TOUCH_TARGET }}
+              testID={testID ? `${testID}-done` : undefined}
+            >
+              <Text className="text-body font-medium text-green-dark">{t('common.done')}</Text>
+            </Pressable>
+          </View>
+        </InputAccessoryView>
       ) : null}
     </View>
   );
