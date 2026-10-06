@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { Text } from 'react-native';
 
 import { eventKey, myEventsKey } from '../api/events';
-import { joinedEvent } from '../test/eventFixtures';
+import { guestEvent, joinedEvent } from '../test/eventFixtures';
 import { memoryTokenStore } from '../test/fakes';
 import { createTestQueryClient, TestProviders } from '../test/render';
 import { emitUnauthorized } from './sessionEvents';
@@ -10,9 +10,9 @@ import { SessionProvider } from './SessionProvider';
 import { useSession } from './useSession';
 
 function Status() {
-  const { status, reason, signOut } = useSession();
+  const { status, reason, signOut, signIn } = useSession();
   return (
-    <Text onPress={() => void signOut()}>
+    <Text onPress={() => void (status === 'signedOut' ? signIn('new-jwt') : signOut())}>
       {status}
       {reason ? ` (${reason})` : ''}
     </Text>
@@ -71,5 +71,18 @@ describe('SessionProvider', () => {
     await screen.findByText('signedOut (logout)');
     expect(queryClient.getQueryData(eventKey(joinedEvent.id))).toBeUndefined();
     expect(queryClient.getQueryCache().findAll({ queryKey: ['events'] })).toEqual([]);
+  });
+
+  // QA guest-home BUG-1: signing in does not refresh what the guest had cached. Marked as
+  // failing until the fix (drop or invalidate the ['events'] queries when a token arrives):
+  // remove `.failing` then.
+  it.failing('AC-15.7 signing in drops the guest view of events from the cache', async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(eventKey(guestEvent.id), guestEvent);
+    await renderSession(null, queryClient);
+    await fireEvent.press(await screen.findByText('signedOut'));
+    await screen.findByText('signedIn');
+    const cached = queryClient.getQueryState(eventKey(guestEvent.id));
+    expect(cached?.data === undefined || cached?.isInvalidated).toBe(true);
   });
 });
