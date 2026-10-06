@@ -4,7 +4,9 @@ import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/te
 
 import i18n from '../i18n';
 import { secureTokenStore, TOKEN_KEY } from '../auth/tokenStore';
-import { apiError, mockAuth, offlineError, resetApiMock } from './apiMock';
+import { apiError, mockAuth, mockEvents, offlineError, resetApiMock } from './apiMock';
+import { saveReturnTo } from '../auth/returnTo';
+import { eventFixture, eventOptionsFixture, eventPage, guestEvent } from './eventFixtures';
 import { closingMe, meFixture, termsMe, unconfirmedMe } from './fixtures';
 
 afterEach(() => onlineManager.setOnline(true));
@@ -31,12 +33,17 @@ describe('auth gate (M-9)', () => {
     await i18n.changeLanguage('fr');
   });
 
-  it('shows Welcome to a device without a token', async () => {
+  it('AC-15.1 opens Sorties in guest mode on a device without a token (no Welcome first)', async () => {
     const { app } = await openApp({ token: null });
 
-    expect(await screen.findByText('Créer mon compte')).toBeOnTheScreen();
-    expect(app.getPathname()).toBe('/welcome');
-    expect(screen.queryByRole('tab')).toBeNull();
+    expect(
+      await screen.findByRole('header', {
+        name: 'Les sorties en famille, sans la charge mentale.',
+      }),
+    ).toBeOnTheScreen();
+    expect(app.getPathname()).toBe('/');
+    expect(screen.getByRole('tab', { name: 'Sorties' })).toBeSelected();
+    expect(mockAuth.me).not.toHaveBeenCalled();
   });
 
   it('AC-3.4 skips Welcome when the app reopens with a valid token', async () => {
@@ -133,6 +140,31 @@ describe('auth gate (M-9)', () => {
     expect(app.getPathnameWithParams()).not.toContain('abc123');
   });
 
+  it('AC-15.7 after the email confirmation, a guest is back on the event, the join ready not done', async () => {
+    await saveReturnTo({ event: { id: eventFixture.id, then: 'join' } });
+    mockAuth.confirmEmail.mockResolvedValue({ token: 'new-jwt', user: meFixture });
+    mockAuth.me.mockResolvedValue(meFixture);
+    mockEvents.get.mockResolvedValue({ event: eventFixture });
+
+    const { app } = await openApp({ token: null, url: '/confirm-email?token=abc123' });
+
+    expect(await screen.findByText('Combien de places ?')).toBeOnTheScreen();
+    expect(app.getPathname()).toBe(`/events/${eventFixture.id}`);
+    expect(mockEvents.join).not.toHaveBeenCalled();
+  });
+
+  it('AC-15.7 after logging in, a guest is back on the search they were on', async () => {
+    await saveReturnTo({ filters: null });
+    mockAuth.me.mockResolvedValue(meFixture);
+    mockEvents.options.mockResolvedValue(eventOptionsFixture);
+    mockEvents.search.mockResolvedValue(eventPage([eventFixture]));
+    // A token arrives while Log in is open: the gate becomes ready.
+    const { app } = await openApp({ token: 'jwt', url: '/log-in' });
+
+    expect(await screen.findByRole('header', { name: 'Sorties' })).toBeOnTheScreen();
+    expect(app.getPathname()).toBe('/');
+  });
+
   it('AC-2.2 sends an expired confirmation link to Link expired', async () => {
     mockAuth.confirmEmail.mockRejectedValue(apiError(422, 'invalid_or_expired_token'));
 
@@ -153,7 +185,11 @@ describe('auth gate (M-9)', () => {
     expect(app.getPathname()).toBe('/account');
     await fireEvent.press(screen.getByRole('button', { name: 'Me déconnecter' }));
 
-    expect(await screen.findByText('Créer mon compte')).toBeOnTheScreen();
+    expect(
+      await screen.findByRole('header', {
+        name: 'Les sorties en famille, sans la charge mentale.',
+      }),
+    ).toBeOnTheScreen();
     expect(mockAuth.logOut).toHaveBeenCalled();
     expect(screen.getByText('Déconnexion effectuée')).toBeOnTheScreen();
     await expect(SecureStore.getItemAsync(TOKEN_KEY)).resolves.toBeNull();
@@ -166,21 +202,48 @@ describe('auth gate (M-9)', () => {
 
     await fireEvent.press(await screen.findByRole('button', { name: 'Me déconnecter' }));
 
-    expect(await screen.findByText('Créer mon compte')).toBeOnTheScreen();
+    expect(
+      await screen.findByRole('header', {
+        name: 'Les sorties en famille, sans la charge mentale.',
+      }),
+    ).toBeOnTheScreen();
     await expect(SecureStore.getItemAsync(TOKEN_KEY)).resolves.toBeNull();
   });
 
   it('sends unknown paths (e.g. a later-PR email link) back through the gate', async () => {
     await openApp({ token: null, url: '/verification-status' });
 
-    expect(await screen.findByText('Créer mon compte')).toBeOnTheScreen();
+    expect(
+      await screen.findByRole('header', {
+        name: 'Les sorties en famille, sans la charge mentale.',
+      }),
+    ).toBeOnTheScreen();
+  });
+
+  it('AC-15.1b a logged-out phone opens an event link (events/<uuid>) on the guest view', async () => {
+    mockEvents.get.mockResolvedValue({ event: guestEvent });
+    const { app } = await openApp({ token: null, url: `/events/${guestEvent.id}` });
+
+    expect(await screen.findByText('Organisée par un parent vérifié')).toBeOnTheScreen();
+    expect(app.getPathname()).toBe(`/events/${guestEvent.id}`);
+  });
+
+  it('AC-15.1b a logged-out phone opens the `events` link on Sorties as a guest; `my-events` too', async () => {
+    mockEvents.options.mockResolvedValue(eventOptionsFixture);
+    mockEvents.search.mockResolvedValue(eventPage([guestEvent]));
+    const { app } = await openApp({ token: null, url: '/events' });
+    expect(await screen.findByText('Goûter et jeux au parc')).toBeOnTheScreen();
+    expect(app.getPathname()).toBe('/');
+
+    const second = await openApp({ token: null, url: '/my-events' });
+    await waitFor(() => expect(second.app.getPathname()).toBe('/'));
   });
 
   it('AC-12.2 the "your data is ready" link needs a logged-in phone', async () => {
     const { app } = await openApp({ token: null, url: '/my-data' });
 
-    expect(await screen.findByText('Créer mon compte')).toBeOnTheScreen();
-    expect(app.getPathname()).toBe('/welcome');
+    expect(await screen.findAllByText('Créer mon compte')).not.toHaveLength(0);
+    expect(app.getPathname()).toBe('/');
   });
 
   it('AC-5.5 S9 "I don\'t accept" opens Close my account (A7)', async () => {

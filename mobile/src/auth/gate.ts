@@ -10,7 +10,7 @@ import type { SessionStatus, SignOutReason } from './SessionProvider';
  */
 export type GateState =
   | 'loading' // reading the token or GET /me (the splash stays up)
-  | 'signedOut' // S1 Welcome and the other auth screens
+  | 'signedOut' // guest mode (US-15): Sorties and the other tabs as a guest, the auth screens
   | 'unconfirmed' // S3 Check your inbox only (AC-2.3)
   | 'closing' // S10 Closure in progress (AC-11.3)
   | 'terms' // S9 Terms updated (AC-5.5)
@@ -50,10 +50,14 @@ export const LINK_ROUTES = [
 /**
  * App links of the event emails (`Dev::OpenAppController::PATHS` in the API): `events`
  * (Sorties, and `events/<uuid>` the detail), `my-events` (Mes sorties) and `verification`
- * (V0 or V5). Members only: unlike LINK_ROUTES they keep the logged-out gate, because guest
- * browsing (US-15) comes in its own release. A logged-out phone lands on Welcome.
+ * (V0 or V5). `events` and `events/<uuid>` also open on a logged-out phone, in guest mode
+ * (US-15, AC-15.1b); `my-events` and `verification` need an account (a logged-out phone lands
+ * on Sorties as a guest).
  */
 export const EVENT_LINK_ROUTES = ['events', 'my-events', 'verification'];
+
+/** Create and edit an event (members only; `routeName` tells them apart from the detail). */
+export const EVENT_FORM_ROUTES = ['events/new', 'events/edit'];
 
 /**
  * A8 Account closed: shown while the closed account's token stops working, and kept after the
@@ -62,7 +66,11 @@ export const EVENT_LINK_ROUTES = ['events', 'my-events', 'verification'];
 const ACCOUNT_CLOSED = 'account-closed';
 
 const ALLOWED: Record<Exclude<GateState, 'loading'>, string[]> = {
+  // Guest mode (US-15): the tabs (Sorties as the guest home, the other tabs' explanations)
+  // and the event detail, with the app links `events` and `events/<uuid>` (AC-15.1b).
   signedOut: [
+    '(tabs)',
+    'events',
     'welcome',
     'sign-up',
     'log-in',
@@ -87,14 +95,20 @@ const ALLOWED: Record<Exclude<GateState, 'loading'>, string[]> = {
     ACCOUNT_CLOSED,
     'verify',
     ...EVENT_LINK_ROUTES,
+    ...EVENT_FORM_ROUTES,
   ],
 };
 
-/** The route name the gate reasons about: the tab group, or the screen's own name. */
+/**
+ * The route name the gate reasons about: the tab group, or the screen's own name. Creating or
+ * editing an event is `events/new` / `events/edit`, apart from the detail a guest may open.
+ */
 export function routeName(segments: readonly string[]): string {
-  const [first, second] = segments;
+  const [first, second, third] = segments;
   if (first === '(tabs)') return '(tabs)';
   if (first === '(auth)') return second ?? 'welcome';
+  if (first === 'events' && second === 'new') return 'events/new';
+  if (first === 'events' && third === 'edit') return 'events/edit';
   return first ?? '(tabs)';
 }
 
@@ -107,8 +121,9 @@ export function isAllowed(state: GateState, route: string): boolean {
 export function homeFor(state: Exclude<GateState, 'loading'>, reason: SignOutReason): Href {
   switch (state) {
     case 'signedOut':
-      // Logged out by the server (token refused): straight to Log in (M-18).
-      return reason === 'unauthorized' ? '/log-in' : '/welcome';
+      // Logged out by the server (token refused): straight to Log in (M-18). Otherwise Sorties
+      // in guest mode, the guest home (AC-15.1: no Welcome screen first).
+      return reason === 'unauthorized' ? '/log-in' : '/';
     case 'unconfirmed':
       return '/check-inbox';
     case 'closing':

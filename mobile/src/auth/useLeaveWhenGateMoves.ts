@@ -3,13 +3,15 @@ import { useEffect } from 'react';
 
 import { homeFor } from './gate';
 import { useGate } from './GateContext';
+import { consumeReturnTo, returnHref } from './returnTo';
 import { useSession } from './useSession';
 
 /**
  * Email-link screens stay reachable in every gate state, so they leave on their own once
  * their work is done: as soon as the gate knows where this device belongs now (signed in,
  * account state loaded), go there. Waiting for the gate avoids racing the session update.
- * `readyHref` replaces the default landing tab when the account ends up ready.
+ * `readyHref` replaces the default landing tab when the account ends up ready; a guest's
+ * return target (AC-15.7, the event or search they signed up from) comes first.
  */
 export function useLeaveWhenGateMoves(done: boolean, readyHref?: Href) {
   const router = useRouter();
@@ -18,6 +20,8 @@ export function useLeaveWhenGateMoves(done: boolean, readyHref?: Href) {
 
   useEffect(() => {
     if (!done || gate === 'loading') return;
-    router.replace(gate === 'ready' && readyHref ? readyHref : homeFor(gate, reason));
+    const target = gate === 'ready' ? consumeReturnTo() : null;
+    if (target) router.replace(returnHref(target));
+    else router.replace(gate === 'ready' && readyHref ? readyHref : homeFor(gate, reason));
   }, [done, gate, reason, router, readyHref]);
 }

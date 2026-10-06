@@ -36,7 +36,6 @@ describe('auth gate rules (M-9, contract §1 "Account gates")', () => {
   it('AC-2.3 an unconfirmed account sees only Check your inbox', () => {
     expect(isAllowed('unconfirmed', 'check-inbox')).toBe(true);
     expect(isAllowed('unconfirmed', '(tabs)')).toBe(false);
-    expect(isAllowed('signedOut', '(tabs)')).toBe(false);
     expect(isAllowed('ready', 'welcome')).toBe(false);
   });
 
@@ -52,8 +51,19 @@ describe('auth gate rules (M-9, contract §1 "Account gates")', () => {
     expect(isAllowed('ready', routeName(['events', 'new']))).toBe(true);
     expect(isAllowed('ready', 'my-events')).toBe(true);
     expect(isAllowed('ready', 'verification')).toBe(true);
-    // US-15 guest browsing is a later release: the logged-out gate stays.
-    EVENT_LINK_ROUTES.forEach((route) => expect(isAllowed('signedOut', route)).toBe(false));
+    expect(isAllowed('ready', routeName(['events', '[id]', 'edit']))).toBe(true);
+  });
+
+  it('AC-15.1 AC-15.1b a logged-out phone browses as a guest: the tabs and the event links', () => {
+    expect(isAllowed('signedOut', '(tabs)')).toBe(true);
+    expect(isAllowed('signedOut', routeName(['events']))).toBe(true);
+    expect(isAllowed('signedOut', routeName(['events', '[id]']))).toBe(true);
+    // Account links and the host's form still need an account.
+    expect(isAllowed('signedOut', 'my-events')).toBe(false);
+    expect(isAllowed('signedOut', 'verification')).toBe(false);
+    expect(isAllowed('signedOut', routeName(['events', 'new']))).toBe(false);
+    expect(isAllowed('signedOut', routeName(['events', '[id]', 'edit']))).toBe(false);
+    expect(isAllowed('signedOut', 'account')).toBe(false);
   });
 
   it('names routes by their screen, the tabs as one group', () => {
@@ -63,9 +73,9 @@ describe('auth gate rules (M-9, contract §1 "Account gates")', () => {
     expect(routeName([])).toBe('(tabs)');
   });
 
-  it('M-18 a refused token leads to Log in, a chosen logout to Welcome', () => {
+  it('M-18 AC-15.1 a refused token leads to Log in, a chosen logout to Sorties as a guest', () => {
     expect(homeFor('signedOut', 'unauthorized')).toBe('/log-in');
-    expect(homeFor('signedOut', 'logout')).toBe('/welcome');
+    expect(homeFor('signedOut', 'logout')).toBe('/');
     expect(homeFor('ready', null)).toBe('/');
   });
 });
