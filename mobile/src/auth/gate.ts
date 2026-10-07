@@ -60,6 +60,15 @@ export const EVENT_LINK_ROUTES = ['events', 'my-events', 'verification'];
 export const EVENT_FORM_ROUTES = ['events/new', 'events/edit'];
 
 /**
+ * Circles (docs/api/circles.md): `circles` (a circle's page or public page, also the app
+ * link of circle e-mails) and `join` (an invitation link, `join/<token>`) also open on a
+ * logged-out phone, in guest mode (AC-3.3, AC-17.10). Creating, editing, inviting and
+ * entering a code need an account.
+ */
+export const CIRCLE_LINK_ROUTES = ['circles', 'join'];
+export const CIRCLE_MEMBER_ROUTES = ['circles/new', 'circles/manage', 'circles/code'];
+
+/**
  * A8 Account closed: shown while the closed account's token stops working, and kept after the
  * device is signed out, until "OK".
  */
@@ -78,6 +87,7 @@ const ALLOWED: Record<Exclude<GateState, 'loading'>, string[]> = {
     'link-sent',
     'check-inbox',
     ACCOUNT_CLOSED,
+    ...CIRCLE_LINK_ROUTES,
   ],
   unconfirmed: ['check-inbox'],
   closing: ['account-closing'],
@@ -96,6 +106,8 @@ const ALLOWED: Record<Exclude<GateState, 'loading'>, string[]> = {
     'verify',
     ...EVENT_LINK_ROUTES,
     ...EVENT_FORM_ROUTES,
+    ...CIRCLE_LINK_ROUTES,
+    ...CIRCLE_MEMBER_ROUTES,
   ],
 };
 
@@ -109,6 +121,9 @@ export function routeName(segments: readonly string[]): string {
   if (first === '(auth)') return second ?? 'welcome';
   if (first === 'events' && second === 'new') return 'events/new';
   if (first === 'events' && third === 'edit') return 'events/edit';
+  if (first === 'circles' && second === 'new') return 'circles/new';
+  if (first === 'circles' && (second === 'code' || second === 'join')) return 'circles/code';
+  if (first === 'circles' && (third === 'edit' || third === 'invite')) return 'circles/manage';
   return first ?? '(tabs)';
 }
 

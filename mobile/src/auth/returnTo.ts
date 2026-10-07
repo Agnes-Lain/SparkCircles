@@ -30,6 +30,10 @@ export type ReturnTarget = {
   event?: { id: string; then: ReturnAction };
   /** « Créer ma sortie »: the create form (V0 replaces it until the account is verified). */
   create?: boolean;
+  /** Circles AC-17.6: a public circle's page, the request ready but not sent. */
+  circle?: { id: string };
+  /** Circles AC-3.3: an invitation link, the request ready but not sent. */
+  invitation?: { token: string };
   /** A guest tab (Cercles, Services, Voyages, Mon espace). */
   tab?: 'community' | 'market' | 'travel' | 'my-space';
   /** The Sorties search as it was (the area is already kept on the device, areaStore). */
@@ -90,13 +94,15 @@ export function takeRestoredFilters(): SavedFilters | null {
 }
 
 /**
- * Where the target leads: the event (its action ready, not done), the create form, a tab,
- * or Sorties.
+ * Where the target leads: the event (its action ready, not done), the create form, a circle
+ * or an invitation (the request ready, not sent), a tab, or Sorties.
  */
 export function returnHref(target: ReturnTarget): Href {
   if (target.create) return '/events/new';
   if (target.event)
     return `/events/${encodeURIComponent(target.event.id)}?then=${target.event.then}`;
+  if (target.circle) return `/circles/${encodeURIComponent(target.circle.id)}?then=request`;
+  if (target.invitation) return `/join/${encodeURIComponent(target.invitation.token)}?then=request`;
   if (target.tab) return `/${target.tab}`;
   return '/';
 }

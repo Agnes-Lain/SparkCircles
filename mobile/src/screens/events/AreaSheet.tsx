@@ -54,6 +54,7 @@ export function AreaSheet({
   areas,
   current,
   guest = false,
+  applyLabel,
   onApply,
   onClose,
 }: {
@@ -62,6 +63,8 @@ export function AreaSheet({
   current: string[];
   /** Guest wording (design guest-home section 4): the choice stays on this phone (AC-15.9). */
   guest?: boolean;
+  /** The apply button ("Voir les sorties" by default; Circles: "Voir les cercles"). */
+  applyLabel?: string;
   onApply: (areas: string[]) => void;
   onClose: () => void;
 }) {
@@ -135,7 +138,7 @@ export function AreaSheet({
           </View>
           <View className="flex-[1.6]">
             <Button
-              label={t('events.area.see')}
+              label={applyLabel ?? t('events.area.see')}
               onPress={() => onApply(selected)}
               testID="area-use"
             />

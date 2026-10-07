@@ -10,16 +10,20 @@ export function EmptyState({
   body,
   emoji = '🦄',
   children,
+  module = 'events',
   testID,
 }: {
   title: string;
   body: string;
   emoji?: string;
   children?: ReactNode;
+  /** The module's Light background: mint for Events, sky for Circles. */
+  module?: 'events' | 'community';
   testID?: string;
 }) {
+  const bg = module === 'community' ? 'bg-sky-light' : 'bg-green-light';
   return (
-    <View testID={testID} className="items-center gap-md rounded-lg bg-green-light px-lg py-xl">
+    <View testID={testID} className={`items-center gap-md rounded-lg px-lg py-xl ${bg}`}>
       <Text className="text-[32px]" accessible={false} importantForAccessibility="no">
         {emoji}
       </Text>

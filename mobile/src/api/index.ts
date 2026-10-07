@@ -4,6 +4,7 @@ import { currentLocale } from '../i18n';
 import { accountApi } from './account';
 import { clientSignature, secureDeviceIdStore } from './appSignature';
 import { authApi } from './auth';
+import { circlesApi } from './circles';
 import { createApiClient } from './client';
 import { apiBaseUrl } from './config';
 import { eventsApi } from './events';
@@ -45,4 +46,9 @@ export function verification() {
 /** Events v1 (search, detail, create, join, report). */
 export function events() {
   return eventsApi(api());
+}
+
+/** Circles v1 (my circles, create, invite, join, members, search). */
+export function circles() {
+  return circlesApi(api());
 }

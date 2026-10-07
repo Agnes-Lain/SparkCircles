@@ -42,6 +42,22 @@ export type ApiErrorCode =
   | 'request_expired'
   | 'request_closed'
   | 'requests_frozen'
+  // Circles contract (docs/api/circles.md, section 1).
+  | 'admin_rights_paused'
+  | 'circle_create_limit'
+  | 'circle_member_limit'
+  | 'circle_full'
+  | 'already_member'
+  | 'sole_admin'
+  | 'admin_limit'
+  | 'already_admin'
+  | 'member_is_admin'
+  | 'member_is_creator'
+  | 'not_verified_member'
+  | 'circle_has_verified_members'
+  | 'requester_at_limit'
+  | 'invitation_invalid'
+  | 'too_many_tries'
   | 'server_error'
   // Client side: no answer from the server (offline, DNS, refused) or too slow.
   | 'network_error'
@@ -80,7 +96,9 @@ export type FieldErrorKey =
   | 'contains_address'
   | 'banned_word'
   | 'too_few'
-  | 'too_far';
+  | 'too_far'
+  // Circles (docs/api/circles.md): events with circles.
+  | 'not_allowed';
 
 /** §1 Error body: { "error": { "code", "message", "details"? } } */
 export type ApiErrorBody = {

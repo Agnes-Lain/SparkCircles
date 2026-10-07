@@ -41,7 +41,9 @@ export type TextFieldKind =
   | 'number'
   | 'time'
   | 'phone'
-  | 'emergencyPhone';
+  | 'emergencyPhone'
+  // Circles invitation code (design 7): capitals, no autocorrect, not a one-time code.
+  | 'inviteCode';
 
 export type TextFieldProps = {
   label: string;
@@ -122,6 +124,13 @@ const KIND: Record<TextFieldKind, Partial<TextInputProps>> = {
     textContentType: 'none',
     autoCorrect: false,
     maxLength: 24,
+  },
+  inviteCode: {
+    autoCapitalize: 'characters',
+    autoCorrect: false,
+    autoComplete: 'off',
+    textContentType: 'none',
+    maxLength: 12,
   },
 };
 

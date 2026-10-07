@@ -16,6 +16,7 @@ export function SegmentedControl<K extends string>({
   onChange,
   accessibilityLabel,
   testIDPrefix = 'segment',
+  module = 'events',
 }: {
   segments: Segment<K>[];
   value: K;
@@ -23,7 +24,11 @@ export function SegmentedControl<K extends string>({
   /** Names the group for screen readers (e.g. a form field's label). */
   accessibilityLabel?: string;
   testIDPrefix?: string;
+  /** Circles (design 11): the same control with sky selected. */
+  module?: 'events' | 'community';
 }) {
+  const activeBg = module === 'community' ? 'bg-sky' : 'bg-green';
+  const idleText = module === 'community' ? 'text-sky-dark' : 'text-green-dark';
   return (
     <View
       accessibilityRole="tablist"
@@ -41,10 +46,10 @@ export function SegmentedControl<K extends string>({
             accessibilityLabel={segment.label}
             accessibilityState={{ selected: active }}
             onPress={() => onChange(segment.key)}
-            className={`flex-1 items-center justify-center rounded-md ${active ? 'bg-green' : ''}`}
+            className={`flex-1 items-center justify-center rounded-md ${active ? activeBg : ''}`}
             style={{ minHeight: MIN_TOUCH_TARGET }}
           >
-            <Text className={`text-body font-medium ${active ? 'text-ink' : 'text-green-dark'}`}>
+            <Text className={`text-body font-medium ${active ? 'text-ink' : idleText}`}>
               {segment.label}
             </Text>
           </Pressable>

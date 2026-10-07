@@ -3,6 +3,7 @@
 //   jest.mock('../api', () => jest.requireActual('../test/apiMock').apiModule);
 import type { AccountApi } from '../api/account';
 import type { AuthApi } from '../api/auth';
+import type { CirclesApi } from '../api/circles';
 import type { EventsApi } from '../api/events';
 import type { VerificationApi } from '../api/verification';
 import { ApiError } from '../api/errors';
@@ -69,6 +70,32 @@ export const mockEvents: MockedEvents = {
   report: jest.fn(),
 };
 
+type MockedCircles = { [K in keyof CirclesApi]: jest.Mock };
+
+export const mockCircles: MockedCircles = {
+  mine: jest.fn(),
+  get: jest.fn(),
+  create: jest.fn(),
+  update: jest.fn(),
+  remove: jest.fn(),
+  search: jest.fn(),
+  invitation: jest.fn(),
+  renewInvitation: jest.fn(),
+  toggleInvitation: jest.fn(),
+  preview: jest.fn(),
+  joinByInvitation: jest.fn(),
+  askToJoin: jest.fn(),
+  cancelRequest: jest.fn(),
+  accept: jest.fn(),
+  decline: jest.fn(),
+  leave: jest.fn(),
+  stepDown: jest.fn(),
+  removeMember: jest.fn(),
+  promote: jest.fn(),
+  report: jest.fn(),
+  dismissCard: jest.fn(),
+};
+
 export const mockHealth = jest.fn();
 
 export const apiModule = {
@@ -77,6 +104,7 @@ export const apiModule = {
   account: () => mockAccount,
   verification: () => mockVerification,
   events: () => mockEvents,
+  circles: () => mockCircles,
   ApiError,
 };
 
@@ -85,11 +113,21 @@ export function resetApiMock() {
   Object.values(mockAccount).forEach((fn) => fn.mockReset());
   Object.values(mockVerification).forEach((fn) => fn.mockReset());
   Object.values(mockEvents).forEach((fn) => fn.mockReset());
+  Object.values(mockCircles).forEach((fn) => fn.mockReset());
   // The Sorties tab searches at once ("Tout Paris" by default): an empty page unless a test
   // says otherwise.
   const empty = { events: [], pagination: { page: 1, per_page: 20, next_page: null } };
   mockEvents.search.mockResolvedValue(empty);
   mockEvents.mine.mockResolvedValue(empty);
+  // The Cercles tab and the event form read "My circles": none unless a test says otherwise.
+  mockCircles.mine.mockResolvedValue({
+    items: [],
+    limits: { created: 0, max_created: 3, circles: 0, max_circles: 5, can_create: true },
+  });
+  mockCircles.search.mockResolvedValue({
+    circles: [],
+    pagination: { page: 1, per_page: 20, next_page: null },
+  });
   mockHealth.mockReset().mockResolvedValue(true);
   mockAuth.logOut.mockResolvedValue(undefined);
 }

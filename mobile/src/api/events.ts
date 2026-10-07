@@ -9,6 +9,7 @@ type Client = Pick<ApiClient, 'request'>;
 
 export type EventStatus = 'draft' | 'published' | 'suspended' | 'cancelled' | 'past';
 export type JoinRule = 'anyone' | 'verified_only';
+export type EventVisibility = 'searchable' | 'circles';
 export type ViewerRole = 'guest' | 'member' | 'participant' | 'host';
 export type JoinBlocker =
   | 'account_required'
@@ -119,8 +120,10 @@ export type SparkEvent = {
   /** §8.1 drop-off: the host's phone (host; accepted participants until `phone_visible_until`). */
   host_phone?: string;
   phone_visible_until?: string | null;
-  /** §2.4 host only. */
-  visibility?: 'searchable';
+  /** Circles US-16: every non-guest audience; "circles" = visible to chosen circles only. */
+  visibility?: EventVisibility;
+  /** Circles AC-16.4: the chosen circles the viewer is in (all of them for the host). */
+  circles?: { id: string; name: string }[];
   /** §8.1 host only. */
   pending_requests_count?: number;
   published_at?: string | null;
@@ -181,6 +184,9 @@ export type EventParams = {
   adult_required?: boolean;
   approval_required?: boolean;
   host_phone?: string | null;
+  /** Circles US-16 */
+  visibility?: EventVisibility;
+  circle_ids?: string[];
 };
 
 export type PlacesParams = {
