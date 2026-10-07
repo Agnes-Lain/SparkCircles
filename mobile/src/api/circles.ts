@@ -142,6 +142,8 @@ export type MyCircleItem =
       state: 'pending' | 'expired';
       circle: { id?: string | null; name: string; area: Area; families_count: number };
     }
+  /** PM phone test 2026-10-07: my declined request, the circle name only. */
+  | { id: string; state: 'declined'; circle: { name: string } }
   | { id: string; state: 'removed' | 'paused' | 'closed'; circle: null };
 
 export type CircleLimits = {

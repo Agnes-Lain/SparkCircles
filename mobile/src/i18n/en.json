@@ -1017,6 +1017,7 @@
     "moreMembers": "+{{count}}",
     "neutral": {
       "removed": "You are no longer in this circle.",
+      "declined": "Your request to join « {{name}} » wasn’t accepted.",
       "paused": "This circle is paused.",
       "closed": "This circle is closed.",
       "hide": "Hide"
@@ -1155,6 +1156,8 @@
       "alreadyMember": "You’re already in this circle.",
       "openCircle": "Open my circle",
       "alreadyPending": "Your request is already waiting for approval.",
+      "declined": "Your request for this circle wasn’t accepted. You can’t send it again.",
+      "removed": "You’re no longer in this circle.",
       "loading": "Loading the invitation"
     },
     "detail": {
@@ -1162,6 +1165,7 @@
       "familiesOf": "{{families}}",
       "invite": "Invite families",
       "suggestOuting": "Suggest an outing",
+      "suggestBody": "Plan an outing only the circle’s families can see.",
       "createdTitle": "Circle created",
       "createdBody": "Invite the first families: they ask, you approve.",
       "pausedTitle": "Your admin rights are paused",

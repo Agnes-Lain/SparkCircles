@@ -306,10 +306,17 @@ function CircleItem({ item }: { item: MyCircleItem }) {
     return content;
   }
 
-  // AC-9.3, AC-5.2: no name, no data.
+  // AC-9.3, AC-5.2: no name, no data; a declined request only names the circle the person
+  // asked to join (no admin, no reason; PM phone test 2026-10-07).
   return (
     <CommunityCard neutral testID={`circle-${item.state}`}>
-      <NeutralLine text={t(`circles.neutral.${item.state}`)} />
+      <NeutralLine
+        text={
+          item.state === 'declined'
+            ? t('circles.neutral.declined', { name: item.circle.name })
+            : t(`circles.neutral.${item.state}`)
+        }
+      />
       <View className="items-start" style={{ minHeight: MIN_TOUCH_TARGET }}>
         <TextLink
           quiet

@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   Ellipsis,
   Flag,
+  Info,
   Pencil,
   Search,
   Trash2,
@@ -48,6 +49,7 @@ import {
   Card,
   circleStatusError,
   FamiliesLine,
+  joinRefusal,
   NeutralLine,
   RoleBadge,
   TypeLine,
@@ -261,6 +263,19 @@ function PublicCircleView({ circle }: { circle: PublicCircle }) {
     },
     onError: () => showToast(t('circles.detail.actionError'), 'error'),
   });
+
+  const refusal = joinRefusal(ask.error, t);
+  if (refusal) {
+    return (
+      <MessageScreen testID="public-refused" onBack={back} icon={Info} title={refusal}>
+        <Button
+          variant="ghost"
+          label={t('circles.join.seeCircles')}
+          onPress={() => router.replace('/community')}
+        />
+      </MessageScreen>
+    );
+  }
 
   if (sent) {
     return (
@@ -676,15 +691,29 @@ function MemberCircleView({ circle }: { circle: MemberCircle }) {
               </Card>
             </Pressable>
           ))}
-          {circle.can.invite ? (
-            <View className="items-start">
-              <TextLink
+          {/* PM phone test 2026-10-07: a card like Routines. Hosting needs a verified
+              identity (events AC-1.1) and an active circle (this member view). */}
+          <Card testID="circle-suggest-card">
+            <Text className="text-h3 text-ink">{t('circles.detail.suggestOuting')}</Text>
+            <Text className="text-body text-ink-2">{t('circles.detail.suggestBody')}</Text>
+            {verifiedMe ? (
+              <Button
+                variant="module"
+                module="community"
                 label={t('circles.detail.suggestOuting')}
                 onPress={() => router.push(`/events/new?circle=${circle.id}`)}
-                testID="circle-suggest-link"
+                testID="circle-suggest-card-cta"
               />
-            </View>
-          ) : null}
+            ) : (
+              <View className="items-start">
+                <TextLink
+                  label={t('circles.join.verify')}
+                  onPress={() => router.push('/verify')}
+                  testID="suggest-verify"
+                />
+              </View>
+            )}
+          </Card>
         </View>
 
         <Card testID="circle-routines">

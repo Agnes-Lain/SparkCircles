@@ -1017,6 +1017,7 @@
     "moreMembers": "+{{count}}",
     "neutral": {
       "removed": "Tu ne fais plus partie de ce cercle.",
+      "declined": "Ta demande pour rejoindre « {{name}} » n’a pas été acceptée.",
       "paused": "Ce cercle est en pause.",
       "closed": "Ce cercle est fermé.",
       "hide": "Masquer"
@@ -1155,6 +1156,8 @@
       "alreadyMember": "Tu fais déjà partie de ce cercle.",
       "openCircle": "Ouvrir mon cercle",
       "alreadyPending": "Ta demande attend déjà une réponse.",
+      "declined": "Ta demande pour ce cercle n’a pas été acceptée. Tu ne peux pas la renvoyer.",
+      "removed": "Tu ne fais plus partie de ce cercle.",
       "loading": "Chargement de l’invitation"
     },
     "detail": {
@@ -1162,6 +1165,7 @@
       "familiesOf": "{{families}}",
       "invite": "Inviter des familles",
       "suggestOuting": "Proposer une sortie",
+      "suggestBody": "Organise une sortie réservée aux familles du cercle.",
       "createdTitle": "Cercle créé",
       "createdBody": "Invite les premières familles : elles demandent, tu acceptes.",
       "pausedTitle": "Tes droits d’admin sont en pause",

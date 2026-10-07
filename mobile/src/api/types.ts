@@ -62,6 +62,9 @@ export type ApiErrorCode =
   | 'circle_paused'
   | 'circle_closed'
   | 'circle_forced_private'
+  // PM phone test 2026-10-07: asking again after a decline or a removal (nothing is created).
+  | 'circle_request_declined'
+  | 'circle_membership_removed'
   | 'server_error'
   // Client side: no answer from the server (offline, DNS, refused) or too slow.
   | 'network_error'

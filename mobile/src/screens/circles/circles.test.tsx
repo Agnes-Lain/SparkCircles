@@ -88,6 +88,23 @@ describe('Cercles tab (C1)', () => {
     await waitFor(() => expect(mockCircles.dismissCard).toHaveBeenCalledWith('item-3'));
   });
 
+  it('PM 2026-10-07 tells a declined request in a neutral card with the name only, « Masquer » hides it', async () => {
+    mockCircles.mine.mockResolvedValue({
+      ...noCircles,
+      items: [{ id: 'item-9', state: 'declined', circle: { name: 'Voisins du square' } }],
+    });
+    mockCircles.dismissCard.mockResolvedValue(undefined);
+    await open('/community');
+    const card = await screen.findByTestId('circle-declined');
+    expect(
+      within(card).getByText(
+        'Ta demande pour rejoindre « Voisins du square » n’a pas été acceptée.',
+      ),
+    ).toBeOnTheScreen();
+    await fireEvent.press(within(card).getByTestId('hide-card'));
+    await waitFor(() => expect(mockCircles.dismissCard).toHaveBeenCalledWith('item-9'));
+  });
+
   it('AC-9.1 empty, verified: create or enter a code (sky module CTA)', async () => {
     mockCircles.mine.mockResolvedValue(noCircles);
     await open('/community');
@@ -318,6 +335,32 @@ describe('Join (C4)', () => {
     expect(await screen.findByText('Demande envoyée')).toBeOnTheScreen();
   });
 
+  it('AC-2.7, PM 2026-10-07 a declined person reusing the code is told so, not « Demande envoyée »', async () => {
+    mockCircles.preview.mockResolvedValue({ circle: preview });
+    mockCircles.joinByInvitation.mockRejectedValue(
+      apiError(403, 'circle_request_declined', 'server copy'),
+    );
+    await open('/circles/join?code=K7PMQ2XC');
+    await fireEvent.press(await screen.findByTestId('join-ask'));
+    expect(await screen.findByTestId('join-refused')).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        'Ta demande pour ce cercle n’a pas été acceptée. Tu ne peux pas la renvoyer.',
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText('Demande envoyée')).toBeNull();
+    expect(screen.queryByText('Claire D.')).toBeNull();
+  });
+
+  it('AC-2.7, PM 2026-10-07 a removed person reusing the link is told they are no longer in the circle', async () => {
+    mockCircles.preview.mockResolvedValue({ circle: preview });
+    mockCircles.joinByInvitation.mockRejectedValue(apiError(403, 'circle_membership_removed'));
+    await open('/join/abcdefghijklmnopqrstuv');
+    await fireEvent.press(await screen.findByTestId('join-ask'));
+    expect(await screen.findByText('Tu ne fais plus partie de ce cercle.')).toBeOnTheScreen();
+    expect(screen.queryByText('Demande envoyée')).toBeNull();
+  });
+
   it('AC-3.2 tells a parent who is not verified they can join without verifying', async () => {
     mockCircles.preview.mockResolvedValue({ circle: preview });
     await open('/join/abcdefghijklmnopqrstuv', unverifiedMe);
@@ -430,6 +473,27 @@ describe('Circle detail (C5)', () => {
     ).toBeOnTheScreen();
     expect(screen.getByText('Cercle : Parents CE2 · Jaurès')).toBeOnTheScreen();
     expect(screen.getByTestId('circle-suggest')).toHaveTextContent('Proposer une sortie');
+    // PM 2026-10-07: the « Proposer une sortie » card asks to verify first, like Routines.
+    const card = screen.getByTestId('circle-suggest-card');
+    expect(
+      within(card).getByText('Organise une sortie réservée aux familles du cercle.'),
+    ).toBeOnTheScreen();
+    expect(within(card).queryByTestId('circle-suggest-card-cta')).toBeNull();
+    await fireEvent.press(within(card).getByTestId('suggest-verify'));
+    expect(await screen.findByText('route:verify')).toBeOnTheScreen();
+  });
+
+  it('PM 2026-10-07 a verified member gets the « Proposer une sortie » card with the sky button', async () => {
+    mockCircles.get.mockResolvedValue({ circle: adminCircle });
+    mockCircles.mine.mockResolvedValue(myCircles);
+    await open(`/circles/${adminCircle.id}`);
+    const card = await screen.findByTestId('circle-suggest-card');
+    expect(
+      within(card).getByText('Organise une sortie réservée aux familles du cercle.'),
+    ).toBeOnTheScreen();
+    expect(screen.queryByTestId('circle-suggest-link')).toBeNull();
+    await fireEvent.press(within(card).getByTestId('circle-suggest-card-cta'));
+    expect(await screen.findByTestId('form-who-sees')).toBeOnTheScreen();
   });
 
   it('AC-6.5 an admin whose verification expired sees the paused rights', async () => {
@@ -487,6 +551,20 @@ describe('Public circle page (C9)', () => {
     expect(screen.queryByText('Claire M.')).toBeNull();
     await fireEvent.press(screen.getByTestId('public-ask'));
     expect(await screen.findByText('Demande envoyée')).toBeOnTheScreen();
+  });
+
+  it('AC-2.7, PM 2026-10-07 a declined person asking from the page is told so', async () => {
+    mockCircles.get.mockResolvedValue({ circle: publicCircle });
+    mockCircles.askToJoin.mockRejectedValue(apiError(403, 'circle_request_declined'));
+    await open(`/circles/${publicCircle.id}`);
+    await fireEvent.press(await screen.findByTestId('public-ask'));
+    expect(await screen.findByTestId('public-refused')).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        'Ta demande pour ce cercle n’a pas été acceptée. Tu ne peux pas la renvoyer.',
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText('Demande envoyée')).toBeNull();
   });
 
   it('AC-17.13 shows my pending request and lets me cancel it', async () => {

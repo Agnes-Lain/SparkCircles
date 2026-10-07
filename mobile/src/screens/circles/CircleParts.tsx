@@ -58,6 +58,16 @@ export function circleStatusError(error: ApiError | null | undefined, t: TFuncti
   return null;
 }
 
+/**
+ * AC-2.7 (PM phone test 2026-10-07): asking again after a decline or a removal is refused
+ * and the app says so honestly instead of « Demande envoyée ». Nothing else about the circle.
+ */
+export function joinRefusal(error: ApiError | null | undefined, t: TFunction): string | null {
+  if (error?.code === 'circle_request_declined') return t('circles.join.declined');
+  if (error?.code === 'circle_membership_removed') return t('circles.join.removed');
+  return null;
+}
+
 /** A plain Surface card (detail sections). */
 export function Card({ children, testID }: { children: ReactNode; testID?: string }) {
   return (

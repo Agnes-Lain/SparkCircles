@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Link2 } from 'lucide-react-native';
+import { Info, Link2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
@@ -18,14 +18,22 @@ import { SuccessCheckmark } from '../../components/SuccessCheckmark';
 import { FormScreen, MessageScreen } from '../auth/layouts';
 import { useBack } from '../auth/useBack';
 import { useGuestAccount } from '../guest/useGuestAccount';
-import { Card, CardsSkeleton, FamiliesLine, TypeLine, VerifiedBadge } from './CircleParts';
+import {
+  Card,
+  CardsSkeleton,
+  FamiliesLine,
+  joinRefusal,
+  TypeLine,
+  VerifiedBadge,
+} from './CircleParts';
 import { displayName, refreshCircles, useInvitationPreview } from './queries';
 
 /**
  * C4b Join preview and C4c request sent (AC-3.1 to AC-3.5, AC-2.3, AC-2.7, design 4c to 4g),
  * from an invitation link (`/join/<token>`) or a typed code (`/circles/join?code=…`). Name,
- * area, families and the admin with badge; never the description or the members. A blocked
- * person sees the same "Demande envoyée" (no request is created, AC-2.7).
+ * area, families and the admin with badge; never the description or the members. A declined
+ * or removed person is told they can't ask again (no request is created, AC-2.7, PM phone
+ * test 2026-10-07).
  */
 export function JoinPreviewScreen() {
   const params = useLocalSearchParams<{ token?: string; code?: string; then?: string }>();
@@ -51,6 +59,15 @@ export function JoinPreviewScreen() {
     },
   });
   const seeCircles = () => router.replace('/community');
+  const refusal = joinRefusal(join.error, t);
+
+  if (refusal) {
+    return (
+      <MessageScreen testID="join-refused" onBack={back} icon={Info} title={refusal}>
+        <Button variant="ghost" label={t('circles.join.seeCircles')} onPress={seeCircles} />
+      </MessageScreen>
+    );
+  }
 
   if (sent) {
     return (
