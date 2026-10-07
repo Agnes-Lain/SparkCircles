@@ -49,23 +49,7 @@ export function GuestTabScreen({ tab }: { tab: GuestTab }) {
             testID="guest-log-in-link"
           />
         </View>
-        <View className={`items-start gap-md rounded-xl px-xl py-2xl ${panel.bg}`}>
-          <View className="flex-row items-center gap-md">
-            <Text
-              className="text-[32px]"
-              accessible={false}
-              importantForAccessibility="no"
-              maxFontSizeMultiplier={1}
-            >
-              {panel.emoji}
-            </Text>
-            {panel.soon ? <Badge kind="badge-yellow" label={t('guest.hero.soon')} /> : null}
-          </View>
-          <Text accessibilityRole="header" className="text-h2 text-ink">
-            {t(`guest.tabs.${tab}.title`)}
-          </Text>
-          <Text className="text-body text-ink-2">{t(`guest.tabs.${tab}.body`)}</Text>
-        </View>
+        <ModulePanel tab={tab} />
         <View className="gap-sm">
           <Button
             size="large"
@@ -93,5 +77,37 @@ export function GuestTabScreen({ tab }: { tab: GuestTab }) {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * What a module does (design guest-home section 5): the module-colour panel with its emoji,
+ * « Bientôt » when not built yet, title and body. Shared by the guest tabs and, for members,
+ * the coming-soon tabs (Services, Voyages).
+ */
+export function ModulePanel({ tab }: { tab: GuestTab }) {
+  const { t } = useTranslation();
+  const panel = PANEL[tab];
+  return (
+    <View
+      className={`items-start gap-md rounded-xl px-xl py-2xl ${panel.bg}`}
+      testID={`module-panel-${tab}`}
+    >
+      <View className="flex-row items-center gap-md">
+        <Text
+          className="text-[32px]"
+          accessible={false}
+          importantForAccessibility="no"
+          maxFontSizeMultiplier={1}
+        >
+          {panel.emoji}
+        </Text>
+        {panel.soon ? <Badge kind="badge-yellow" label={t('guest.hero.soon')} /> : null}
+      </View>
+      <Text accessibilityRole="header" className="text-h2 text-ink">
+        {t(`guest.tabs.${tab}.title`)}
+      </Text>
+      <Text className="text-body text-ink-2">{t(`guest.tabs.${tab}.body`)}</Text>
+    </View>
   );
 }

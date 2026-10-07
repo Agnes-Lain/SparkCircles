@@ -465,6 +465,23 @@ describe('US-15 guest tabs', () => {
     },
   );
 
+  it.each([
+    ['/market', 'Services', 'Des aides de confiance pour la garde et le quotidien'],
+    ['/travel', 'Voyages', 'Échange ta maison avec une famille pendant les vacances'],
+  ])(
+    'members on %s see the same panel with « Bientôt », no account actions (PM 2026-10-07)',
+    async (url, name, title) => {
+      const app = await openAsMember(url);
+      expect(await screen.findByRole('header', { name })).toBeOnTheScreen();
+      expect(screen.getByText(title)).toBeOnTheScreen();
+      expect(screen.getByText('Bientôt')).toBeOnTheScreen();
+      expect(screen.queryByTestId('guest-tab-sign-up')).toBeNull();
+      expect(screen.queryByText('Me connecter')).toBeNull();
+      await fireEvent.press(screen.getByTestId('coming-soon-see-events'));
+      await waitFor(() => expect(app.app.getPathname()).toBe('/'));
+    },
+  );
+
   it('AC-15.5 AC-15.6 Mon espace: the explanation, no « Bientôt », sign-up comes back to it', async () => {
     await openAsGuest('/my-space');
     expect(await screen.findByRole('header', { name: 'Mon espace' })).toBeOnTheScreen();

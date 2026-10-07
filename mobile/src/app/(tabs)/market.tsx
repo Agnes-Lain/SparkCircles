@@ -1,12 +1,10 @@
-import { useTranslation } from 'react-i18next';
-
 import { useIsGuest } from '../../auth/GateContext';
 import { GuestTabScreen } from '../../screens/guest/GuestTabScreen';
-import { PlaceholderScreen } from '../../screens/PlaceholderScreen';
+import { ComingSoonScreen } from '../../screens/ComingSoonScreen';
 
 export default function MarketScreen() {
-  const { t } = useTranslation();
   // Guests: what Services will do, and the invitation to sign up (AC-15.6).
   if (useIsGuest()) return <GuestTabScreen tab="market" />;
-  return <PlaceholderScreen title={t('tabs.market')} />;
+  // Members: the same panel with « Bientôt » until the module ships (PM 2026-10-07).
+  return <ComingSoonScreen tab="market" />;
 }
