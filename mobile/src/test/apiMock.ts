@@ -5,6 +5,7 @@ import type { AccountApi } from '../api/account';
 import type { AuthApi } from '../api/auth';
 import type { CirclesApi } from '../api/circles';
 import type { EventsApi } from '../api/events';
+import type { MySpaceApi } from '../api/mySpace';
 import type { VerificationApi } from '../api/verification';
 import { ApiError } from '../api/errors';
 
@@ -96,6 +97,12 @@ export const mockCircles: MockedCircles = {
   dismissCard: jest.fn(),
 };
 
+type MockedMySpace = { [K in keyof MySpaceApi]: jest.Mock };
+
+export const mockMySpace: MockedMySpace = {
+  agenda: jest.fn(),
+};
+
 export const mockHealth = jest.fn();
 
 export const apiModule = {
@@ -105,6 +112,7 @@ export const apiModule = {
   verification: () => mockVerification,
   events: () => mockEvents,
   circles: () => mockCircles,
+  mySpace: () => mockMySpace,
   ApiError,
 };
 
@@ -114,6 +122,7 @@ export function resetApiMock() {
   Object.values(mockVerification).forEach((fn) => fn.mockReset());
   Object.values(mockEvents).forEach((fn) => fn.mockReset());
   Object.values(mockCircles).forEach((fn) => fn.mockReset());
+  Object.values(mockMySpace).forEach((fn) => fn.mockReset());
   // The Sorties tab searches at once ("Tout Paris" by default): an empty page unless a test
   // says otherwise.
   const empty = { events: [], pagination: { page: 1, per_page: 20, next_page: null } };
@@ -127,6 +136,11 @@ export function resetApiMock() {
   mockCircles.search.mockResolvedValue({
     circles: [],
     pagination: { page: 1, per_page: 20, next_page: null },
+  });
+  // My space: an empty agenda unless a test says otherwise.
+  mockMySpace.agenda.mockResolvedValue({
+    events: [],
+    window: { from: '2026-10-07', to: '2026-11-05', next_from: null },
   });
   mockHealth.mockReset().mockResolvedValue(true);
   mockAuth.logOut.mockResolvedValue(undefined);

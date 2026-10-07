@@ -10,9 +10,10 @@ import { apiError, mockAccount, mockAuth, offlineError, resetApiMock } from '../
 import { legalFixture, meFixture } from '../../test/fixtures';
 import { createTestQueryClient } from '../../test/render';
 import { renderScreen, routeStub } from '../../test/renderScreen';
+import AccountLink from '../../app/account';
+import MySpaceTab from '../../app/(tabs)/my-space';
 import { LinkExpiredScreen } from '../auth/LinkExpiredScreen';
 import { AccountClosedScreen } from './AccountClosedScreen';
-import { AccountScreen } from './AccountScreen';
 import { ChangeEmailScreen } from './ChangeEmailScreen';
 import { CloseAccountScreen } from './CloseAccountScreen';
 import { DataExportScreen, dataFileName } from './DataExportScreen';
@@ -51,7 +52,8 @@ jest.mock('expo-web-browser', () => ({
 }));
 
 const ROUTES = {
-  'account/index': AccountScreen,
+  'account/index': AccountLink,
+  'my-space': MySpaceTab,
   'account/profile-preview': ProfilePreviewScreen,
   'account/edit-profile': EditProfileScreen,
   'account/change-email': ChangeEmailScreen,
@@ -96,106 +98,49 @@ beforeEach(async () => {
   await i18n.changeLanguage('fr');
 });
 
-describe('A1 My account', () => {
+describe('« Mon compte » in My space (spec my-space US-7)', () => {
+  it('AC-7.4 /account opens My space on « Mon compte »', async () => {
+    const { app } = await open('/account');
+    expect(await screen.findByTestId('account-panel')).toBeOnTheScreen();
+    expect(app.getPathname()).toBe('/my-space');
+    expect(screen.getByRole('tab', { name: 'Mon compte', selected: true })).toBeOnTheScreen();
+  });
+
   it.each([
-    [
-      'not verified',
-      notVerified,
-      'Non vérifiée',
-      'Vérifie ton identité pour organiser des sorties',
-      "Pour participer à une sortie, ce n'est jamais nécessaire. Environ 3 minutes. Notre équipe vérifie tes documents sous 48 heures.",
-    ],
+    ['not verified', notVerified, 'Non vérifiée', 'Vérifie ton identité pour organiser', 'À faire'],
     [
       'pending',
       { ...notVerified, status: 'pending', submitted_at: '2026-10-02T12:05:00Z' },
       'En attente',
-      'Nous vérifions ton identité',
-      'En général sous 48 heures. Nous te préviendrons.',
+      'Vérification en cours. Réponse sous 48 h en général.',
+      'En cours',
     ],
-    [
-      'verified',
-      meFixture.verification,
-      'Vérifiée ✓',
-      'Ton identité est vérifiée',
-      "Valable jusqu'au 2 oct. 2028.",
-    ],
-    [
-      'expires soon',
-      { ...meFixture.verification, expires_on: '2026-11-01', expires_soon: true },
-      'Expire bientôt',
-      'Ta vérification prend fin le 1 nov.',
-      'Fais vérifier ton identité à nouveau avec un document valide pour continuer à organiser des sorties.',
-    ],
-    [
-      'not accepted',
-      {
-        ...notVerified,
-        status: 'rejected',
-        rejection: {
-          reason: 'photo_blurry',
-          message: 'La photo est floue. Prends-en une nouvelle avec une bonne lumière.',
-          note: null,
-        },
-      },
-      'Non acceptée',
-      "Nous n'avons pas pu vérifier ton identité",
-      'La photo est floue. Prends-en une nouvelle avec une bonne lumière.',
-    ],
-    [
-      'expired',
-      { ...notVerified, status: 'expired' },
-      'Expirée',
-      'Ta vérification a pris fin',
-      'Les autres ne voient plus ton badge Vérifié. Fais vérifier ton identité à nouveau pour organiser des sorties.',
-    ],
-    [
-      'removed',
-      {
-        ...notVerified,
-        revoked: true,
-        rejection: { reason: 'other', message: 'Retirée après un signalement.', note: null },
-      },
-      'Non vérifiée',
-      'Ta vérification a été retirée',
-      'Retirée après un signalement.',
-    ],
+    ['verified', meFixture.verification, 'Vérifiée ✓', "Valable jusqu'au 2 oct. 2028", 'Vérifiée'],
   ] as [string, Me['verification'], string, string, string][])(
-    'AC-7.5 AC-6.3 shows the %s badge and card',
-    async (_, verification, badge, title, body) => {
+    'AC-7.1 profile card and Verification row, %s',
+    async (_, verification, badge, status, row) => {
       await open('/account', { ...meFixture, verification });
-
-      expect(screen.getByText('Claire M.')).toBeOnTheScreen();
-      expect(screen.getByText('c•••••@example.com')).toBeOnTheScreen();
+      expect(await screen.findByText('Claire M.')).toBeOnTheScreen();
       expect(screen.getByText(badge)).toBeOnTheScreen();
-      expect(screen.getByRole('header', { name: title })).toBeOnTheScreen();
-      expect(screen.getByText(body)).toBeOnTheScreen();
+      expect(screen.getByText(status)).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: `Vérification. ${row}` })).toBeOnTheScreen();
     },
   );
 
-  it('AC-7.5 shows when a pending verification was sent', async () => {
-    await open('/account', {
-      ...meFixture,
-      verification: { ...notVerified, status: 'pending', submitted_at: '2026-10-02T12:05:00Z' },
-    });
-    expect(screen.getByText(/^Envoyée le 2 oct\./)).toBeOnTheScreen();
-  });
-
-  it('shows a skeleton of the header, card and rows while the account loads', async () => {
-    mockAuth.me.mockReturnValue(new Promise(() => undefined));
-    await open('/account', null);
-    expect(screen.getByTestId('account-loading')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Un instant…')).toBeOnTheScreen();
-  });
-
-  it('lists the settings and opens each screen', async () => {
+  it('AC-7.1 lists the groups in order and opens the same screens as before (AC-7.2)', async () => {
     const { app } = await open('/account');
+    await screen.findByTestId('account-panel');
+    expect(screen.getAllByRole('header').map((node) => node.props.children as string)).toEqual(
+      expect.arrayContaining(['Profil', 'Compte', 'Données et préférences', 'À propos']),
+    );
 
     for (const [label, path] of [
       ['Comment les autres me voient', '/account/profile-preview'],
       ['Modifier mon profil', '/account/edit-profile'],
-      ['Confidentialité et messages', '/account/privacy'],
-      ['Mot de passe et appareils', '/account/security'],
-      ['Obtenir une copie de mes données', '/my-data'],
+      ['E-mail. c•••••@example.com', '/account/change-email'],
+      ['Sécurité', '/account/security'],
+      ['Confidentialité', '/account/privacy'],
+      ['Mes données', '/my-data'],
     ]) {
       mockAccount.publicProfile.mockReturnValue(new Promise(() => undefined));
       mockAccount.dataExport.mockReturnValue(new Promise(() => undefined));
@@ -203,18 +148,55 @@ describe('A1 My account', () => {
       await fireEvent.press(screen.getByRole('button', { name: label as string }));
       await waitFor(() => expect(app.getPathname()).toBe(path));
       await act(() => router.back());
+      await screen.findByTestId('account-panel');
     }
+  });
+
+  it('AC-7.1 shows a waiting e-mail change in words and the dot on the segment', async () => {
+    await open('/account', { ...meFixture, pending_email: 'new@example.com' });
+    expect(
+      await screen.findByRole('button', { name: 'E-mail. Changement à confirmer' }),
+    ).toBeOnTheScreen();
+    expect(screen.getByRole('tab', { name: 'Mon compte' })).toHaveProp('accessibilityValue', {
+      text: 'à faire',
+    });
+  });
+
+  it('a valid verification and nothing pending: no dot on « Mon compte »', async () => {
+    await open('/account');
+    await screen.findByTestId('account-panel');
+    expect(screen.queryByTestId('my-space-segment-account-dot')).toBeNull();
+  });
+
+  it('Langue opens a two-radio sheet and applies the language at once', async () => {
+    mockAccount.updateProfile.mockResolvedValue({ ...meFixture, locale: 'en' });
+    await open('/account');
+    await fireEvent.press(await screen.findByRole('button', { name: 'Langue. Français' }));
+    await fireEvent.press(await screen.findByRole('radio', { name: 'English' }));
+    expect(await screen.findByRole('tab', { name: 'My account' })).toBeOnTheScreen();
+    expect(mockAccount.updateProfile).toHaveBeenCalledWith({ locale: 'en' });
+    await act(() => i18n.changeLanguage('fr'));
+  });
+
+  it('Informations légales opens the terms and the privacy policy', async () => {
+    mockAuth.legal.mockResolvedValue(legalFixture);
+    await open('/account');
+    await fireEvent.press(await screen.findByRole('button', { name: 'Informations légales' }));
+    expect(
+      await screen.findByRole('button', { name: "Conditions d'utilisation" }),
+    ).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Politique de confidentialité' })).toBeOnTheScreen();
   });
 
   it('AC-11.1 offers "Close my account" as a quiet link at the bottom', async () => {
     const { app } = await open('/account');
-    await fireEvent.press(screen.getByRole('link', { name: 'Fermer mon compte' }));
+    await fireEvent.press(await screen.findByRole('link', { name: 'Fermer mon compte' }));
     await waitFor(() => expect(app.getPathname()).toBe('/close-account'));
   });
 
   it('AC-3.5 "Log out" logs this device out with the toast, without confirmation', async () => {
     const { tokenStore } = await open('/account');
-    await fireEvent.press(screen.getByRole('button', { name: 'Me déconnecter' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Me déconnecter' }));
 
     expect(mockAuth.logOut).toHaveBeenCalled();
     expect(await screen.findByText('Déconnexion effectuée')).toBeOnTheScreen();
@@ -227,7 +209,7 @@ describe('B1 Badge explanation sheet', () => {
     await open('/account');
 
     await fireEvent.press(
-      screen.getByRole('button', {
+      await screen.findByRole('button', {
         name: 'Vérifiée, identité contrôlée par SparkCircles. Ouvre une explication.',
       }),
     );
@@ -245,14 +227,17 @@ describe('B1 Badge explanation sheet', () => {
     await waitFor(() => expect(screen.queryByTestId('badge-sheet')).toBeNull());
   });
 
-  it('AC-8.3 also opens from "What this means" and closes with the Close button or the scrim', async () => {
+  it('AC-8.3 closes with the Close button or the scrim', async () => {
     await open('/account');
+    const badge = await screen.findByRole('button', {
+      name: 'Vérifiée, identité contrôlée par SparkCircles. Ouvre une explication.',
+    });
 
-    await fireEvent.press(screen.getByRole('link', { name: 'Ce que cela signifie' }));
+    await fireEvent.press(badge);
     await fireEvent.press(await screen.findByRole('button', { name: 'Fermer' }));
     await waitFor(() => expect(screen.queryByTestId('badge-sheet')).toBeNull());
 
-    await fireEvent.press(screen.getByRole('link', { name: 'Ce que cela signifie' }));
+    await fireEvent.press(badge);
     await fireEvent.press(
       await screen.findByTestId('badge-sheet-scrim', { includeHiddenElements: true }),
     );
@@ -767,7 +752,8 @@ describe('English copy', () => {
   it('M-21 shows My account in English', async () => {
     await i18n.changeLanguage('en');
     await open('/account');
-    expect(screen.getByRole('header', { name: 'My account' })).toBeOnTheScreen();
+    expect(await screen.findByRole('tab', { name: 'My account' })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'My space' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Log out' })).toBeOnTheScreen();
   });
 });

@@ -8,7 +8,127 @@
     "navigation": "Sections principales"
   },
   "mySpace": {
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "segmentsLabel": "Mon espace",
+    "segment": {
+      "today": "Aujourd'hui",
+      "account": "Mon compte",
+      "needsAttention": "à faire",
+      "position": "onglet {{position}} sur {{count}}"
+    },
+    "loading": "Chargement",
+    "updated": "Mis à jour",
+    "next": {
+      "title": "Prochaine sortie",
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain",
+      "exactAddress": "adresse exacte",
+      "families_one": "{{count}} famille",
+      "families_other": "{{count}} familles"
+    },
+    "role": {
+      "host": "Je reçois",
+      "going": "J'y vais",
+      "view": "Voir"
+    },
+    "approve": {
+      "title": "À valider",
+      "eventRequests": "Demandes de participation",
+      "circleRequests": "Demandes pour rejoindre",
+      "eventA11y_one": "{{title}}, {{count}} demande de participation",
+      "eventA11y_other": "{{title}}, {{count}} demandes de participation",
+      "circleA11y_one": "{{title}}, {{count}} demande pour rejoindre",
+      "circleA11y_other": "{{title}}, {{count}} demandes pour rejoindre",
+      "waiting": "En attente de réponse : {{title}}",
+      "waitingMore": "+{{count}} autres"
+    },
+    "agenda": {
+      "title": "Agenda",
+      "seeAll": "Tout voir",
+      "seeFull": "Voir tout l'agenda",
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain",
+      "cancelled": "Annulée",
+      "cancelledBy": "Annulée par l'organisateur",
+      "circleOnly": "Cercle uniquement",
+      "empty": "Tes prochaines sorties apparaîtront ici.",
+      "findOuting": "Trouver une sortie",
+      "end": "C'est tout pour l'instant",
+      "nothingThatDay": "Rien ce jour-là",
+      "stripLabel": "Semaine",
+      "stripHint": "Balaie pour changer de semaine",
+      "dayNothing": "{{day}}, rien de prévu",
+      "dayToday": "{{day}}, aujourd'hui",
+      "dayOutings_one": "{{count}} sortie : {{titles}}",
+      "dayOutings_other": "{{count}} sorties : {{titles}}",
+      "dayCancelled_one": "{{count}} sortie annulée",
+      "dayCancelled_other": "{{count}} sorties annulées",
+      "legend": "Point plein vert : ta sortie · bleu : sortie de cercle · cercle vide : annulée",
+      "nextWeek": "Semaine suivante",
+      "previousWeek": "Semaine précédente"
+    },
+    "verify": {
+      "title": "Vérifie ton identité pour organiser des sorties",
+      "body": "Ça prend environ 3 minutes.",
+      "cta": "Vérifier mon identité",
+      "retry": "Réessayer",
+      "pending": "Vérification en cours. Réponse sous 48 h en général.",
+      "renewTitle": "Ta vérification se termine le {{date}}.",
+      "renew": "Renouveler"
+    },
+    "circles": {
+      "title": "Mes cercles",
+      "all": "Tous",
+      "families_one": "{{count}} famille",
+      "families_other": "{{count}} familles",
+      "new": "Nouveau",
+      "outings": "Sorties de tes cercles",
+      "none": "Aucun cercle pour l'instant.",
+      "joinOrCreate": "Rejoindre ou créer un cercle",
+      "join": "Rejoindre un cercle"
+    },
+    "welcome": {
+      "title": "Bienvenue chez SparkCircles",
+      "body": "Rien de prévu pour l'instant. Trouve une sortie près de chez toi ou rejoins un cercle de familles.",
+      "findOuting": "Trouver une sortie",
+      "hostOuting": "Organiser une sortie",
+      "joinCircle": "Rejoindre un cercle"
+    },
+    "error": {
+      "block": "Impossible de charger cette partie.",
+      "retry": "Réessayer"
+    },
+    "offline": {
+      "title": "Pas de connexion",
+      "body": "Mis à jour à {{time}}. Les infos peuvent avoir changé.",
+      "updatedAt": "Mis à jour à {{time}}"
+    },
+    "account": {
+      "statusValid": "Valable jusqu'au {{date}}",
+      "statusVerify": "Vérifie ton identité pour organiser",
+      "groupProfile": "Profil",
+      "groupAccount": "Compte",
+      "groupData": "Données et préférences",
+      "groupAbout": "À propos",
+      "howOthersSee": "Comment les autres me voient",
+      "editProfile": "Modifier mon profil",
+      "verification": "Vérification",
+      "email": "E-mail",
+      "security": "Sécurité",
+      "privacy": "Confidentialité",
+      "data": "Mes données",
+      "language": "Langue",
+      "legal": "Informations légales",
+      "rowVerified": "Vérifiée",
+      "rowToDo": "À faire",
+      "rowInProgress": "En cours",
+      "rowEmailPending": "Changement à confirmer",
+      "languageTitle": "Langue",
+      "french": "Français",
+      "english": "English",
+      "terms": "Conditions d'utilisation",
+      "privacyPolicy": "Politique de confidentialité"
+    }
   },
   "errors": {
     "unreachable": {
@@ -165,13 +285,6 @@
     "wait": "Attends quelques minutes, puis réessaie."
   },
   "account": {
-    "title": "Mon compte",
-    "sectionProfile": "Profil et confidentialité",
-    "howOthersSee": "Comment les autres me voient",
-    "editProfile": "Modifier mon profil",
-    "privacy": "Confidentialité et messages",
-    "security": "Mot de passe et appareils",
-    "data": "Obtenir une copie de mes données",
     "close": "Fermer mon compte"
   },
   "badge": {
@@ -192,7 +305,6 @@
     "pendingCaption": "Envoyée le {{date}}",
     "verifiedTitle": "Ton identité est vérifiée",
     "verifiedBody": "Valable jusqu'au {{date}}.",
-    "whatThisMeans": "Ce que cela signifie",
     "expiresSoonTitle": "Ta vérification prend fin le {{date}}",
     "expiresSoonBody": "Fais vérifier ton identité à nouveau avec un document valide pour continuer à organiser des sorties.",
     "rejectedTitle": "Nous n'avons pas pu vérifier ton identité",

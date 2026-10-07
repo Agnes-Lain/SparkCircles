@@ -64,7 +64,7 @@ export function withinPhoneWindow(event: SparkEvent, now: Date = new Date()): Sp
     : scrubbed;
 }
 
-const pageWithoutPhones = (page: EventPage): EventPage => ({
+export const pageWithoutPhones = <P extends { events: SparkEvent[] }>(page: P): P => ({
   ...page,
   events: page.events.map(withoutPhones),
 });
@@ -221,7 +221,8 @@ function stripIfCancelled(client: QueryClient, event: SparkEvent) {
 function stripFromLists(client: QueryClient, id: string) {
   for (const query of client.getQueryCache().findAll({ queryKey: EVENTS_KEY })) {
     const kind = query.queryKey[1];
-    if (kind !== 'search' && kind !== 'mine') continue;
+    // My space agenda pages (`['events', 'agenda']`) hold the same event objects.
+    if (kind !== 'search' && kind !== 'mine' && kind !== 'agenda') continue;
     const data = query.state.data as InfiniteData<EventPage> | undefined;
     if (!data?.pages?.some((page) => page.events.some((event) => event.id === id))) continue;
     query.setState({

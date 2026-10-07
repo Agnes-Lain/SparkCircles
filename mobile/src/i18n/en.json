@@ -8,7 +8,127 @@
     "navigation": "Main sections"
   },
   "mySpace": {
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "segmentsLabel": "My space",
+    "segment": {
+      "today": "Today",
+      "account": "My account",
+      "needsAttention": "needs attention",
+      "position": "tab {{position}} of {{count}}"
+    },
+    "loading": "Loading",
+    "updated": "Updated",
+    "next": {
+      "title": "Next outing",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "exactAddress": "exact address",
+      "families_one": "{{count}} family",
+      "families_other": "{{count}} families"
+    },
+    "role": {
+      "host": "Hosting",
+      "going": "Going",
+      "view": "View"
+    },
+    "approve": {
+      "title": "To approve",
+      "eventRequests": "Participation requests",
+      "circleRequests": "Requests to join",
+      "eventA11y_one": "{{title}}, {{count}} participation request",
+      "eventA11y_other": "{{title}}, {{count}} participation requests",
+      "circleA11y_one": "{{title}}, {{count}} request to join",
+      "circleA11y_other": "{{title}}, {{count}} requests to join",
+      "waiting": "Waiting for a reply: {{title}}",
+      "waitingMore": "+{{count}} more"
+    },
+    "agenda": {
+      "title": "Agenda",
+      "seeAll": "See all",
+      "seeFull": "See the full agenda",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "cancelled": "Cancelled",
+      "cancelledBy": "Cancelled by the host",
+      "circleOnly": "Circle only",
+      "empty": "Your coming outings will show up here.",
+      "findOuting": "Find an outing",
+      "end": "That's all for now",
+      "nothingThatDay": "Nothing that day",
+      "stripLabel": "Week",
+      "stripHint": "Swipe to change week",
+      "dayNothing": "{{day}}, nothing planned",
+      "dayToday": "{{day}}, today",
+      "dayOutings_one": "{{count}} outing: {{titles}}",
+      "dayOutings_other": "{{count}} outings: {{titles}}",
+      "dayCancelled_one": "{{count}} cancelled outing",
+      "dayCancelled_other": "{{count}} cancelled outings",
+      "legend": "Green dot: your outing · blue: circle outing · empty ring: cancelled",
+      "nextWeek": "Next week",
+      "previousWeek": "Previous week"
+    },
+    "verify": {
+      "title": "Verify your identity to host outings",
+      "body": "It takes about 3 minutes.",
+      "cta": "Verify my identity",
+      "retry": "Try again",
+      "pending": "Verification in progress. Usually answered within 48 h.",
+      "renewTitle": "Your verification ends on {{date}}.",
+      "renew": "Renew"
+    },
+    "circles": {
+      "title": "My circles",
+      "all": "All",
+      "families_one": "{{count}} family",
+      "families_other": "{{count}} families",
+      "new": "New",
+      "outings": "Outings from your circles",
+      "none": "No circle yet.",
+      "joinOrCreate": "Join or create a circle",
+      "join": "Join a circle"
+    },
+    "welcome": {
+      "title": "Welcome to SparkCircles",
+      "body": "Nothing planned yet. Find an outing near you or join a circle of families.",
+      "findOuting": "Find an outing",
+      "hostOuting": "Host an outing",
+      "joinCircle": "Join a circle"
+    },
+    "error": {
+      "block": "This part could not load.",
+      "retry": "Retry"
+    },
+    "offline": {
+      "title": "No connection",
+      "body": "Updated at {{time}}. Things may have changed.",
+      "updatedAt": "Updated at {{time}}"
+    },
+    "account": {
+      "statusValid": "Valid until {{date}}",
+      "statusVerify": "Verify your identity to host",
+      "groupProfile": "Profile",
+      "groupAccount": "Account",
+      "groupData": "Data and preferences",
+      "groupAbout": "About",
+      "howOthersSee": "How others see me",
+      "editProfile": "Edit profile",
+      "verification": "Verification",
+      "email": "Email",
+      "security": "Security",
+      "privacy": "Privacy",
+      "data": "My data",
+      "language": "Language",
+      "legal": "Legal information",
+      "rowVerified": "Verified",
+      "rowToDo": "To do",
+      "rowInProgress": "In progress",
+      "rowEmailPending": "Change to confirm",
+      "languageTitle": "Language",
+      "french": "Français",
+      "english": "English",
+      "terms": "Terms of use",
+      "privacyPolicy": "Privacy policy"
+    }
   },
   "errors": {
     "unreachable": {
@@ -165,13 +285,6 @@
     "wait": "Wait a few minutes, then try again."
   },
   "account": {
-    "title": "My account",
-    "sectionProfile": "Profile and privacy",
-    "howOthersSee": "How others see me",
-    "editProfile": "Edit my profile",
-    "privacy": "Privacy and messages",
-    "security": "Password and devices",
-    "data": "Get a copy of my data",
     "close": "Close my account"
   },
   "badge": {
@@ -192,7 +305,6 @@
     "pendingCaption": "Sent on {{date}}",
     "verifiedTitle": "You're verified",
     "verifiedBody": "Valid until {{date}}.",
-    "whatThisMeans": "What this means",
     "expiresSoonTitle": "Your verification ends on {{date}}",
     "expiresSoonBody": "Verify again with a valid document to keep hosting.",
     "rejectedTitle": "We couldn't verify your identity",

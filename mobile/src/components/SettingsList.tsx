@@ -14,6 +14,8 @@ export type SettingsItem = {
   iconTone?: IconSquareTone;
   /** Caption under the label (e.g. "Accepted on 2 Oct 2026, version 1.0"). */
   caption?: string;
+  /** « Changement à confirmer » (design my-space 3): the caption in Sunny Dark. */
+  captionTone?: 'default' | 'attention';
   /** Without onPress the row is plain text (no chevron). */
   onPress?: () => void;
   /** A badge after the label (a count, « Bientôt »). */
@@ -61,7 +63,13 @@ function SettingsRow({ item, roomy }: { item: SettingsItem; roomy: boolean }) {
       {item.icon ? <IconSquare icon={item.icon} tone={item.iconTone} /> : null}
       <View className="flex-1">
         <Text className="text-body text-ink">{item.label}</Text>
-        {item.caption ? <Text className="text-caption text-ink-3">{item.caption}</Text> : null}
+        {item.caption ? (
+          <Text
+            className={`text-caption ${item.captionTone === 'attention' ? 'text-sunny-dark' : 'text-ink-3'}`}
+          >
+            {item.caption}
+          </Text>
+        ) : null}
       </View>
       {item.badge ? (
         <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>

@@ -8,6 +8,7 @@ import { circlesApi } from './circles';
 import { createApiClient } from './client';
 import { apiBaseUrl } from './config';
 import { eventsApi } from './events';
+import { mySpaceApi } from './mySpace';
 import { verificationApi } from './verification';
 
 export { ApiError } from './errors';
@@ -51,4 +52,9 @@ export function events() {
 /** Circles v1 (my circles, create, invite, join, members, search). */
 export function circles() {
   return circlesApi(api());
+}
+
+/** My space (the agenda; the other Today blocks reuse events and circles). */
+export function mySpace() {
+  return mySpaceApi(api());
 }

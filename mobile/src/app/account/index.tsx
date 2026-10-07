@@ -1,3 +1,9 @@
-import { AccountScreen } from '../../screens/account/AccountScreen';
+import { Redirect } from 'expo-router';
 
-export default AccountScreen;
+/**
+ * `/account` (e-mail and app links, back fallbacks of the account screens) opens My space on
+ * « Mon compte » (spec my-space AC-7.4); the `/account/*` screens stay pushed screens.
+ */
+export default function AccountLink() {
+  return <Redirect href="/my-space?view=account" />;
+}

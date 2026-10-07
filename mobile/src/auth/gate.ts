@@ -100,6 +100,8 @@ const ALLOWED: Record<Exclude<GateState, 'loading'>, string[]> = {
   ready: [
     '(tabs)',
     'account',
+    // My space full agenda (spec my-space).
+    'agenda',
     'my-data',
     'close-account',
     ACCOUNT_CLOSED,

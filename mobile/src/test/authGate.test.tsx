@@ -174,15 +174,15 @@ describe('auth gate (M-9)', () => {
     expect(app.getPathname()).toBe('/link-expired');
   });
 
-  it('AC-3.5 logs out from My account (avatar on My space): Welcome and "You\'re logged out"', async () => {
+  it('AC-3.5 logs out from « Mon compte » in My space: Welcome and "You\'re logged out"', async () => {
     mockAuth.me.mockResolvedValue(meFixture);
     const { app } = await openApp({ token: 'jwt', url: '/my-space' });
     await screen.findByRole('header', { name: 'Mon espace' });
     expect(screen.queryByTestId('dev-log-out')).toBeNull();
 
-    await fireEvent.press(await screen.findByRole('button', { name: 'Mon compte' }));
-    expect(await screen.findByRole('header', { name: 'Mon compte' })).toBeOnTheScreen();
-    expect(app.getPathname()).toBe('/account');
+    await fireEvent.press(await screen.findByRole('tab', { name: 'Mon compte' }));
+    expect(await screen.findByTestId('account-panel')).toBeOnTheScreen();
+    expect(app.getPathname()).toBe('/my-space');
     await fireEvent.press(screen.getByRole('button', { name: 'Me déconnecter' }));
 
     expect(

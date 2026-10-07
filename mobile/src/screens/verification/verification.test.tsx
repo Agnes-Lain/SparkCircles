@@ -16,7 +16,9 @@ import { cameraState, mockRequestPermission, mockTakePicture } from '../../test/
 import { meFixture } from '../../test/fixtures';
 import { createTestQueryClient } from '../../test/render';
 import { renderScreen, routeStub } from '../../test/renderScreen';
-import { AccountScreen } from '../account/AccountScreen';
+import AccountLink from '../../app/account';
+import MySpaceTab from '../../app/(tabs)/my-space';
+import VerificationLink from '../../app/verification';
 import { DocumentCaptureRoute, SelfieCaptureRoute } from './CaptureScreen';
 import { DocumentTypeScreen } from './DocumentTypeScreen';
 import { VerificationFlowProvider as around } from './flow';
@@ -67,7 +69,9 @@ jest.mock('expo-file-system', () => ({
 }));
 
 const ROUTES = {
-  'account/index': AccountScreen,
+  'account/index': AccountLink,
+  'my-space': MySpaceTab,
+  verification: VerificationLink,
   'verify/index': VerifyGateScreen,
   'verify/document': DocumentTypeScreen,
   'verify/capture': DocumentCaptureRoute,
@@ -174,17 +178,15 @@ afterEach(async () => {
   });
 });
 
-describe('A1 verification card buttons (M-1)', () => {
+describe('My space verification card and row (spec my-space US-4, M-1)', () => {
   it.each([
-    ['not verified', notVerified, 'Vérifier mon identité', 'verify-gate'],
-    ['pending', pending, 'Voir le détail', 'status-pending'],
-    ['not accepted', rejected, 'Réessayer', 'verify-gate'],
-    ['expired', { ...notVerified, status: 'expired' }, 'Vérifier à nouveau', 'verify-gate'],
+    ['not verified', notVerified, 'Vérifier mon identité'],
+    ['not accepted', rejected, 'Réessayer'],
+    ['expired', { ...notVerified, status: 'expired' }, 'Vérifier mon identité'],
     [
       'expires soon',
       { ...meFixture.verification, expires_on: '2026-11-01', expires_soon: true },
-      'Vérifier à nouveau',
-      'verify-gate',
+      'Renouveler',
     ],
     [
       'removed',
@@ -193,41 +195,56 @@ describe('A1 verification card buttons (M-1)', () => {
         revoked: true,
         rejection: { reason: 'other', message: 'Retirée.', note: null },
       },
-      'Vérifier à nouveau',
-      'verify-gate',
+      'Vérifier mon identité',
     ],
-  ] as [string, Verification, string, string][])(
-    'AC-7.5 %s: the card button opens the right screen',
-    async (_, verification, label, target) => {
-      await open('/account', verification);
-      await press(screen.getByRole('button', { name: label }));
-      expect(await screen.findByTestId(target)).toBeOnTheScreen();
+  ] as [string, Verification, string][])(
+    'AC-4.1 AC-4.3 %s: the Today card button opens V0',
+    async (_, verification, label) => {
+      await open('/my-space', verification);
+      await press(await screen.findByRole('button', { name: label }));
+      expect(await screen.findByTestId('verify-gate')).toBeOnTheScreen();
     },
   );
 
-  it('QA-V1 AC-7.15 verified, more than 30 days left: no renewal entry, only "What this means"', async () => {
-    await open('/account', meFixture.verification);
-    expect(screen.queryByTestId('verification-action')).toBeNull();
-    expect(screen.queryByText('Vérifier à nouveau')).toBeNull();
-    expect(screen.getByText('Ce que cela signifie')).toBeOnTheScreen();
+  it('AC-7.7 a rejection shows its reason in plain words, never a criminal record (AC-4.5)', async () => {
+    await open('/my-space', rejected);
+    expect(
+      await screen.findByText('La photo est floue. Prends-en une nouvelle avec une bonne lumière.'),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText(/casier|judiciaire/i)).toBeNull();
   });
 
-  it('QA-V1 AC-7.15 expires soon: "Vérifier à nouveau" leads into the renewal flow', async () => {
-    await open('/account', {
+  it('AC-4.2 pending: a quiet card, no action', async () => {
+    await open('/my-space', pending);
+    expect(
+      await screen.findByText('Vérification en cours. Réponse sous 48 h en général.'),
+    ).toBeOnTheScreen();
+    expect(screen.queryByTestId('verify-start')).toBeNull();
+  });
+
+  it('AC-4.4 verified, more than 30 days left: no card in Today', async () => {
+    await open('/my-space', meFixture.verification);
+    await screen.findByTestId('today-panel');
+    expect(screen.queryByTestId('verify-note')).toBeNull();
+    expect(screen.queryByTestId('verify-note-renew')).toBeNull();
+    expect(screen.queryByTestId('verify-note-pending')).toBeNull();
+  });
+
+  it('QA-V1 AC-7.15 expires soon: « Renouveler » leads into the renewal flow', async () => {
+    await open('/my-space', {
       ...meFixture.verification,
       expires_on: '2026-11-01',
       expires_soon: true,
     });
-    await press(screen.getByRole('button', { name: 'Vérifier à nouveau' }));
+    await press(await screen.findByRole('button', { name: 'Renouveler' }));
     await press(await screen.findByRole('button', { name: 'Vérifier mon identité' }));
     expect(await screen.findByText('Quel document as-tu ?')).toBeOnTheScreen();
   });
 
-  it('AC-7.15 a renewal under review shows "Renouvellement en attente" and "Voir le détail"', async () => {
+  it('AC-7.15 a renewal under review: « En cours » in Mon compte opens « Renouvellement en attente »', async () => {
     await open('/account', renewalPending);
-    expect(screen.getByText('Expire bientôt')).toBeOnTheScreen();
-    expect(screen.getByText('Renouvellement en attente')).toBeOnTheScreen();
-    await press(screen.getByRole('button', { name: 'Voir le détail' }));
+    expect(await screen.findByText('Expire bientôt')).toBeOnTheScreen();
+    await press(screen.getByRole('button', { name: 'Vérification. En cours' }));
     expect(await screen.findByTestId('status-renewal-pending')).toBeOnTheScreen();
   });
 });

@@ -9,7 +9,7 @@ import { cameraState, mockRequestPermission, mockTakePicture } from '../../test/
 import { meFixture } from '../../test/fixtures';
 import { createTestQueryClient } from '../../test/render';
 import { renderScreen, routeStub } from '../../test/renderScreen';
-import { AccountScreen } from '../account/AccountScreen';
+import AccountLink from '../../app/account';
 import { DocumentCaptureRoute, SelfieCaptureRoute } from './CaptureScreen';
 import { DocumentTypeScreen } from './DocumentTypeScreen';
 import { VerificationFlowProvider as around } from './flow';
@@ -54,7 +54,7 @@ jest.mock('expo-file-system', () => ({
 }));
 
 const ROUTES = {
-  'account/index': AccountScreen,
+  'account/index': AccountLink,
   'verify/index': VerifyGateScreen,
   'verify/document': DocumentTypeScreen,
   'verify/capture': DocumentCaptureRoute,

@@ -2,13 +2,15 @@ import { Pressable, Text, View } from 'react-native';
 
 import { MIN_TOUCH_TARGET } from '../theme/a11y';
 
-export type AvatarSize = 'sm' | 'md' | 'lg';
+export type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 
 // Design system section 11: SM 24 / 10 px, MD 36 / 13 px, LG 44 / 15 px, round.
 const SIZE: Record<AvatarSize, { box: string; text: string }> = {
   sm: { box: 'h-6 w-6', text: 'text-[10px]' },
   md: { box: 'h-9 w-9', text: 'text-[13px]' },
   lg: { box: 'h-11 w-11', text: 'text-[15px]' },
+  // My space « Mon compte » profile card (design my-space 3): 64 px.
+  xl: { box: 'h-16 w-16', text: 'text-h2' },
 };
 
 // Rotating Light / Dark pairs: lavender, green, pink, sky, sunny.
