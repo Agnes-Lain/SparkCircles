@@ -234,10 +234,18 @@ class Event < ApplicationRecord
     end
     errors.add(:join_rule, :inclusion) if join_rule == "verified_only" && !dropoff?
     errors.add(:circle_ids, :blank) if ids.empty? && !draft?
-    return if chosen_circle_ids.nil? || chosen_circle_ids.empty?
+    return if ids.empty? || !check_circle_membership?
 
-    allowed = host.circle_memberships.active.joins(:circle).merge(Circle.active).where(circle_id: chosen_circle_ids).pluck(:circle_id)
-    errors.add(:circle_ids, :inclusion) if (chosen_circle_ids - allowed).any?
+    allowed = host.circle_memberships.active.joins(:circle).merge(Circle.active).where(circle_id: ids).pluck(:circle_id)
+    errors.add(:circle_ids, :inclusion) if (ids - allowed).any?
+  end
+
+  # QA B1: the circles sent with the form, and the stored ones of a draft (saved or
+  # published), so a host who left or was removed can't publish into that circle. Once
+  # published, the circles are fixed (AC-16.9) and departures are handled by
+  # Circles::Departure (AC-16.5 to AC-16.7).
+  def check_circle_membership?
+    !chosen_circle_ids.nil? || new_record? || status_in_database == "draft"
   end
 
   def save_chosen_circles

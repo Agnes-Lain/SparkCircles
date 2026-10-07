@@ -119,10 +119,16 @@ module Circles
     def events_after_departure(user, notify:)
       remaining = Events::Viewer.new(user).circle_ids
       upcoming_events.find_each do |event|
+        # QA B1: the person's drafts lose this circle at once (the draft itself is kept;
+        # without a circle left it can't be published, AC-16.1).
+        if event.draft? && event.hosted_by?(user)
+          event.event_circles.where(circle_id: @circle.id).delete_all
+          next
+        end
         next if (event.circle_id_list & remaining).any?
 
         if event.hosted_by?(user)
-          cancel_event!(event) unless event.draft?
+          cancel_event!(event)
         else
           drop_participant!(event, user, notify)
         end
