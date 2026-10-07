@@ -15,7 +15,8 @@ export type GuestTab = 'community' | 'market' | 'travel' | 'mySpace';
 
 // Panel colours and emoji (design guest-home section 5). Class names written out for Tailwind.
 const PANEL: Record<GuestTab, { bg: string; emoji: string; route: string; soon: boolean }> = {
-  community: { bg: 'bg-sky-light', emoji: '🏡', route: 'community', soon: true },
+  // Circles ship in v1: no « Bientôt » (PM decision 2026-10-07).
+  community: { bg: 'bg-sky-light', emoji: '🏡', route: 'community', soon: false },
   market: { bg: 'bg-pink-light', emoji: '🔍', route: 'market', soon: true },
   travel: { bg: 'bg-sunny-light', emoji: '🧳', route: 'travel', soon: true },
   mySpace: { bg: 'bg-lavender-light', emoji: '🗓️', route: 'my-space', soon: false },
