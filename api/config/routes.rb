@@ -37,6 +37,8 @@ Rails.application.routes.draw do
           resource :terms_acceptance, only: :create
           resource :public_profile, only: :show
           resources :events, only: :index
+          # My space agenda (docs/api/my-space.md).
+          resource :agenda, only: :show, controller: "agenda"
         end
       end
 
