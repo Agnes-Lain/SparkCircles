@@ -23,8 +23,10 @@ import { renderScreen, routeStub } from '../../test/renderScreen';
 import { emptyForm, toParams, validateForm } from '../events/formModel';
 import { EventFormScreen } from '../events/EventFormScreen';
 import { CircleFormScreen, circleServerErrors } from './CircleFormScreen';
+import { CircleMembersScreen } from './CircleMembersScreen';
 import { CircleScreen } from './CircleScreen';
 import { CirclesScreen } from './CirclesScreen';
+import { circleTools } from './circleTools';
 import { EnterCodeScreen } from './EnterCodeScreen';
 import { InviteScreen } from './InviteScreen';
 import { JoinPreviewScreen } from './JoinPreviewScreen';
@@ -40,6 +42,7 @@ const ROUTES = {
   'circles/[id]/index': CircleScreen,
   'circles/[id]/edit': CircleFormScreen,
   'circles/[id]/invite': InviteScreen,
+  'circles/[id]/members': CircleMembersScreen,
   'join/[token]': JoinPreviewScreen,
   'events/new': EventFormScreen,
   verify: routeStub('verify'),
@@ -315,7 +318,7 @@ describe('Paused circle (AC-7.3, QA B2)', () => {
   it('AC-7.3 an admin action refused because the circle is paused says so', async () => {
     mockCircles.get.mockResolvedValue({ circle: adminCircle });
     mockCircles.accept.mockRejectedValue(apiError(403, 'circle_paused', 'paused'));
-    await open(`/circles/${adminCircle.id}`);
+    await open(`/circles/${adminCircle.id}/members`);
     await fireEvent.press(await screen.findByTestId('accept-r-ines'));
     expect(await screen.findByText('Ce cercle est en pause.')).toBeOnTheScreen();
   });
@@ -400,46 +403,91 @@ describe('Join (C4)', () => {
 });
 
 describe('Circle detail (C5)', () => {
-  it('AC-4.1, AC-2.4 shows members with badge and role, and the requests first for admins', async () => {
+  it('PM 2026-10-07 « Outils du cercle »: Membres, Proposer une sortie, Routines partagées, no top button', async () => {
     mockCircles.get.mockResolvedValue({ circle: adminCircle });
     await open(`/circles/${adminCircle.id}`);
-    expect(await screen.findByText('Inès B.')).toBeOnTheScreen();
-    const lea = screen.getByTestId('member-m-lea');
-    expect(within(lea).getByText('Léa P.')).toBeOnTheScreen();
-    expect(within(lea).getByText('Vérifié ✓')).toBeOnTheScreen();
-    expect(within(screen.getByTestId('member-m-amir')).getByText('Non vérifié')).toBeOnTheScreen();
-    expect(screen.getByText('Claire M. (toi)')).toBeOnTheScreen();
-    expect(screen.getByTestId('circle-invite')).toHaveTextContent('Inviter des familles');
-  });
-
-  it('AC-2.5 accepts a request', async () => {
-    mockCircles.get.mockResolvedValue({ circle: adminCircle });
-    mockCircles.accept.mockResolvedValue({ circle: { ...adminCircle, requests: [] } });
-    await open(`/circles/${adminCircle.id}`);
-    await fireEvent.press(await screen.findByTestId('accept-r-ines'));
-    await waitFor(() => expect(mockCircles.accept).toHaveBeenCalledWith(adminCircle.id, 'r-ines'));
-    expect(await screen.findByText('Inès B. a rejoint le cercle')).toBeOnTheScreen();
-  });
-
-  it('AC-5.2 removes a member after a confirmation that names the consequences', async () => {
-    mockCircles.get.mockResolvedValue({ circle: adminCircle });
-    mockCircles.removeMember.mockResolvedValue({ circle: adminCircle });
-    await open(`/circles/${adminCircle.id}`);
-    await fireEvent.press(await screen.findByTestId('member-options-m-lea'));
-    await fireEvent.press(await screen.findByTestId('remove-member'));
-    expect(await screen.findByText('Retirer Léa P. du cercle ?')).toBeOnTheScreen();
-    await fireEvent.press(screen.getByTestId('confirm-remove'));
-    await waitFor(() =>
-      expect(mockCircles.removeMember).toHaveBeenCalledWith(adminCircle.id, 'm-lea'),
+    const tools = await screen.findByTestId('circle-tools');
+    expect(within(tools).getByText('Outils du cercle')).toBeOnTheScreen();
+    expect(within(tools).getByTestId('tool-members')).toHaveTextContent(
+      /Membres3 membres · 1 demande1/,
     );
+    expect(screen.getByLabelText('Membres, 3 membres · 1 demande')).toBeOnTheScreen();
+    expect(within(tools).getByTestId('tool-suggest')).toHaveTextContent(
+      'Proposer une sortiePour les familles du cercle',
+    );
+    expect(screen.queryByTestId('circle-suggest')).toBeNull();
+    expect(screen.queryByTestId('circle-invite')).toBeNull();
+    // The members and the requests live in the « Membres » tool now.
+    expect(screen.queryByTestId('circle-members')).toBeNull();
+    expect(screen.queryByTestId('circle-requests')).toBeNull();
+    expect(screen.queryByTestId('circle-alone')).toBeNull();
   });
 
-  it('AC-6.1 offers co-admin only to verified members', async () => {
+  it('PM 2026-10-07 « Routines partagées » says « Bientôt » and is not a button', async () => {
+    mockCircles.get.mockResolvedValue({ circle: memberCircle });
+    await open(`/circles/${memberCircle.id}`);
+    const routines = await screen.findByTestId('tool-routines');
+    expect(routines).toHaveTextContent('Routines partagéesQui est de service, quandBientôt');
+    expect(routines.props.accessibilityRole).toBe('text');
+    expect(routines.props.accessibilityLabel).toBe('Routines partagées, bientôt disponible');
+    expect(routines.props.onClick).toBeUndefined();
+  });
+
+  it('PM 2026-10-07 a verified member suggests an outing from the toolbox', async () => {
     mockCircles.get.mockResolvedValue({ circle: adminCircle });
+    mockCircles.mine.mockResolvedValue(myCircles);
     await open(`/circles/${adminCircle.id}`);
-    await fireEvent.press(await screen.findByTestId('member-options-m-amir'));
-    expect(await screen.findByText('Pas encore vérifié')).toBeOnTheScreen();
-    expect(screen.queryByTestId('make-co-admin')).toBeNull();
+    await fireEvent.press(await screen.findByTestId('tool-suggest'));
+    expect(await screen.findByTestId('form-who-sees')).toBeOnTheScreen();
+  });
+
+  it('AC-4.4, AC-16.4 a member who is not verified is asked to verify before suggesting, and sees the circle outing', async () => {
+    mockCircles.get.mockResolvedValue({ circle: memberCircle });
+    await open(`/circles/${memberCircle.id}`, unverifiedMe);
+    expect(await screen.findByText('Cercle : Parents CE2 · Jaurès')).toBeOnTheScreen();
+    const suggest = screen.getByTestId('tool-suggest');
+    expect(suggest).toHaveTextContent('Proposer une sortieVérifie ton compte d’abord');
+    await fireEvent.press(suggest);
+    expect(await screen.findByText('route:verify')).toBeOnTheScreen();
+  });
+
+  it('PM 2026-10-07 an admin alone in the circle is prompted to invite families', async () => {
+    const alone = {
+      ...adminCircle,
+      families_count: 1,
+      requests: [],
+      members: adminCircle.members.filter((member) => member.me),
+    };
+    mockCircles.get.mockResolvedValue({ circle: alone });
+    await open(`/circles/${adminCircle.id}?created=1`);
+    const prompt = await screen.findByTestId('circle-alone');
+    expect(within(prompt).getByText('Invite des familles')).toBeOnTheScreen();
+    expect(
+      screen.queryByText('Invite les premières familles : elles demandent, tu acceptes.'),
+    ).toBeNull();
+    expect(screen.getByTestId('tool-members')).toHaveTextContent(/1 membre$/);
+    await fireEvent.press(within(prompt).getByTestId('circle-invite'));
+    await waitFor(() => expect(mockCircles.invitation).toHaveBeenCalled());
+  });
+
+  it('the toolbox is data: one entry per tool, the Membres caption counts requests for admins only', () => {
+    const t = i18n.t.bind(i18n);
+    expect(circleTools(adminCircle, true, t).map((tool) => tool.key)).toEqual([
+      'members',
+      'suggest',
+      'routines',
+    ]);
+    const [members, suggest, routines] = circleTools(memberCircle, false, t);
+    expect(members).toMatchObject({
+      caption: '3 membres',
+      href: `/circles/${memberCircle.id}/members`,
+    });
+    expect(members?.badge).toBeUndefined();
+    expect(suggest).toMatchObject({ tone: 'neutral', href: '/verify' });
+    expect(routines?.href).toBeUndefined();
+    expect(circleTools(adminCircle, true, t)[1]).toMatchObject({
+      href: `/events/new?circle=${adminCircle.id}`,
+    });
   });
 
   it('AC-6.2 the sole admin is asked to name another admin before leaving', async () => {
@@ -461,39 +509,6 @@ describe('Circle detail (C5)', () => {
     ).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('confirm-leave'));
     await waitFor(() => expect(mockCircles.leave).toHaveBeenCalledWith(memberCircle.id));
-  });
-
-  it('AC-4.4, AC-16.4 a member who is not verified sees routines hidden and the circle outing', async () => {
-    mockCircles.get.mockResolvedValue({ circle: memberCircle });
-    await open(`/circles/${memberCircle.id}`, unverifiedMe);
-    expect(
-      await screen.findByText(
-        'Les lieux et horaires des trajets d’enfants sont masqués tant que ton identité n’est pas vérifiée.',
-      ),
-    ).toBeOnTheScreen();
-    expect(screen.getByText('Cercle : Parents CE2 · Jaurès')).toBeOnTheScreen();
-    expect(screen.getByTestId('circle-suggest')).toHaveTextContent('Proposer une sortie');
-    // PM 2026-10-07: the « Proposer une sortie » card asks to verify first, like Routines.
-    const card = screen.getByTestId('circle-suggest-card');
-    expect(
-      within(card).getByText('Organise une sortie réservée aux familles du cercle.'),
-    ).toBeOnTheScreen();
-    expect(within(card).queryByTestId('circle-suggest-card-cta')).toBeNull();
-    await fireEvent.press(within(card).getByTestId('suggest-verify'));
-    expect(await screen.findByText('route:verify')).toBeOnTheScreen();
-  });
-
-  it('PM 2026-10-07 a verified member gets the « Proposer une sortie » card with the sky button', async () => {
-    mockCircles.get.mockResolvedValue({ circle: adminCircle });
-    mockCircles.mine.mockResolvedValue(myCircles);
-    await open(`/circles/${adminCircle.id}`);
-    const card = await screen.findByTestId('circle-suggest-card');
-    expect(
-      within(card).getByText('Organise une sortie réservée aux familles du cercle.'),
-    ).toBeOnTheScreen();
-    expect(screen.queryByTestId('circle-suggest-link')).toBeNull();
-    await fireEvent.press(within(card).getByTestId('circle-suggest-card-cta'));
-    expect(await screen.findByTestId('form-who-sees')).toBeOnTheScreen();
   });
 
   it('AC-6.5 an admin whose verification expired sees the paused rights', async () => {
@@ -539,6 +554,73 @@ describe('Circle detail (C5)', () => {
     mockCircles.get.mockRejectedValue(apiError(404, 'not_found'));
     await open(`/circles/${adminCircle.id}`);
     expect(await screen.findByText('Ce cercle n’est pas disponible')).toBeOnTheScreen();
+  });
+});
+
+describe('« Membres » tool (PM 2026-10-07)', () => {
+  it('opens from the toolbox', async () => {
+    mockCircles.get.mockResolvedValue({ circle: memberCircle });
+    await open(`/circles/${memberCircle.id}`);
+    await fireEvent.press(await screen.findByTestId('tool-members'));
+    expect(await screen.findByTestId('circle-members')).toBeOnTheScreen();
+  });
+
+  it('AC-4.1, AC-2.4 shows members with badge and role, the invite entry and the requests for admins', async () => {
+    mockCircles.get.mockResolvedValue({ circle: adminCircle });
+    await open(`/circles/${adminCircle.id}/members`);
+    expect(await screen.findByText('Inès B.')).toBeOnTheScreen();
+    const lea = screen.getByTestId('member-m-lea');
+    expect(within(lea).getByText('Léa P.')).toBeOnTheScreen();
+    expect(within(lea).getByText('Vérifié ✓')).toBeOnTheScreen();
+    expect(within(screen.getByTestId('member-m-amir')).getByText('Non vérifié')).toBeOnTheScreen();
+    expect(screen.getByText('Claire M. (toi)')).toBeOnTheScreen();
+    expect(screen.getByTestId('circle-invite')).toHaveTextContent(
+      'Inviter des famillesLien et code',
+    );
+  });
+
+  it('a member sees the members only: no invite, no requests', async () => {
+    mockCircles.get.mockResolvedValue({ circle: memberCircle });
+    await open(`/circles/${memberCircle.id}/members`);
+    expect(await screen.findByTestId('circle-members')).toBeOnTheScreen();
+    expect(screen.queryByTestId('circle-invite')).toBeNull();
+    expect(screen.queryByTestId('circle-requests')).toBeNull();
+  });
+
+  it('AC-2.5 accepts a request', async () => {
+    mockCircles.get.mockResolvedValue({ circle: adminCircle });
+    mockCircles.accept.mockResolvedValue({ circle: { ...adminCircle, requests: [] } });
+    await open(`/circles/${adminCircle.id}/members`);
+    await fireEvent.press(await screen.findByTestId('accept-r-ines'));
+    await waitFor(() => expect(mockCircles.accept).toHaveBeenCalledWith(adminCircle.id, 'r-ines'));
+    expect(await screen.findByText('Inès B. a rejoint le cercle')).toBeOnTheScreen();
+  });
+
+  it('AC-5.2 removes a member after a confirmation that names the consequences', async () => {
+    mockCircles.get.mockResolvedValue({ circle: adminCircle });
+    mockCircles.removeMember.mockResolvedValue({ circle: adminCircle });
+    await open(`/circles/${adminCircle.id}/members`);
+    await fireEvent.press(await screen.findByTestId('member-options-m-lea'));
+    await fireEvent.press(await screen.findByTestId('remove-member'));
+    expect(await screen.findByText('Retirer Léa P. du cercle ?')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('confirm-remove'));
+    await waitFor(() =>
+      expect(mockCircles.removeMember).toHaveBeenCalledWith(adminCircle.id, 'm-lea'),
+    );
+  });
+
+  it('AC-6.1 offers co-admin only to verified members', async () => {
+    mockCircles.get.mockResolvedValue({ circle: adminCircle });
+    await open(`/circles/${adminCircle.id}/members`);
+    await fireEvent.press(await screen.findByTestId('member-options-m-amir'));
+    expect(await screen.findByText('Pas encore vérifié')).toBeOnTheScreen();
+    expect(screen.queryByTestId('make-co-admin')).toBeNull();
+  });
+
+  it('AC-4.6 a circle that is not mine goes back to the circle page', async () => {
+    mockCircles.get.mockResolvedValue({ circle: publicCircle });
+    await open(`/circles/${adminCircle.id}/members`);
+    expect(await screen.findByTestId('public-circle')).toBeOnTheScreen();
   });
 });
 

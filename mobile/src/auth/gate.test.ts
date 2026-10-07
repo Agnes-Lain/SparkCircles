@@ -74,6 +74,9 @@ describe('auth gate rules (M-9, contract §1 "Account gates")', () => {
     expect(isAllowed('signedOut', routeName(['circles', '[id]', 'invite']))).toBe(false);
     expect(isAllowed('ready', routeName(['circles', '[id]', 'edit']))).toBe(true);
     expect(isAllowed('ready', routeName(['circles', 'join']))).toBe(true);
+    // The « Membres » tool is the request e-mails' link: a guest is sent on to the circle page.
+    expect(isAllowed('signedOut', routeName(['circles', '[id]', 'members']))).toBe(true);
+    expect(isAllowed('ready', routeName(['circles', '[id]', 'members']))).toBe(true);
   });
 
   it('names routes by their screen, the tabs as one group', () => {

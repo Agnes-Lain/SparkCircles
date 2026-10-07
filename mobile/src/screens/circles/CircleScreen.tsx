@@ -8,13 +8,11 @@ import {
   Pencil,
   Search,
   Trash2,
-  UserMinus,
   UserPlus,
-  UserRoundCog,
 } from 'lucide-react-native';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { circles } from '../../api';
@@ -26,37 +24,33 @@ import {
 } from '../../api/circles';
 import type { ApiError } from '../../api/errors';
 import { useIsGuest } from '../../auth/GateContext';
-import { Avatar } from '../../components/Avatar';
 import { Badge } from '../../components/Badge';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { HeaderIconButton } from '../../components/HeaderIconButton';
-import { Icon } from '../../components/Icon';
 import { Notification } from '../../components/Notification';
 import { RadioRow } from '../../components/RadioRow';
 import { Skeleton } from '../../components/Skeleton';
 import { SuccessCheckmark } from '../../components/SuccessCheckmark';
 import { TextLink } from '../../components/TextLink';
 import { useToast } from '../../components/ToastProvider';
-import { resolveLocale } from '../../i18n';
-import { MIN_TOUCH_TARGET } from '../../theme/a11y';
 import { MessageScreen } from '../auth/layouts';
 import { useBack } from '../auth/useBack';
 import { ConfirmSheet } from '../events/ConfirmSheet';
-import { formatShortDay, formatTime } from '../events/format';
 import { useGuestAccount } from '../guest/useGuestAccount';
+import { DestructiveLink, SheetAction, useCircleAction } from './circleActions';
 import {
   Card,
   circleStatusError,
   FamiliesLine,
   joinRefusal,
   NeutralLine,
-  RoleBadge,
   TypeLine,
-  VerifiedBadge,
 } from './CircleParts';
 import { CircleReportSheet } from './CircleReportSheet';
-import { displayName, forgetCircle, refreshCircles, storeCircle, useCircle } from './queries';
+import { CircleOutings } from './CircleOutings';
+import { CircleToolbox } from './CircleToolbox';
+import { displayName, forgetCircle, refreshCircles, useCircle } from './queries';
 
 /** `/circles/:id`: the member detail (C5), the paused/closed status, or the public page (C9). */
 export function CircleScreen() {
@@ -179,59 +173,6 @@ function Header({ onMore, back }: { onMore?: () => void; back: () => void }) {
         />
       ) : null}
     </View>
-  );
-}
-
-function SheetAction({
-  icon,
-  label,
-  onPress,
-  destructive = false,
-  testID,
-}: {
-  icon: typeof Flag;
-  label: string;
-  onPress: () => void;
-  destructive?: boolean;
-  testID?: string;
-}) {
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      className="flex-row items-center gap-md"
-      style={{ minHeight: MIN_TOUCH_TARGET + 8 }}
-    >
-      <Icon icon={icon} size={20} color={destructive ? 'error-dark' : 'ink-2'} />
-      <Text className={`text-body font-medium ${destructive ? 'text-error-dark' : 'text-ink'}`}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function DestructiveLink({
-  label,
-  onPress,
-  testID,
-}: {
-  label: string;
-  onPress: () => void;
-  testID?: string;
-}) {
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      className="items-center justify-center"
-      style={{ minHeight: MIN_TOUCH_TARGET }}
-    >
-      <Text className="text-body font-medium text-error-dark underline">{label}</Text>
-    </Pressable>
   );
 }
 
@@ -443,9 +384,6 @@ function PublicCircleView({ circle }: { circle: PublicCircle }) {
 type Sheet =
   | null
   | { kind: 'menu' }
-  | { kind: 'member'; member: CircleMember }
-  | { kind: 'remove'; member: CircleMember }
-  | { kind: 'promote'; member: CircleMember }
   | { kind: 'leave' }
   | { kind: 'sole' }
   | { kind: 'picker' }
@@ -453,8 +391,7 @@ type Sheet =
 
 /** C5 Circle detail for members (AC-2.4, AC-4.1 to AC-4.7, AC-5.x, AC-6.x, AC-7.1, AC-16.4). */
 function MemberCircleView({ circle }: { circle: MemberCircle }) {
-  const { t, i18n } = useTranslation();
-  const locale = resolveLocale(i18n.language);
+  const { t } = useTranslation();
   const router = useRouter();
   const back = useBack('/community');
   const { created } = useLocalSearchParams<{ created?: string }>();
@@ -478,30 +415,10 @@ function MemberCircleView({ circle }: { circle: MemberCircle }) {
     refreshCircles(queryClient, circle.id);
   };
   const after = { close, onFail };
-  const accept = useCircleAction(
-    after,
-    (request: { id: string; name: string }) => circles().accept(circle.id, request.id),
-    (request) => t('circles.detail.joined', { name: request.name }),
-  );
-  const decline = useCircleAction(
-    after,
-    (request: { id: string; name: string }) => circles().decline(circle.id, request.id),
-    () => t('circles.detail.declined'),
-  );
-  const remove = useCircleAction(
-    after,
-    (member: CircleMember) => circles().removeMember(circle.id, member.id),
-    (member) => t('circles.sheets.removed', { name: displayName(member) }),
-  );
   const promote = useCircleAction(
     after,
     (member: CircleMember) => circles().promote(circle.id, member.id),
     (member) => t('circles.sheets.promoted', { name: displayName(member) }),
-  );
-  const stepDown = useCircleAction(
-    after,
-    (_: void) => circles().stepDown(circle.id),
-    () => t('circles.detail.steppedDown'),
   );
   const leave = useMutation<void, ApiError, void>({
     mutationFn: () => circles().leave(circle.id),
@@ -530,28 +447,12 @@ function MemberCircleView({ circle }: { circle: MemberCircle }) {
   const me = circle.members.find((member) => member.me);
   const verifiedMe = me?.verified ?? false;
   const joinedOutings = circle.events.filter((event) => event.joined).length;
-  const admins = circle.members.filter((member) => member.role !== 'member').length;
   const candidates = circle.members.filter(
     (member) => !member.me && member.verified && member.role === 'member',
   );
-  const next = circle.next_event;
 
-  const primary = circle.admin_rights_paused ? null : circle.can.invite ? (
-    <Button
-      size="large"
-      icon={UserPlus}
-      label={t('circles.detail.invite')}
-      onPress={() => router.push(`/circles/${circle.id}/invite`)}
-      testID="circle-invite"
-    />
-  ) : (
-    <Button
-      size="large"
-      label={t('circles.detail.suggestOuting')}
-      onPress={() => router.push(`/events/new?circle=${circle.id}`)}
-      testID="circle-suggest"
-    />
-  );
+  // PM decision 2026-10-07: an admin alone in the circle is prompted to invite families.
+  const alone = circle.can.invite && !circle.admin_rights_paused && circle.members.length <= 1;
 
   return (
     <SafeAreaView edges={['top']} className="flex-1" testID="circle-detail">
@@ -576,7 +477,7 @@ function MemberCircleView({ circle }: { circle: MemberCircle }) {
           <Notification
             level="confirmed"
             title={t('circles.detail.createdTitle')}
-            caption={t('circles.detail.createdBody')}
+            caption={alone ? undefined : t('circles.detail.createdBody')}
             testID="circle-created"
           />
         ) : null}
@@ -600,182 +501,28 @@ function MemberCircleView({ circle }: { circle: MemberCircle }) {
           <Notification level="reminder" title={t('circles.detail.hiddenFromSearch')} />
         ) : null}
 
-        {primary}
-
-        {manage && circle.requests.length > 0 ? (
-          <View className="gap-sm" testID="circle-requests">
-            <View className="flex-row items-center gap-sm">
-              <Text className="text-label uppercase text-ink-2">
-                {t('circles.detail.requests')}
-              </Text>
-              <Badge kind="badge-yellow" label={String(circle.requests.length)} />
-            </View>
-            {circle.full ? (
-              <Notification
-                level="reminder"
-                title={t('circles.detail.fullNote')}
-                testID="requests-full"
+        {alone ? (
+          <Notification
+            level="community"
+            title={t('circles.detail.aloneTitle')}
+            caption={t('circles.detail.aloneBody')}
+            action={
+              <Button
+                variant="secondary"
+                size="small"
+                icon={UserPlus}
+                label={t('circles.detail.invite')}
+                onPress={() => router.push(`/circles/${circle.id}/invite`)}
+                testID="circle-invite"
               />
-            ) : null}
-            {circle.requests.map((request) => {
-              const name = displayName(request);
-              return (
-                <Card key={request.id} testID={`request-${request.id}`}>
-                  <View className="flex-row items-center gap-sm">
-                    <Avatar name={request.first_name} seed={request.id} size="md" />
-                    <Text className="flex-1 text-h3 text-ink" selectable={false}>
-                      {name}
-                    </Text>
-                    <VerifiedBadge verified={request.verified} />
-                  </View>
-                  {circle.full ? null : (
-                    <View className="flex-row gap-sm">
-                      <Button
-                        variant="secondary"
-                        size="small"
-                        label={t('circles.detail.accept')}
-                        accessibilityLabel={t('circles.detail.acceptA11y', { name })}
-                        onPress={() => accept.mutate({ id: request.id, name })}
-                        testID={`accept-${request.id}`}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="small"
-                        label={t('circles.detail.decline')}
-                        accessibilityLabel={t('circles.detail.declineA11y', { name })}
-                        onPress={() => decline.mutate({ id: request.id, name })}
-                        testID={`decline-${request.id}`}
-                      />
-                    </View>
-                  )}
-                </Card>
-              );
-            })}
-            <Text className="text-caption text-ink-3">{t('circles.detail.noReason')}</Text>
-          </View>
+            }
+            testID="circle-alone"
+          />
         ) : null}
 
-        <View className="gap-sm" testID="circle-outings">
-          <Text className="text-label uppercase text-ink-2">{t('circles.detail.outings')}</Text>
-          {next ? (
-            <View accessible className="gap-xs">
-              <Text className="text-caption text-ink-2">{t('circles.detail.nextOuting')}</Text>
-              <Text className="text-data text-ink">
-                {formatTime(next.starts_at, next.time_zone)}
-              </Text>
-              <Text className="text-body font-medium text-ink">
-                {`${formatShortDay(next.starts_at, next.time_zone, locale)} · ${next.area.label}`}
-              </Text>
-            </View>
-          ) : (
-            <Text className="text-caption text-ink-3">{t('circles.detail.noOutings')}</Text>
-          )}
-          {circle.events.map((event) => (
-            <Pressable
-              key={event.id}
-              accessibilityRole="button"
-              accessibilityLabel={event.title}
-              onPress={() => router.push(`/events/${event.id}`)}
-              testID={`circle-event-${event.id}`}
-            >
-              <Card>
-                <Badge kind="badge-sky" label={t('circles.event.badge', { name: circle.name })} />
-                <Text className="text-h3 text-ink">{event.title}</Text>
-                <Text className="text-body text-ink-2">
-                  {`${formatShortDay(event.starts_at, event.time_zone, locale)} · ${formatTime(event.starts_at, event.time_zone)}–${formatTime(event.ends_at, event.time_zone)} · ${event.area.label}`}
-                </Text>
-                <View className="flex-row items-center gap-sm">
-                  <Text className="flex-1 text-body text-ink">{displayName(event.host)}</Text>
-                  <VerifiedBadge verified={event.host.verified} />
-                </View>
-              </Card>
-            </Pressable>
-          ))}
-          {/* PM phone test 2026-10-07: a card like Routines. Hosting needs a verified
-              identity (events AC-1.1) and an active circle (this member view). */}
-          <Card testID="circle-suggest-card">
-            <Text className="text-h3 text-ink">{t('circles.detail.suggestOuting')}</Text>
-            <Text className="text-body text-ink-2">{t('circles.detail.suggestBody')}</Text>
-            {verifiedMe ? (
-              <Button
-                variant="module"
-                module="community"
-                label={t('circles.detail.suggestOuting')}
-                onPress={() => router.push(`/events/new?circle=${circle.id}`)}
-                testID="circle-suggest-card-cta"
-              />
-            ) : (
-              <View className="items-start">
-                <TextLink
-                  label={t('circles.join.verify')}
-                  onPress={() => router.push('/verify')}
-                  testID="suggest-verify"
-                />
-              </View>
-            )}
-          </Card>
-        </View>
+        <CircleToolbox circle={circle} verified={verifiedMe} />
 
-        <Card testID="circle-routines">
-          <View className="flex-row items-center gap-sm">
-            <Text className="flex-1 text-h3 text-ink">{t('circles.detail.routines')}</Text>
-            {verifiedMe ? <Badge kind="badge-yellow" label={t('circles.detail.soon')} /> : null}
-          </View>
-          {verifiedMe ? (
-            <Text className="text-body text-ink-2">{t('circles.detail.routinesBody')}</Text>
-          ) : (
-            <>
-              <Text className="text-body text-ink-2">{t('circles.detail.routinesHidden')}</Text>
-              <View className="items-start">
-                <TextLink
-                  label={t('circles.join.verify')}
-                  onPress={() => router.push('/verify')}
-                  testID="routines-verify"
-                />
-              </View>
-            </>
-          )}
-        </Card>
-
-        <View className="gap-sm" testID="circle-members">
-          <Text className="text-label uppercase text-ink-2">
-            {t('circles.detail.members', { count: circle.members.length })}
-          </Text>
-          {circle.members.map((member) => {
-            const name = displayName(member);
-            const hasOptions = !member.me || circle.can.step_down;
-            return (
-              <View
-                key={member.id}
-                className="flex-row items-center gap-sm"
-                style={{ minHeight: 56 }}
-                testID={`member-${member.id}`}
-              >
-                <Avatar name={member.first_name} seed={member.id} size="md" />
-                <View className="flex-1">
-                  {/* AC-4.7: names can't be selected or copied all at once. */}
-                  <Text className="text-body font-medium text-ink" selectable={false}>
-                    {member.me ? `${name} ${t('circles.detail.you')}` : name}
-                  </Text>
-                  {member.city_shown ? (
-                    <Text className="text-caption text-ink-3">{member.city_shown}</Text>
-                  ) : null}
-                </View>
-                <VerifiedBadge verified={member.verified} />
-                {member.role !== 'member' ? <RoleBadge role={member.role} /> : null}
-                {hasOptions ? (
-                  <HeaderIconButton
-                    icon={Ellipsis}
-                    accessibilityLabel={t('circles.detail.optionsFor', { name })}
-                    onPress={() => setSheet({ kind: 'member', member })}
-                    testID={`member-options-${member.id}`}
-                  />
-                ) : null}
-              </View>
-            );
-          })}
-          <Text className="text-caption text-ink-3">{t('circles.detail.membersNote')}</Text>
-        </View>
+        <CircleOutings circle={circle} />
 
         <View className="items-center gap-xs">
           {circle.can.edit ? (
@@ -831,63 +578,6 @@ function MemberCircleView({ circle }: { circle: MemberCircle }) {
         ) : null}
       </BottomSheet>
 
-      <BottomSheet visible={sheet?.kind === 'member'} onClose={close} testID="member-sheet">
-        {sheet?.kind === 'member' ? (
-          <MemberOptions
-            member={sheet.member}
-            circle={circle}
-            admins={admins}
-            onPromote={() => setSheet({ kind: 'promote', member: sheet.member })}
-            onRemove={() => setSheet({ kind: 'remove', member: sheet.member })}
-            onReport={() => {
-              close();
-              setReport({
-                key: Date.now(),
-                member: { id: sheet.member.id, name: displayName(sheet.member) },
-              });
-            }}
-            onStepDown={() => stepDown.mutate()}
-          />
-        ) : null}
-      </BottomSheet>
-
-      {sheet?.kind === 'remove' ? (
-        <ConfirmSheet
-          visible
-          onClose={close}
-          title={t('circles.sheets.removeTitle', { name: displayName(sheet.member) })}
-          body={t('circles.sheets.removeBody', { first: sheet.member.first_name })}
-          primary={{
-            label: t('circles.sheets.removeConfirm', { first: sheet.member.first_name }),
-            variant: 'destructive',
-            icon: UserMinus,
-            loading: remove.isPending,
-            onPress: () => remove.mutate(sheet.member),
-            testID: 'confirm-remove',
-          }}
-          secondary={{
-            label: t('circles.sheets.removeKeep', { first: sheet.member.first_name }),
-            onPress: close,
-          }}
-          testID="remove-sheet"
-        />
-      ) : null}
-      {sheet?.kind === 'promote' ? (
-        <ConfirmSheet
-          visible
-          onClose={close}
-          title={t('circles.sheets.promoteTitle', { first: sheet.member.first_name })}
-          body={t('circles.sheets.promoteBody', { first: sheet.member.first_name })}
-          primary={{
-            label: t('circles.sheets.promoteConfirm'),
-            loading: promote.isPending,
-            onPress: () => promote.mutate(sheet.member),
-            testID: 'confirm-promote',
-          }}
-          secondary={{ label: t('common.cancel'), onPress: close }}
-          testID="promote-sheet"
-        />
-      ) : null}
       <ConfirmSheet
         visible={sheet?.kind === 'leave'}
         onClose={close}
@@ -993,104 +683,5 @@ function MemberCircleView({ circle }: { circle: MemberCircle }) {
         />
       ) : null}
     </SafeAreaView>
-  );
-}
-
-/** A member action that answers with the circle: stored, toast, sheet closed. */
-function useCircleAction<V>(
-  { close, onFail }: { close: () => void; onFail: (error: ApiError) => void },
-  fn: (v: V) => Promise<{ circle: MemberCircle }>,
-  toast: (v: V) => string,
-) {
-  const queryClient = useQueryClient();
-  const { showToast } = useToast();
-  return useMutation<{ circle: MemberCircle }, ApiError, V>({
-    mutationFn: fn,
-    onSuccess: (data, v) => {
-      close();
-      storeCircle(queryClient, data.circle);
-      showToast(toast(v));
-    },
-    onError: onFail,
-  });
-}
-
-/** C5d Member options (design 5d): co-admin, report, remove; step down on my own row. */
-function MemberOptions({
-  member,
-  circle,
-  admins,
-  onPromote,
-  onRemove,
-  onReport,
-  onStepDown,
-}: {
-  member: CircleMember;
-  circle: MemberCircle;
-  admins: number;
-  onPromote: () => void;
-  onRemove: () => void;
-  onReport: () => void;
-  onStepDown: () => void;
-}) {
-  const { t } = useTranslation();
-  const manage = circle.can.manage;
-  return (
-    <View className="gap-xs">
-      <View className="flex-row items-center gap-sm pb-sm">
-        <Avatar name={member.first_name} seed={member.id} size="md" />
-        <Text className="flex-1 text-h3 text-ink">{displayName(member)}</Text>
-        <VerifiedBadge verified={member.verified} />
-      </View>
-      {member.me ? (
-        <SheetAction
-          icon={UserRoundCog}
-          label={t('circles.detail.stepDown')}
-          onPress={onStepDown}
-          testID="step-down"
-        />
-      ) : (
-        <>
-          {manage && member.role === 'member' ? (
-            member.verified && admins < 3 ? (
-              <SheetAction
-                icon={UserRoundCog}
-                label={t('circles.detail.makeCoAdmin')}
-                onPress={onPromote}
-                testID="make-co-admin"
-              />
-            ) : (
-              <View
-                style={{ minHeight: MIN_TOUCH_TARGET }}
-                className="justify-center"
-                testID="co-admin-unavailable"
-              >
-                <Text className="text-body text-ink-3">{t('circles.detail.makeCoAdmin')}</Text>
-                <Text className="text-caption text-ink-3">
-                  {member.verified
-                    ? t('circles.detail.adminMax')
-                    : t('circles.detail.notVerifiedYet')}
-                </Text>
-              </View>
-            )
-          ) : null}
-          <SheetAction
-            icon={Flag}
-            label={t('circles.detail.reportMember')}
-            onPress={onReport}
-            testID="report-member"
-          />
-          {manage && member.role === 'member' && !member.creator ? (
-            <SheetAction
-              icon={UserMinus}
-              destructive
-              label={t('circles.detail.remove')}
-              onPress={onRemove}
-              testID="remove-member"
-            />
-          ) : null}
-        </>
-      )}
-    </View>
   );
 }
