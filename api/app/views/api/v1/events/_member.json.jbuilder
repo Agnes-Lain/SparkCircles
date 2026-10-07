@@ -2,3 +2,4 @@
 # on a public profile (first name, initial, badge); counts only, no address.
 json.partial! "api/v1/events/common", event: event, viewer: viewer
 json.partial! "api/v1/events/host", host: event.host
+json.partial! "api/v1/events/circles", event: event, viewer: viewer

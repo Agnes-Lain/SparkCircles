@@ -12,7 +12,8 @@ class Event < ApplicationRecord
   JOIN_RULES = %w[anyone verified_only].freeze
   # AC-16.1: the language the host wrote the event in (never translated, AC-16.4).
   LANGUAGES = %w[fr en].freeze
-  VISIBILITIES = %w[searchable].freeze # v2 adds details for verified only, v3 circles
+  # US-16 (circles spec, delivers events US-14): "circles" = visible to chosen circles only.
+  VISIBILITIES = %w[searchable circles].freeze
   AGE_BANDS = { "0-2" => 0..2, "3-5" => 3..5, "6-8" => 6..8, "9-12" => 9..12, "13+" => 13..17 }.freeze
   AGES = 0..17
   PLACES = 1..100
@@ -34,6 +35,8 @@ class Event < ApplicationRecord
   # Every row, requests included (pending, declined, withdrawn, expired, closed).
   has_many :all_participations, class_name: "EventParticipation", dependent: :delete_all, inverse_of: false
   has_many :reports, class_name: "EventReport", dependent: :delete_all, inverse_of: :event
+  has_many :event_circles, dependent: :delete_all
+  has_many :circles, through: :event_circles
 
   normalizes :title, with: ->(value) { value.squish.presence }
   normalizes :description, with: ->(value) { value.strip.presence }
@@ -74,6 +77,8 @@ class Event < ApplicationRecord
   # AC-17.4: a drop-off event needs an age range and the host's phone to be published.
   validates :age_min, :age_max, :host_phone, presence: true, if: -> { dropoff? && !draft? }
   validate :host_phone_accepted
+  validate :circles_allowed
+  after_save :save_chosen_circles
 
   scope :hosted, -> { where(source: "hosted") }
   scope :not_ended, -> { where(ends_at: Time.current..) }
@@ -85,6 +90,12 @@ class Event < ApplicationRecord
   scope :expired, -> { where(ends_at: ...RETENTION.ago) }
 
   attr_accessor :publishing
+  # US-16: the circles sent with the form, saved with the event (see circles_allowed).
+  attr_reader :chosen_circle_ids
+
+  def chosen_circle_ids=(ids)
+    @chosen_circle_ids = Array(ids).map(&:to_s).compact_blank.uniq
+  end
 
   def hosted? = source == "hosted"
   def draft? = status == "draft"
@@ -115,6 +126,11 @@ class Event < ApplicationRecord
   def dropoff? = adult_required == false
   def phone_visible_until = ends_at && ends_at + PHONE_VISIBLE_AFTER_END
   def phone_visible? = phone_visible_until.present? && Time.current < phone_visible_until
+  # US-16: visible to the members of the chosen circles only (AC-16.3).
+  def circle_only? = visibility == "circles"
+
+  # The chosen circles' ids, as sent with the form or as saved.
+  def circle_id_list = chosen_circle_ids || event_circles.map(&:circle_id)
 
   # AC-1.5, AC-1.6: verification is checked again when publishing; the start must be ahead.
   def publish!
@@ -199,5 +215,39 @@ class Event < ApplicationRecord
 
   def locked_fields_unchanged
     LOCKED_AFTER_PUBLISH.each { |field| errors.add(field, :not_editable) if will_save_change_to_attribute?(field) }
+    # AC-16.9: the chosen circles can't change after publishing either.
+    if chosen_circle_ids && chosen_circle_ids.sort != event_circles.map(&:circle_id).sort
+      errors.add(:circle_ids, :not_editable)
+    end
+  end
+
+  # AC-16.1, AC-16.2, AC-16.10: circles the host is an active member of, at least one to
+  # publish; the join rule is "all members of these circles" (stored as "anyone"). A
+  # drop-off event stays "verified members only" (events AC-17.3).
+  def circles_allowed
+    return if host.nil?
+
+    ids = circle_id_list
+    unless circle_only?
+      errors.add(:circle_ids, :not_allowed) if chosen_circle_ids.present?
+      return
+    end
+    errors.add(:join_rule, :inclusion) if join_rule == "verified_only" && !dropoff?
+    errors.add(:circle_ids, :blank) if ids.empty? && !draft?
+    return if chosen_circle_ids.nil? || chosen_circle_ids.empty?
+
+    allowed = host.circle_memberships.active.joins(:circle).merge(Circle.active).where(circle_id: chosen_circle_ids).pluck(:circle_id)
+    errors.add(:circle_ids, :inclusion) if (chosen_circle_ids - allowed).any?
+  end
+
+  def save_chosen_circles
+    ids = chosen_circle_ids
+    ids = [] if ids.nil? && !circle_only? && event_circles.any?
+    return if ids.nil?
+
+    event_circles.where.not(circle_id: ids).delete_all
+    (ids - event_circles.reload.map(&:circle_id)).each { |id| event_circles.create!(circle_id: id) }
+    event_circles.reset
+    @chosen_circle_ids = nil
   end
 end

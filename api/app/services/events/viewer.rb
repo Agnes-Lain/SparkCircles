@@ -54,12 +54,38 @@ module Events
 
     # AC-1.4, AC-8.2: drafts only for the host; suspended, cancelled and past events only
     # for the host and participants; everyone else sees listed events only.
+    # Circles AC-16.3: a circle-only event exists only for its host, its participants and
+    # the active members of an active chosen circle (guests never see it).
     def can_see?(event)
       case audience(event)
       when :host then true
       when :participant then !event.draft?
-      else event.listed? || (request(event)&.pending? && !event.draft?)
+      else (event.listed? || (request(event)&.pending? && !event.draft?)) && in_audience?(event)
       end
+    end
+
+    # Circles AC-16.3: whether the viewer may see the event because of its visibility.
+    def in_audience?(event)
+      return true unless event.circle_only?
+      return false if guest?
+
+      event.hosted_by?(user) || (event.circle_id_list & circle_ids).any?
+    end
+
+    # The active circles the viewer is an active member of (one query per viewer).
+    def circle_ids
+      return [] if guest?
+
+      @circle_ids ||= user.circle_memberships.active.joins(:circle).merge(Circle.active).pluck(:circle_id)
+    end
+
+    # AC-16.4: the chosen circles shown with the event: all of them for the host, the
+    # viewer's own ones for everyone else (never another circle's name).
+    def circles_for(event)
+      return [] unless event.circle_only?
+
+      chosen = event.event_circles.map(&:circle)
+      event.hosted_by?(user) ? chosen : chosen.select { |circle| circle_ids.include?(circle.id) && circle.active? }
     end
 
     def join_blocker(event)

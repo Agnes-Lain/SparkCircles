@@ -73,9 +73,11 @@ RSpec.describe "Events: create, manage and search", type: :request do
       expect(json["event"]["status"]).to eq("published")
     end
 
-    it "AC-2.1 ignores a visibility sent by the app (searchable only in v1)" do
-      post "/api/v1/events", params: { event: attributes.merge(visibility: "circles") }, headers: auth_headers(host), as: :json
-      expect(json["event"]["visibility"]).to eq("searchable")
+    it "AC-2.1 (circles US-16) publishes a circle visibility only with circles the host belongs to" do
+      post "/api/v1/events", params: { event: attributes.merge(visibility: "circles"), publish: true }, headers: auth_headers(host), as: :json
+      expect(json.dig("error", "details", "circle_ids")).to eq([ "blank" ])
+      post "/api/v1/events", params: { event: attributes.merge(visibility: "anyone") }, headers: auth_headers(host), as: :json
+      expect(json.dig("error", "details", "visibility")).to eq([ "inclusion" ])
     end
   end
 

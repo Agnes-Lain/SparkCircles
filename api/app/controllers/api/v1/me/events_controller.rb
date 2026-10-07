@@ -23,7 +23,7 @@ module Api
           else
             scope.ended.order(starts_at: :desc, id: :desc)
           end
-          rows = scope.includes(:host, participations: :user).offset((page - 1) * per_page).limit(per_page + 1).to_a
+          rows = scope.includes(:host, event_circles: :circle, participations: :user).offset((page - 1) * per_page).limit(per_page + 1).to_a
 
           @events = rows.first(per_page)
           @viewer = ::Events::Viewer.new(current_user).preload(@events)

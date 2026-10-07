@@ -5,6 +5,7 @@ role = viewer.audience(event)
 mine = viewer.participation(event)
 json.partial! "api/v1/events/common", event: event, viewer: viewer
 json.partial! "api/v1/events/host", host: event.host
+json.partial! "api/v1/events/circles", event: event, viewer: viewer
 json.exact_address event.exact_address if role == :host || !event.cancelled?
 # AC-17.9, AC-17.12: the host's phone (drop-off) for the host, and for accepted
 # participants until 24 hours after the end; never after a cancellation.
@@ -34,7 +35,6 @@ json.my_participation(mine && { adults: mine.adults, children: mine.children, pl
 if role == :host
   # AC-17.15: the number of requests waiting, for the host only.
   json.pending_requests_count event.all_participations.awaiting_host.count
-  json.visibility event.visibility
   json.published_at event.published_at&.utc&.iso8601
   json.cancelled_at event.cancelled_at&.utc&.iso8601
 end

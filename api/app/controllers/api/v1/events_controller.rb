@@ -19,7 +19,8 @@ module Api
 
       # AC-3.1 to AC-3.6, AC-3.10, AC-15.3, AC-15.12
       def index
-        search = ::Events::Search.new(params, guest: current_user.nil?)
+        circle_ids = ::Events::Viewer.new(current_user).circle_ids
+        search = ::Events::Search.new(params, guest: current_user.nil?, circle_ids: circle_ids)
         result = search.call
         @events = result.events
         @viewer = ::Events::Viewer.new(current_user, areas: search.areas).preload(@events)
@@ -33,7 +34,7 @@ module Api
 
       # AC-1.4, AC-6.1 to AC-6.4, AC-15.2, AC-15.11
       def show
-        @event = Event.hosted.includes(:host).find(params[:id])
+        @event = Event.hosted.includes(:host, event_circles: :circle).find(params[:id])
         @viewer = ::Events::Viewer.new(current_user, areas: ::Events::Search.area_keys(params))
         raise ActiveRecord::RecordNotFound unless @viewer.can_see?(@event)
       end
@@ -112,7 +113,10 @@ module Api
       def event_params
         params.require(:event).permit(:title, :description, :category, :starts_at, :ends_at, :area, :exact_address,
                                       :places_total, :age_min, :age_max, :join_rule, :language, :adult_required,
-                                      :approval_required, :host_phone, tags: [])
+                                      :approval_required, :host_phone, :visibility, tags: [], circle_ids: []).tap do |permitted|
+          # US-16: saved with the event (Event#save_chosen_circles), checked by its validations.
+          permitted[:chosen_circle_ids] = permitted.delete(:circle_ids) if permitted.key?(:circle_ids)
+        end
       end
 
       # AC-17.8: approval is on by default for a drop-off event unless the host chose.

@@ -26,9 +26,11 @@ module Events
 
     Result = Data.define(:events, :page, :next_page)
 
-    def initialize(params, guest:)
+    # `circle_ids`: the active circles the member belongs to (circles AC-16.3).
+    def initialize(params, guest:, circle_ids: [])
       @params = params
       @guest = guest
+      @circle_ids = circle_ids
       @errors = Hash.new { |hash, key| hash[key] = [] }
     end
 
@@ -67,7 +69,7 @@ module Events
 
     def call
       reject_non_scalar_params
-      scope = Event.listed
+      scope = filter_visibility(Event.listed)
       scope = filter_area(scope)
       scope = filter_categories(scope)
       scope = filter_dates(scope)
@@ -80,7 +82,7 @@ module Events
       # AC-15.9, AC-15.12: a city ("Tout Paris") counts as a scoped search.
       raise TooBroad if @guest && area_keys.empty? && param(:q).to_s.strip.length < GUEST_Q_MIN
 
-      rows = scope.soonest_first.includes(:host).offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
+      rows = scope.soonest_first.includes(:host, event_circles: :circle).offset((page - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
       more = rows.size > PER_PAGE && !(@guest && page >= GUEST_MAX_PAGES)
       # AC-8.2: drops events whose host stopped being verified since the last daily job
       # (a page can then hold fewer than PER_PAGE events; pagination stays stable).
@@ -95,6 +97,15 @@ module Events
     def reject_non_scalar_params
       SCALAR_PARAMS.each { |key| @errors[key] << "invalid" if @params.key?(key) && !@params[key].nil? && param(key).nil? }
       @errors[:area] << "invalid" if self.class.area_keys(@params).nil?
+    end
+
+    # Circles AC-16.3, AC-17.12: circle-only events are found only by members of a chosen
+    # circle (guests never); a public circle never makes its events public.
+    def filter_visibility(scope)
+      searchable = scope.where(visibility: "searchable")
+      return searchable if @guest || @circle_ids.empty?
+
+      searchable.or(scope.where(visibility: "circles", id: EventCircle.where(circle_id: @circle_ids).select(:event_id)))
     end
 
     def filter_area(scope)

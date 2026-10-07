@@ -73,7 +73,9 @@ RSpec.describe "Events: what each audience sees", type: :request do
     it "AC-6.5 sees the host's first name and initial with the badge, no address, no participants (AC-6.1, AC-6.4)" do
       create(:event_participation, event: event, user: participant)
       data = get_event(event, auth_headers(member))
-      expect(data.keys).to match_array(COMMON_KEYS + %w[host])
+      # Circles US-16: members also get the visibility and their circles (none here).
+      expect(data.keys).to match_array(COMMON_KEYS + %w[host visibility circles])
+      expect(data).to include("visibility" => "searchable", "circles" => [])
       expect(data["host"]).to eq("id" => host.id, "first_name" => "Claire", "last_name_initial" => "M", "photo_url" => nil,
                                  "verified" => true, "former_member" => false)
       expect(response.body).not_to include("Oberkampf", "Thomas")
@@ -105,7 +107,7 @@ RSpec.describe "Events: what each audience sees", type: :request do
                                              "former_member" => false, "adults" => 1, "children" => 2 } ])
       expect(data["my_participation"]).to eq("adults" => 1, "children" => 2, "places" => 3, "emergency_phone" => nil, "pending_change" => nil)
       expect(data["viewer"]).to include("role" => "participant", "joined" => true, "join_blocker" => "joined")
-      expect(data).not_to have_key("visibility")
+      expect(data).to include("visibility" => "searchable", "circles" => [])
     end
 
     it "AC-6.2 the host sees the address, participants and publication fields" do
