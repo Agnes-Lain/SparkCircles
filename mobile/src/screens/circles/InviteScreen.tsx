@@ -16,7 +16,7 @@ import { useToast } from '../../components/ToastProvider';
 import { FormScreen } from '../auth/layouts';
 import { useBack } from '../auth/useBack';
 import { ConfirmSheet } from '../events/ConfirmSheet';
-import { Card, CardsSkeleton } from './CircleParts';
+import { Card, CardsSkeleton, circleStatusError } from './CircleParts';
 import { useCircle, useInvitation } from './queries';
 
 /**
@@ -50,7 +50,8 @@ export function InviteScreen() {
   const toggle = useMutation<{ invitation: Invitation }, ApiError, boolean>({
     mutationFn: (enabled) => circles().toggleInvitation(id, enabled),
     onSuccess: store,
-    onError: () => showToast(t('circles.detail.actionError'), 'error'),
+    onError: (error) =>
+      showToast(circleStatusError(error, t) ?? t('circles.detail.actionError'), 'error'),
   });
 
   const share = () => {
@@ -73,14 +74,17 @@ export function InviteScreen() {
         ) : (
           <Notification
             level="error"
-            title={t('circles.detail.loadError')}
+            title={circleStatusError(query.error, t) ?? t('circles.detail.loadError')}
+            testID="invitation-load-error"
             action={
-              <Button
-                variant="secondary"
-                size="small"
-                label={t('errors.tryAgain')}
-                onPress={() => void query.refetch()}
-              />
+              circleStatusError(query.error, t) ? undefined : (
+                <Button
+                  variant="secondary"
+                  size="small"
+                  label={t('errors.tryAgain')}
+                  onPress={() => void query.refetch()}
+                />
+              )
             }
           />
         )

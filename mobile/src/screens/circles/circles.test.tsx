@@ -209,6 +209,29 @@ describe('Create and edit (C2)', () => {
     );
   });
 
+  it('AC-17.7 (QA B3) a circle forced private by SparkCircles greys out the public option and says why', async () => {
+    mockCircles.get.mockResolvedValue({
+      circle: { ...adminCircle, visibility: 'private', forced_private: true },
+    });
+    await open(`/circles/${adminCircle.id}/edit`);
+    const radio = await screen.findByTestId('type-public-radio');
+    expect(radio).toBeDisabled();
+    expect(
+      screen.getByText(
+        'Indisponible : SparkCircles a rendu ce cercle privé après un signalement. Il reste privé pour l’instant.',
+      ),
+    ).toBeOnTheScreen();
+    await fireEvent.press(radio);
+    await fireEvent.press(screen.getByTestId('circle-submit'));
+    expect(screen.queryByText('Rendre ce cercle public ?')).toBeNull();
+    await waitFor(() =>
+      expect(mockCircles.update).toHaveBeenCalledWith(
+        adminCircle.id,
+        expect.objectContaining({ visibility: 'private' }),
+      ),
+    );
+  });
+
   it('formats the created-circles ordinal', () => {
     expect(ordinal(1, 'fr')).toBe('1er');
     expect(ordinal(2, 'en')).toBe('2nd');
@@ -249,6 +272,38 @@ describe('Invite (C3)', () => {
   });
 });
 
+describe('French copy (QA B5)', () => {
+  it('the circles copy is gender-neutral (no invité, inscrit, prévenu or nouvel admin)', () => {
+    const circlesCopy = JSON.stringify(i18n.getResourceBundle('fr', 'translation').circles);
+    expect(circlesCopy).not.toMatch(
+      /es (invité|inscrit)|t’a invité|est inscrit|(est|sont|été) prévenu|nouvel admin|Reste prudent/,
+    );
+    expect(i18n.t('circles.join.invited')).toBe('On t’invite à rejoindre');
+  });
+});
+
+describe('Paused circle (AC-7.3, QA B2)', () => {
+  it('AC-7.3 the invite screen says the circle is paused instead of showing the link', async () => {
+    mockCircles.invitation.mockRejectedValue(
+      apiError(403, 'circle_paused', 'Ce cercle est en pause.'),
+    );
+    mockCircles.get.mockResolvedValue({ circle: adminCircle });
+    await open(`/circles/${adminCircle.id}/invite`);
+    expect(await screen.findByTestId('invitation-load-error')).toHaveTextContent(
+      /Ce cercle est en pause\./,
+    );
+    expect(screen.queryByText('Réessayer')).toBeNull();
+  });
+
+  it('AC-7.3 an admin action refused because the circle is paused says so', async () => {
+    mockCircles.get.mockResolvedValue({ circle: adminCircle });
+    mockCircles.accept.mockRejectedValue(apiError(403, 'circle_paused', 'paused'));
+    await open(`/circles/${adminCircle.id}`);
+    await fireEvent.press(await screen.findByTestId('accept-r-ines'));
+    expect(await screen.findByText('Ce cercle est en pause.')).toBeOnTheScreen();
+  });
+});
+
 describe('Join (C4)', () => {
   it('AC-3.1, AC-2.3 previews an invitation code with the admin badge, then sends the request', async () => {
     mockCircles.preview.mockResolvedValue({ circle: preview });
@@ -274,7 +329,7 @@ describe('Join (C4)', () => {
     await open('/join/abcdefghijklmnopqrstuv');
     expect(
       await screen.findByText(
-        'Cette invitation n’est plus valide. Demande à la personne qui t’a invité.',
+        'Cette invitation n’est plus valide. Demande à la personne qui t’a envoyé l’invitation.',
       ),
     ).toBeOnTheScreen();
   });
@@ -348,7 +403,7 @@ describe('Circle detail (C5)', () => {
     mockCircles.get.mockResolvedValue({ circle: adminCircle });
     await open(`/circles/${adminCircle.id}`);
     await fireEvent.press(await screen.findByTestId('circle-leave'));
-    expect(await screen.findByText('Choisis d’abord un nouvel admin')).toBeOnTheScreen();
+    expect(await screen.findByText('Choisis d’abord qui sera admin')).toBeOnTheScreen();
   });
 
   it('AC-5.1, AC-16.5 the leave sheet says the joined circle outings are left too', async () => {
@@ -358,7 +413,7 @@ describe('Circle detail (C5)', () => {
     await fireEvent.press(await screen.findByTestId('circle-leave'));
     expect(
       await screen.findByText(
-        /Tu quitteras aussi la sortie du cercle à laquelle tu es inscrit \(1 à venir\)/,
+        /Tu quitteras aussi la sortie du cercle où tu as une place \(1 à venir\)/,
       ),
     ).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('confirm-leave'));

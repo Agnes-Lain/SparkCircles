@@ -33,7 +33,7 @@ import { fold } from '../events/AreaSheet';
 import { readArea } from '../events/areaStore';
 import { ConfirmSheet } from '../events/ConfirmSheet';
 import { useEventOptions } from '../events/queries';
-import { CardsSkeleton } from './CircleParts';
+import { CardsSkeleton, circleStatusError } from './CircleParts';
 import { ordinal, storeCircle, useCircle, useMyCircles } from './queries';
 
 export const NAME_MIN = 3;
@@ -253,7 +253,9 @@ function CircleForm({ circle, created = 0 }: { circle?: MemberCircle; created?: 
 
   const failed = mutation.error && mutation.error.code !== 'validation_failed';
   const areaLabel = areas?.find((area) => area.key === values.area)?.label ?? circle?.area.label;
-  const publicDisabled = !verified;
+  // QA B3: forced to private by SparkCircles, until staff lift it (the API refuses too).
+  const forcedPrivate = circle?.forced_private ?? false;
+  const publicDisabled = !verified || forcedPrivate;
   const locked = mutation.isPending;
 
   return (
@@ -269,7 +271,11 @@ function CircleForm({ circle, created = 0 }: { circle?: MemberCircle; created?: 
           <RadioRow
             label={t('circles.form.public')}
             helper={
-              publicDisabled ? t('circles.form.publicUnavailable') : t('circles.form.publicHelp')
+              forcedPrivate
+                ? t('circles.form.forcedPrivate')
+                : publicDisabled
+                  ? t('circles.form.publicUnavailable')
+                  : t('circles.form.publicHelp')
             }
             selected={values.visibility === 'public'}
             disabled={publicDisabled || locked}
@@ -363,9 +369,8 @@ function CircleForm({ circle, created = 0 }: { circle?: MemberCircle; created?: 
           title={
             mutation.error?.code === 'rate_limited'
               ? t('rateLimited.title')
-              : circle
-                ? t('circles.form.errors.serverSave')
-                : t('circles.form.errors.server')
+              : (circleStatusError(mutation.error, t) ??
+                (circle ? t('circles.form.errors.serverSave') : t('circles.form.errors.server')))
           }
           caption={
             mutation.error?.isOffline ? t('errors.unreachable.caption') : mutation.error?.message

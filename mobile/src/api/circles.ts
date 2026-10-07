@@ -85,6 +85,8 @@ export type MemberCircle = {
   area: Area;
   visibility: CircleVisibility;
   premium_entitlement: 'test_phase_free' | null;
+  /** Forced to private by SparkCircles: the admins can't make it public until staff lift it. */
+  forced_private: boolean;
   families_count: number;
   max_families: number;
   full: boolean;

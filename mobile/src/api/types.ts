@@ -58,6 +58,10 @@ export type ApiErrorCode =
   | 'requester_at_limit'
   | 'invitation_invalid'
   | 'too_many_tries'
+  // QA fixes: paused or closed circle (B2), forced private by SparkCircles (B3).
+  | 'circle_paused'
+  | 'circle_closed'
+  | 'circle_forced_private'
   | 'server_error'
   // Client side: no answer from the server (offline, DNS, refused) or too slow.
   | 'network_error'

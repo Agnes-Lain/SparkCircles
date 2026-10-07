@@ -44,7 +44,15 @@ import { useBack } from '../auth/useBack';
 import { ConfirmSheet } from '../events/ConfirmSheet';
 import { formatShortDay, formatTime } from '../events/format';
 import { useGuestAccount } from '../guest/useGuestAccount';
-import { Card, FamiliesLine, NeutralLine, RoleBadge, TypeLine, VerifiedBadge } from './CircleParts';
+import {
+  Card,
+  circleStatusError,
+  FamiliesLine,
+  NeutralLine,
+  RoleBadge,
+  TypeLine,
+  VerifiedBadge,
+} from './CircleParts';
 import { CircleReportSheet } from './CircleReportSheet';
 import { displayName, forgetCircle, refreshCircles, storeCircle, useCircle } from './queries';
 
@@ -448,7 +456,10 @@ function MemberCircleView({ circle }: { circle: MemberCircle }) {
 
   const onFail = (error: ApiError) => {
     close();
-    showToast(error.message || t('circles.detail.actionError'), 'error');
+    showToast(
+      circleStatusError(error, t) ?? (error.message || t('circles.detail.actionError')),
+      'error',
+    );
     refreshCircles(queryClient, circle.id);
   };
   const after = { close, onFail };

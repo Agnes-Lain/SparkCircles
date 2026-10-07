@@ -13,6 +13,7 @@ export const adminCircle: MemberCircle = {
   area,
   visibility: 'public',
   premium_entitlement: null,
+  forced_private: false,
   families_count: 3,
   max_families: 25,
   full: false,

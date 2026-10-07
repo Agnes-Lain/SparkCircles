@@ -1049,6 +1049,7 @@
       "privateHelp": "Nobody can find it. People get in only with your link or code, after your approval.",
       "freeTest": "Free during the test phase",
       "publicUnavailable": "Not available: verify your identity again first.",
+      "forcedPrivate": "Not available: SparkCircles made this circle private after a report. It stays private for now.",
       "safetyTitle": "Keep it safe: public means anyone can read the name and description",
       "safetyBody": "No school name, address, children’s names or phone numbers.",
       "privateTitle": "A circle is private",

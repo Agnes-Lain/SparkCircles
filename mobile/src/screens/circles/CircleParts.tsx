@@ -1,9 +1,11 @@
+import type { TFunction } from 'i18next';
 import { Globe, Info, Lock, Users } from 'lucide-react-native';
 import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 import type { CircleRole, CircleVisibility } from '../../api/circles';
+import type { ApiError } from '../../api/errors';
 import { Badge } from '../../components/Badge';
 import { Icon } from '../../components/Icon';
 import { Skeleton } from '../../components/Skeleton';
@@ -44,6 +46,16 @@ export function CommunityCard({
       <View className="flex-1 gap-sm px-lg py-md">{children}</View>
     </View>
   );
+}
+
+/**
+ * AC-7.3 (QA B2): a paused or closed circle refuses every admin action and every join; the
+ * app says why with the circle's status line.
+ */
+export function circleStatusError(error: ApiError | null | undefined, t: TFunction): string | null {
+  if (error?.code === 'circle_paused') return t('circles.detail.statusPaused');
+  if (error?.code === 'circle_closed') return t('circles.detail.statusClosed');
+  return null;
 }
 
 /** A plain Surface card (detail sections). */
