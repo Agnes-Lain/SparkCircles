@@ -426,8 +426,16 @@ describe('US-15 guest event detail and the sign-up prompt', () => {
 });
 
 describe('US-15 guest tabs', () => {
+  it('AC-8.1 (circles) /community explains circles without « Bientôt », with the circle search', async () => {
+    await openAsGuest('/community');
+    expect(await screen.findByRole('header', { name: 'Cercles' })).toBeOnTheScreen();
+    expect(screen.getByText('Des petits cercles de familles près de chez toi')).toBeOnTheScreen();
+    expect(screen.queryByText('Bientôt')).toBeNull();
+    expect(screen.getByTestId('guest-tab-sign-up')).toHaveTextContent('Créer mon compte');
+    expect(screen.getByTestId('circles-segment-find')).toBeOnTheScreen();
+  });
+
   it.each([
-    ['/community', 'Cercles', 'Des petits cercles de familles près de chez toi'],
     ['/market', 'Services', 'Des aides de confiance pour la garde et le quotidien'],
     ['/travel', 'Voyages', 'Échange ta maison avec une famille pendant les vacances'],
   ])(

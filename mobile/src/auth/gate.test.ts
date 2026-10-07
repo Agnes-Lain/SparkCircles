@@ -66,6 +66,16 @@ describe('auth gate rules (M-9, contract §1 "Account gates")', () => {
     expect(isAllowed('signedOut', 'account')).toBe(false);
   });
 
+  it('circles AC-3.3, AC-17.10: invitation links and public circle pages open as a guest; forms need an account', () => {
+    expect(isAllowed('signedOut', routeName(['join', '[token]']))).toBe(true);
+    expect(isAllowed('signedOut', routeName(['circles', '[id]']))).toBe(true);
+    expect(isAllowed('signedOut', routeName(['circles', 'new']))).toBe(false);
+    expect(isAllowed('signedOut', routeName(['circles', 'code']))).toBe(false);
+    expect(isAllowed('signedOut', routeName(['circles', '[id]', 'invite']))).toBe(false);
+    expect(isAllowed('ready', routeName(['circles', '[id]', 'edit']))).toBe(true);
+    expect(isAllowed('ready', routeName(['circles', 'join']))).toBe(true);
+  });
+
   it('names routes by their screen, the tabs as one group', () => {
     expect(routeName(['(tabs)', 'events'])).toBe('(tabs)');
     expect(routeName(['(auth)', 'log-in'])).toBe('log-in');
