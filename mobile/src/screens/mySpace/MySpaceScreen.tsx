@@ -31,8 +31,8 @@ const VIEW_KEY = ['my-space', 'view'] as const;
  * until backlog #17, no unread dot), then « Aujourd'hui | Mon compte » (Lavender). Opens on
  * Today, also when the tab comes back after another tab; `?view=account` (the `/account`
  * link) opens « Mon compte » (AC-7.4). Coming back from a screen pushed from « Mon compte »
- * keeps it. One scroll,
- * pull to refresh, refresh when the tab comes back into view (AC-3.5).
+ * keeps it. Fixed header like Sorties and Cercles; only the panel scrolls, with pull to
+ * refresh, and refreshes when the tab comes back into view (AC-3.5).
  */
 export function MySpaceScreen() {
   const { t } = useTranslation();
@@ -113,18 +113,8 @@ export function MySpaceScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1" testID="my-space-screen">
-      <ScrollView
-        ref={scroll}
-        contentContainerClassName="gap-lg px-lg pb-3xl pt-xl"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => void onRefresh()}
-            tintColor={colorValue('lavender-dark')}
-            colors={[colorValue('lavender-dark')]}
-          />
-        }
-      >
+      {/* Fixed header (same as Sorties and Cercles): only the panel below scrolls. */}
+      <View className="gap-md px-lg pb-md pt-xl">
         <View className="flex-row items-center justify-between gap-md">
           <Text accessibilityRole="header" className="flex-1 text-h1 text-ink">
             {t('tabs.mySpace')}
@@ -150,7 +140,20 @@ export function MySpaceScreen() {
           value={view}
           onChange={setView}
         />
-
+      </View>
+      <ScrollView
+        ref={scroll}
+        contentContainerClassName="gap-lg px-lg pb-3xl"
+        testID="my-space-scroll"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void onRefresh()}
+            tintColor={colorValue('lavender-dark')}
+            colors={[colorValue('lavender-dark')]}
+          />
+        }
+      >
         {celebrating ? (
           <View className="items-center">
             <SuccessCheckmark />

@@ -94,6 +94,16 @@ describe('My space header and segments (spec my-space 5, AC-7.3, AC-7.6)', () =>
     await fireEvent.press(screen.getByRole('tab', { name: 'Mon compte' }));
     expect(await screen.findByTestId('account-panel')).toBeOnTheScreen();
   });
+
+  it('keeps the title, bell and segments fixed above the scrolling panel', async () => {
+    await open();
+    const scroll = screen.getByTestId('my-space-scroll');
+    expect(await within(scroll).findByTestId('today-panel')).toBeOnTheScreen();
+    expect(within(scroll).queryByRole('header', { name: 'Mon espace' })).toBeNull();
+    expect(within(scroll).queryByTestId('notifications-entry')).toBeNull();
+    expect(within(scroll).queryByRole('tab', { name: "Aujourd'hui" })).toBeNull();
+    expect(screen.getByRole('tab', { name: "Aujourd'hui" })).toBeOnTheScreen();
+  });
 });
 
 describe('Next outing (US-1, AC-1.1, AC-1.2, AC-1.4)', () => {
