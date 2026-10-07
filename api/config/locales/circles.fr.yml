@@ -1,0 +1,85 @@
+fr:
+  admin:
+    nav:
+      open_circle_reports:
+        one: "%{count} cercle signalé"
+        other: "%{count} cercles signalés"
+  api:
+    errors:
+      admin_rights_paused: "Tes droits d'admin sont en pause. Vérifie à nouveau ton identité pour gérer le cercle."
+      circle_create_limit: "Tu peux créer 3 cercles et tu en as déjà 3."
+      circle_member_limit: "Tu fais déjà partie de 5 cercles, c'est le maximum. Quitte un cercle pour en rejoindre un autre."
+      circle_full: "Ce cercle est complet."
+      already_member: "Tu fais déjà partie de ce cercle."
+      sole_admin: "Tu es la seule personne admin. Nomme un membre vérifié admin, puis tu pourras quitter le cercle."
+      admin_limit: "3 admins au maximum."
+      already_admin: "Ce membre est déjà admin."
+      member_is_admin: "Une personne admin ne peut pas être retirée. Elle peut d'abord quitter son rôle."
+      member_is_creator: "La personne qui a créé le cercle ne peut pas être retirée."
+      not_verified_member: "Seul un membre vérifié peut devenir admin."
+      circle_has_verified_members: "D'autres membres vérifiés peuvent animer ce cercle : nomme plutôt l'un d'eux admin."
+      requester_at_limit: "Cette personne fait déjà partie de 5 cercles, c'est le maximum."
+      invitation_invalid: "Cette invitation n'est plus valide. Demande à la personne qui t'a invité."
+      too_many_tries: "Trop d'essais. Réessaie dans quelques minutes."
+  circles:
+    report_reasons:
+      unsafe: "Dangereux ou inapproprié"
+      not_real_group: "Pas un vrai groupe"
+      inappropriate_behaviour: "Comportement inapproprié"
+      child_safety: "Inquiétude pour la sécurité des enfants"
+      fake_identity: "Fausse identité"
+      other: "Autre"
+  activerecord:
+    errors:
+      messages:
+        not_allowed: "n'est pas autorisé ici"
+        verification_required: "demande une identité vérifiée"
+  circle_mailer:
+    request_received:
+      subject: "Nouvelle demande pour « %{name} »"
+      lines:
+        - "%{person} demande à rejoindre « %{name} »."
+        - "Ouvre le cercle pour accepter ou refuser. Aucun motif n'est envoyé si tu refuses."
+      action: "Voir la demande"
+    requests_digest:
+      subject:
+        one: "1 nouvelle demande pour « %{name} »"
+        other: "%{count} nouvelles demandes pour « %{name} »"
+      lines:
+        - "De nouvelles demandes attendent dans « %{name} »."
+        - "Ouvre le cercle pour accepter ou refuser. Aucun motif n'est envoyé si tu refuses."
+      action: "Voir les demandes"
+    request_accepted:
+      subject: "Tu es dans le cercle « %{name} »"
+      lines:
+        - "Ta demande a été acceptée : tu fais maintenant partie de « %{name} »."
+        - "Tu peux voir ses membres et ses sorties dans l'app."
+      action: "Ouvrir le cercle"
+    request_declined:
+      subject: "Ta demande pour « %{name} »"
+      lines:
+        - "Ta demande pour rejoindre « %{name} » n'a pas été acceptée."
+      action: "Voir mes cercles"
+    request_expired:
+      subject: "Ta demande pour « %{name} » a expiré"
+      lines:
+        - "Ta demande pour rejoindre « %{name} » a expiré. Tu peux redemander."
+        - "Réutilise le lien ou le code."
+      action: "Voir mes cercles"
+    event_access_lost:
+      subject: "Tu ne peux plus participer à « %{title} »"
+      left: "Tu ne peux plus participer à « %{title} » : tu as quitté le cercle."
+      removed: "Tu ne peux plus participer à « %{title} » : tu ne fais plus partie du cercle."
+      action: "Voir les sorties"
+    new_admin:
+      subject: "Tu es maintenant admin de « %{name} »"
+      lines:
+        - "La personne admin de « %{name} » a fermé son compte. Comme membre vérifié de longue date, tu es maintenant admin du cercle."
+        - "Tu peux accepter les demandes, renouveler le lien et gérer le cercle. Tu peux aussi nommer un autre admin."
+      action: "Ouvrir le cercle"
+    circle_closing:
+      subject: "« %{name} » va fermer"
+      lines:
+        - "« %{name} » n'a plus de membre vérifié pour l'animer. Il fermera le %{date}."
+        - "D'ici là, tu peux toujours le voir dans l'app."
+      action: "Voir mes cercles"

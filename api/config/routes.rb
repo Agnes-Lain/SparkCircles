@@ -67,6 +67,38 @@ Rails.application.routes.draw do
           resources :reports, only: :create
         end
       end
+
+      # Circles (docs/api/circles.md).
+      resources :circles, only: %i[index show create update destroy] do
+        collection { get :search }
+        member { get :activity }
+        scope module: :circles do
+          resource :invitation, only: %i[show create update]
+          resource :join_request, only: %i[create destroy]
+          resources :requests, only: [] do
+            member do
+              post :accept
+              post :decline
+            end
+          end
+          resource :membership, only: :destroy do
+            post :step_down
+          end
+          resources :members, only: :destroy do
+            post :promote, on: :member
+          end
+          resources :reports, only: :create
+        end
+      end
+      resources :circle_invitations, only: [] do
+        collection do
+          post :preview
+          post :join
+        end
+      end
+      resources :circle_cards, only: [] do
+        post :dismiss, on: :member
+      end
     end
   end
 
@@ -95,6 +127,15 @@ Rails.application.routes.draw do
         post :remove_tag
         post :suspend
         post :cancel
+        post :resolve_reports
+      end
+    end
+
+    resources :circles, only: %i[index show] do
+      member do
+        post :suspend
+        post :resume
+        post :force_private
         post :resolve_reports
       end
     end

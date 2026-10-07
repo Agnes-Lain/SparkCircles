@@ -1,0 +1,85 @@
+en:
+  admin:
+    nav:
+      open_circle_reports:
+        one: "%{count} reported circle"
+        other: "%{count} reported circles"
+  api:
+    errors:
+      admin_rights_paused: "Your admin rights are paused. Verify your identity again to manage the circle."
+      circle_create_limit: "You can create 3 circles and you already have 3."
+      circle_member_limit: "You're already in 5 circles, the maximum. Leave a circle to join another one."
+      circle_full: "This circle is full."
+      already_member: "You're already in this circle."
+      sole_admin: "You're the only admin. Name a verified member as admin, then you can leave."
+      admin_limit: "3 admins at most."
+      already_admin: "This member is already an admin."
+      member_is_admin: "An admin can't be removed. They can step down first."
+      member_is_creator: "The person who created the circle can't be removed."
+      not_verified_member: "Only a verified member can become an admin."
+      circle_has_verified_members: "Other verified members can run this circle: name one of them admin instead."
+      requester_at_limit: "This person is already in 5 circles, the maximum."
+      invitation_invalid: "This invitation isn't valid anymore. Ask the person who invited you."
+      too_many_tries: "Too many tries. Try again in a few minutes."
+  circles:
+    report_reasons:
+      unsafe: "Unsafe or inappropriate"
+      not_real_group: "Not a real group"
+      inappropriate_behaviour: "Inappropriate behaviour"
+      child_safety: "Concern about children's safety"
+      fake_identity: "Fake identity"
+      other: "Other"
+  activerecord:
+    errors:
+      messages:
+        not_allowed: "isn't allowed here"
+        verification_required: "needs a verified identity"
+  circle_mailer:
+    request_received:
+      subject: "New request for « %{name} »"
+      lines:
+        - "%{person} asked to join « %{name} »."
+        - "Open the circle to accept or decline. No reason is sent if you decline."
+      action: "See the request"
+    requests_digest:
+      subject:
+        one: "1 new request for « %{name} »"
+        other: "%{count} new requests for « %{name} »"
+      lines:
+        - "New requests are waiting in « %{name} »."
+        - "Open the circle to accept or decline. No reason is sent if you decline."
+      action: "See the requests"
+    request_accepted:
+      subject: "You're in « %{name} »"
+      lines:
+        - "Your request was accepted: you're now in « %{name} »."
+        - "You can see its members and its outings in the app."
+      action: "Open the circle"
+    request_declined:
+      subject: "Your request for « %{name} »"
+      lines:
+        - "Your request to join « %{name} » was not accepted."
+      action: "See my circles"
+    request_expired:
+      subject: "Your request for « %{name} » expired"
+      lines:
+        - "Your request to join « %{name} » expired. You can ask again."
+        - "Use the link or the code again."
+      action: "See my circles"
+    event_access_lost:
+      subject: "You can no longer attend « %{title} »"
+      left: "You can no longer attend « %{title} »: you left the circle."
+      removed: "You can no longer attend « %{title} »: you're no longer in the circle."
+      action: "See outings"
+    new_admin:
+      subject: "You're now admin of « %{name} »"
+      lines:
+        - "The admin of « %{name} » closed their account. As a long-standing verified member, you're now its admin."
+        - "You can approve requests, renew the link and manage the circle. You can also name another admin."
+      action: "Open the circle"
+    circle_closing:
+      subject: "« %{name} » will close"
+      lines:
+        - "« %{name} » has no verified member left to run it. It will close on %{date}."
+        - "Until then, you can still see it in the app."
+      action: "See my circles"
