@@ -110,6 +110,11 @@ describe('US-15 guest home (Sorties in guest mode)', () => {
     await screen.findByText('Goûter et jeux au parc');
     expect(screen.queryByText('Mes sorties')).toBeNull();
     expect(screen.queryByTestId('map-button')).toBeNull();
+    // Guest buttons harmonisation: a quiet link with a `plus` icon, not the Secondary pill.
+    const create = screen.getByRole('button', { name: 'Créer ma sortie' });
+    expect(create).toHaveStyle({ minHeight: 44 });
+    expect(create.props.className).not.toContain('rounded-pill');
+    expect(screen.getByText('Créer ma sortie').props.className).toContain('text-green-dark');
     await fireEvent.press(screen.getByTestId('create-event'));
     expect(screen.getByText('Crée ton compte pour proposer une sortie')).toBeOnTheScreen();
     // No event behind "create": no return-to-event promise.
@@ -142,7 +147,16 @@ describe('US-15 guest home (Sorties in guest mode)', () => {
     expect(
       screen.queryByText('Pas besoin de compte pour regarder les sorties ci-dessous.'),
     ).toBeNull();
-    expect(screen.getByTestId('hero-sign-up')).toBeOnTheScreen();
+    // Guest buttons harmonisation: stacked full width (large Primary, then Ghost), never inline.
+    const actions = screen.getByTestId('hero-compact-actions');
+    expect(actions.props.className).toContain('gap-sm');
+    expect(actions.props.className).not.toContain('flex-row');
+    const signUp = within(actions).getByTestId('hero-sign-up');
+    const logIn = within(actions).getByTestId('hero-log-in');
+    expect(signUp.props.className).toContain('px-7 py-3.5');
+    expect(logIn.props.className).toContain('px-5 py-2.5');
+    expect(signUp.parent?.props.className ?? '').not.toContain('flex-1');
+    expect(logIn.parent?.props.className ?? '').not.toContain('flex-1');
   });
 
   it('AC-15.9 AC-15.12 searches "Tout Paris" by default, sent as the city area', async () => {

@@ -1,4 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
+import { Plus } from 'lucide-react-native';
 import { AccessibilityInfo, Animated, Platform, Text } from 'react-native';
 
 import i18n from '../i18n';
@@ -118,6 +119,18 @@ describe('TextLink (design system section 5)', () => {
       minHeight: MIN_TOUCH_TARGET,
       minWidth: MIN_TOUCH_TARGET,
     });
+  });
+
+  it('can carry a leading icon and act as a button, keeping its label and 44 px target', async () => {
+    const onPress = jest.fn();
+    await renderWithProviders(
+      <TextLink icon={Plus} accessibilityRole="button" label="Créer ma sortie" onPress={onPress} />,
+    );
+    const link = screen.getByRole('button', { name: 'Créer ma sortie' });
+    expect(link).toHaveStyle({ minHeight: MIN_TOUCH_TARGET });
+    expect(screen.queryByRole('link')).toBeNull();
+    await fireEvent.press(link);
+    expect(onPress).toHaveBeenCalled();
   });
 });
 

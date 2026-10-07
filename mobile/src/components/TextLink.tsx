@@ -1,7 +1,9 @@
+import type { LucideIcon } from 'lucide-react-native';
 import type { Ref } from 'react';
-import { Pressable, Text, type View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { MIN_TOUCH_TARGET } from '../theme/a11y';
+import { Icon } from './Icon';
 
 export type TextLinkProps = {
   /** The pressable, e.g. so focus can return to it after a sheet closes. */
@@ -13,6 +15,10 @@ export type TextLinkProps = {
   /** Caption-size link (the Welcome language switch, design system section 18). */
   small?: boolean;
   disabled?: boolean;
+  /** Leading line icon, 16 px in the label colour with a 4 px gap (guest « Créer ma sortie »). */
+  icon?: LucideIcon;
+  /** 'button' when the link triggers an action rather than navigating (default 'link'). */
+  accessibilityRole?: 'link' | 'button';
   /** Language of the label when it differs from the app's (VoiceOver pronunciation). */
   accessibilityLanguage?: string;
   testID?: string;
@@ -25,6 +31,8 @@ export function TextLink({
   quiet = false,
   small = false,
   disabled = false,
+  icon,
+  accessibilityRole = 'link',
   accessibilityLanguage,
   ref,
   testID,
@@ -34,7 +42,7 @@ export function TextLink({
     <Pressable
       ref={ref}
       testID={testID}
-      accessibilityRole="link"
+      accessibilityRole={accessibilityRole}
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
       accessibilityLanguage={accessibilityLanguage}
@@ -43,11 +51,14 @@ export function TextLink({
       className="items-center justify-center"
       style={{ minHeight: MIN_TOUCH_TARGET, minWidth: MIN_TOUCH_TARGET }}
     >
-      <Text
-        className={quiet ? `${size} text-ink-2 underline` : `${size} font-medium text-green-dark`}
-      >
-        {label}
-      </Text>
+      <View className="flex-row items-center gap-xs">
+        {icon ? <Icon icon={icon} size={16} color={quiet ? 'ink-2' : 'green-dark'} /> : null}
+        <Text
+          className={quiet ? `${size} text-ink-2 underline` : `${size} font-medium text-green-dark`}
+        >
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }

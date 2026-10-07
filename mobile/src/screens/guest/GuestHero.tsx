@@ -61,7 +61,7 @@ function Benefit({
  * Guest hero (design guest-home sections 3 and 3b) on top of Sorties in guest mode; it
  * scrolls away with the list. Full: the promise, the support line, the benefits card and the
  * two account actions. Compact (a device that has seen the full hero): the promise on one
- * line and both actions inline. One Primary either way.
+ * line and both actions stacked full width, as in GuestTabScreen. One Primary either way.
  */
 export function GuestHero({
   compact,
@@ -82,22 +82,19 @@ export function GuestHero({
         <Text accessibilityRole="header" className="text-body font-medium text-ink">
           {t('guest.hero.promise')}
         </Text>
-        <View className="flex-row gap-sm">
-          <View className="flex-1">
-            <Button
-              label={t('guest.createAccount')}
-              onPress={() => account.signUp()}
-              testID="hero-sign-up"
-            />
-          </View>
-          <View className="flex-1">
-            <Button
-              variant="ghost"
-              label={t('guest.haveAccount')}
-              onPress={() => account.logIn()}
-              testID="hero-log-in"
-            />
-          </View>
+        <View className="gap-sm" testID="hero-compact-actions">
+          <Button
+            size="large"
+            label={t('guest.createAccount')}
+            onPress={() => account.signUp()}
+            testID="hero-sign-up"
+          />
+          <Button
+            variant="ghost"
+            label={t('guest.haveAccount')}
+            onPress={() => account.logIn()}
+            testID="hero-log-in"
+          />
         </View>
       </View>
     );

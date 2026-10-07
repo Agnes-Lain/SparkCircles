@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsGuest } from '../../auth/GateContext';
 import { Button } from '../../components/Button';
 import { SegmentedControl } from '../../components/SegmentedControl';
+import { TextLink } from '../../components/TextLink';
 import { DiscoverList } from './DiscoverList';
 import { MyEvents } from './MyEvents';
 import { GuestConversionCard, GuestFooter } from '../guest/GuestFooter';
@@ -55,14 +56,14 @@ function GuestEventsScreen({ tag }: { tag?: string }) {
         top={(openBadge) => (
           <>
             {heroSeen === null ? null : <GuestHero compact={heroSeen} onVerifyInfo={openBadge} />}
-            <View className="flex-row items-center justify-between gap-md">
+            {/* Guests: a quiet link, not a pill (guest-home "Guest buttons harmonisation"). */}
+            <View className="flex-row flex-wrap items-center justify-between gap-md">
               <Text accessibilityRole="header" className="flex-1 text-h2 text-ink">
                 {t('guest.searchTitle')}
               </Text>
-              <Button
-                variant="secondary"
-                size="small"
+              <TextLink
                 icon={Plus}
+                accessibilityRole="button"
                 label={t('events.create')}
                 onPress={() => setCreating(true)}
                 testID="create-event"
