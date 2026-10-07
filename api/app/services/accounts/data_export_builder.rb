@@ -40,7 +40,16 @@ module Accounts
         event_participations: @user.event_participations.includes(:event).order(:created_at).map do |participation|
           participation_entry(participation)
         end,
-        event_reports: @user.event_reports.includes(:event).order(:created_at).map { |report| report_entry(report) }
+        event_reports: @user.event_reports.includes(:event).order(:created_at).map { |report| report_entry(report) },
+        # Circles spec section 7: my circles and requests, never other members' data.
+        circles: @user.circle_memberships.active.includes(:circle).order(:joined_at).map { |membership| circle_entry(membership) },
+        circle_requests: @user.circle_memberships.where.not(status: "active").includes(:circle).order(:created_at).map do |membership|
+          circle_request_entry(membership)
+        end,
+        circle_reports: @user.circle_reports.includes(:circle).order(:created_at).map do |report|
+          { circle_name: report.circle.name, about_a_member: report.member_report?, reason: report.reason,
+            details: report.details, reported_at: iso(report.created_at) }
+        end
       }
     end
 
@@ -78,6 +87,22 @@ module Accounts
       {
         event_id: report.event_id, event_title: report.event.title, reason: report.reason, details: report.details,
         reported_at: iso(report.created_at)
+      }
+    end
+
+    def circle_entry(membership)
+      circle = membership.circle
+      {
+        circle_id: circle.id, name: circle.name, description: circle.description, area: circle.area,
+        visibility: circle.visibility, visibility_changed_at: iso(circle.visibility_changed_at), status: circle.status,
+        role: membership.display_role, joined_at: iso(membership.joined_at), created_by_me: circle.created_by_id == @user.id
+      }
+    end
+
+    def circle_request_entry(membership)
+      {
+        circle_name: membership.circle.name, status: membership.status,
+        requested_at: iso(membership.requested_at), decided_at: iso(membership.decided_at)
       }
     end
 

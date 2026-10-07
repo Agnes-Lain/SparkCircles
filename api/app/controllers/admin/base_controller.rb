@@ -17,7 +17,7 @@ module Admin
     rescue_from Pundit::NotAuthorizedError, Admin::MemberActions::OwnAccount, with: :forbidden
     rescue_from ActiveRecord::RecordNotFound, with: -> { render "admin/shared/not_found", status: :not_found }
 
-    helper_method :current_admin, :open_reports_count, :open_event_reports_count
+    helper_method :current_admin, :open_reports_count, :open_event_reports_count, :open_circle_reports_count
 
     private
 
@@ -32,6 +32,10 @@ module Admin
 
     def open_event_reports_count
       @open_event_reports_count ||= EventReport.open.distinct.count(:event_id)
+    end
+
+    def open_circle_reports_count
+      @open_circle_reports_count ||= CircleReport.open.distinct.count(:circle_id)
     end
 
     def current_admin

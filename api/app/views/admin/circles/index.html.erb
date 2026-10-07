@@ -1,0 +1,26 @@
+<h1>Reported circles</h1>
+<p><%= @circles.size %> with open reports · oldest report first</p>
+
+<% if @circles.empty? %>
+  <div class="card" style="text-align: center">
+    <h3>All caught up</h3>
+    <p>No circle report is waiting. New ones appear here.</p>
+  </div>
+<% else %>
+  <div class="card">
+    <table>
+      <thead><tr><th>Circle</th><th>Reasons</th><th>Reports</th><th><span class="visually-hidden">Action</span></th></tr></thead>
+      <tbody>
+        <% @circles.each do |circle| %>
+          <% open = circle.reports.select { |report| report.resolved_at.nil? } %>
+          <tr>
+            <td><%= circle.name %><br><span class="caption"><%= circle.visibility.capitalize %> · <%= circle.status.capitalize %> · <%= t("events.areas.#{circle.area}", locale: :en) %></span></td>
+            <td><%= open.map { |report| report.member_report? ? "Member: #{report.reason_label}" : report.reason_label }.tally.map { |label, count| count > 1 ? "#{label} (#{count})" : label }.join(", ") %></td>
+            <td><%= open.size %></td>
+            <td><%= target_link "Review", admin_circle_path(circle), "aria-label": "Review #{circle.name}" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

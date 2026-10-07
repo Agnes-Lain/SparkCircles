@@ -94,6 +94,49 @@ if dropoff.new_record? || dropoff.ended?
   raise "Seed event #{dropoff.title} invalid: #{dropoff.errors.full_messages.join(', ')}" unless dropoff.published?
 end
 
+# Circles v1 (spec circles): Karim runs a public circle (Claire is a member, Thomas, not
+# verified, is waiting for approval) with a circle-only outing; Claire runs a private circle
+# and a second public one, so search has results. Found again by name: never duplicated.
+def seed_circle(name, admin:, area:, visibility:, description:)
+  Circle.find_by(name: name) || Circle.create!(name: name, area: area, visibility: visibility, description: description,
+                                               created_by: admin).tap do |circle|
+    circle.memberships.create!(user: admin, status: "active", role: "admin", creator: true, joined_at: Time.current,
+                               admin_since: Time.current, seen_at: Time.current)
+  end
+end
+
+def seed_membership(circle, user, status: "active")
+  circle.memberships.find_or_create_by!(user: user) do |membership|
+    membership.status = status
+    membership.joined_at = Time.current if status == "active"
+    membership.requested_at = Time.current if status == "pending"
+    membership.seen_at = Time.current
+  end
+end
+
+class_circle = seed_circle("Parents CE2 · Jaurès", admin: karim, area: "paris-11", visibility: "public",
+                           description: "Les familles de la classe de Mme Roux, pour s'organiser pour les sorties d'école.")
+seed_membership(class_circle, claire)
+seed_membership(class_circle, pending, status: "pending")
+neighbours = seed_circle("Voisins de la Roquette", admin: claire, area: "paris-11", visibility: "private",
+                         description: "Les familles de l'immeuble.")
+seed_circle("Goûters du 20e", admin: claire, area: "paris-20", visibility: "public",
+            description: "Des goûters au parc de Belleville, un mercredi sur deux.")
+
+circle_outing = Event.find_or_initialize_by(host: karim, title: "Goûter et jeux au parc")
+if circle_outing.new_record? || circle_outing.ended?
+  starts_at = paris.now.to_date.advance(days: 3).then { |day| paris.local(day.year, day.month, day.day, 15) }
+  circle_outing.assign_attributes(category: "playdates", area: "paris-11", exact_address: "Square Maurice-Gardette", places_total: 12,
+                                  join_rule: "anyone", visibility: "circles", chosen_circle_ids: [ class_circle.id ], tags: %w[goûter],
+                                  starts_at: starts_at, ends_at: starts_at + 2.hours, description: "Goûter partagé après l'école.")
+  circle_outing.status = "draft" unless circle_outing.persisted?
+  circle_outing.status == "draft" ? circle_outing.publish! : circle_outing.update!(status: "published")
+  raise "Seed event #{circle_outing.title} invalid: #{circle_outing.errors.full_messages.join(', ')}" unless circle_outing.published?
+end
+
+link_base = Rails.configuration.x.app_link_base
+puts "Circles: « #{class_circle.name} » (Karim, public, code #{class_circle.formatted_code}), " \
+     "« #{neighbours.name} » (Claire, private, code #{neighbours.formatted_code}, link #{link_base}/join/#{neighbours.invite_token})."
 puts "Seeded: admin@, verified@, verified-paris@ and pending@sparkcircles.localhost, and #{Event.listed.count} upcoming events."
 if created.empty?
   puts "The accounts already existed: they keep their current password."

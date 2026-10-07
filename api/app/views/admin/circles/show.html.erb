@@ -1,0 +1,77 @@
+<p><%= target_link "← Reported circles", admin_circles_path %></p>
+<div class="title-row">
+  <h1><%= @circle.name %></h1>
+  <span class="badge badge-<%= @circle.active? ? 'green' : 'neutral' %>"><%= @circle.status.capitalize %></span>
+  <span class="badge badge-neutral"><%= @circle.visibility.capitalize %></span>
+</div>
+<p class="caption"><%= admin_icon(:lock, size: 14) %> Your access is recorded: <%= reason_phrase("safety_report") %>.</p>
+
+<% policy = Admin::CirclePolicy.new(current_admin, @circle) %>
+<div class="card">
+  <dl>
+    <dt>Area</dt><dd><%= t("events.areas.#{@circle.area}", locale: :en) %></dd>
+    <dt>Families</dt><dd><%= @circle.families_count %> of <%= Circle::MAX_FAMILIES %></dd>
+    <dt>Admins</dt>
+    <dd>
+      <% @admins.each do |admin| %>
+        <%= admin.user.display_name %> <%= verification_badge(admin.user) %> · <%= target_link "Member page", admin_member_path(admin.user, reason: "safety_report") %><br>
+      <% end %>
+    </dd>
+    <dt>Description</dt><dd><%= simple_format(@circle.description.presence || "—") %></dd>
+  </dl>
+  <div class="actions">
+    <% if policy.suspend? %>
+      <button type="button" class="btn btn-destructive" data-dialog-open="suspend-dialog">Pause circle</button>
+    <% end %>
+    <% if policy.resume? %>
+      <%= button_to "Resume circle", resume_admin_circle_path(@circle), method: :post, class: "btn btn-ghost" %>
+    <% end %>
+    <% if policy.force_private? %>
+      <%= button_to "Make private", force_private_admin_circle_path(@circle), method: :post, class: "btn btn-ghost" %>
+    <% end %>
+    <% if @open_reports.any? %>
+      <%= button_to "Mark reports as reviewed", resolve_reports_admin_circle_path(@circle), method: :post, class: "btn btn-ghost" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Open reports (<%= @open_reports.size %>)</h2>
+  <% if @open_reports.empty? %>
+    <p>No open report.</p>
+  <% else %>
+    <table>
+      <thead><tr><th>About</th><th>Reason</th><th>Details</th><th>Reporter</th><th>Sent</th></tr></thead>
+      <tbody>
+        <% @open_reports.each do |report| %>
+          <tr>
+            <td>
+              <% if report.member_report? %>
+                <% if report.reported_user %>
+                  <%= report.reported_user.display_name %> · <%= target_link "Member page", admin_member_path(report.reported_user, reason: "safety_report") %>
+                <% else %>Erased account<% end %>
+              <% else %>The circle<% end %>
+            </td>
+            <td><%= report.reason_label %></td>
+            <td><%= report.details.presence || "—" %></td>
+            <td><%= report.reporter&.display_name || "Erased account" %></td>
+            <td><%= admin_datetime(report.created_at) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
+
+<% if policy.suspend? %>
+  <dialog class="modal" id="suspend-dialog" aria-labelledby="suspend-title">
+    <div class="card">
+      <h2 id="suspend-title">Pause this circle?</h2>
+      <p>Members see "This circle is paused" and nothing else. It leaves search and its outings are hidden from members. Open reports are marked as reviewed.</p>
+      <div class="actions">
+        <%= button_to "Pause circle", suspend_admin_circle_path(@circle), method: :post, class: "btn btn-destructive" %>
+        <button type="button" class="btn btn-ghost" data-dialog-close>Keep it</button>
+      </div>
+    </div>
+  </dialog>
+<% end %>

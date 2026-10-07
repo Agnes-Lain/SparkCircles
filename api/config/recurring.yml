@@ -48,3 +48,10 @@ production:
   purge_guest_access_events:
     class: PurgeGuestAccessEventsJob
     schedule: every day at 4:30am
+  # Circles (spec circles)
+  expire_circle_requests:
+    class: ExpireCircleRequestsJob
+    schedule: every day at 4:45am
+  close_circles:
+    class: CloseCirclesJob
+    schedule: every day at 5am

@@ -21,6 +21,11 @@ module Accounts
         @user.data_exports.each { |export| export.file.purge if export.file.attached? }
         # Reports stay for moderation, unlinked (reporter_id NULL, FK), without the free text.
         @user.event_reports.update_all(details: nil, updated_at: Time.current)
+        # Circles (spec section 7): circle reports stay unlinked without their text; any
+        # membership left (closure normally ended them, AC-6.4) is ended the same way, and
+        # memberships and requests go with the account (on delete cascade).
+        @user.circle_reports.update_all(details: nil, updated_at: Time.current)
+        Circles::Departure.close_account!(@user) if @user.circle_memberships.where(status: %w[active pending]).exists?
         # Pending host digests keep no id of the erased person (anonymous "left" instead).
         Events::Notifications.forget_participant(@user)
         @user.destroy!
