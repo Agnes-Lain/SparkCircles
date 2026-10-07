@@ -17,6 +17,7 @@ import { events } from '../../api';
 import type { ApiError } from '../../api/errors';
 import type { SparkEvent } from '../../api/events';
 import { useMe } from '../../auth/useMe';
+import { Checkbox } from '../../components/Checkbox';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { CategoryIcon } from '../../components/CategoryPill';
@@ -34,6 +35,7 @@ import { MIN_TOUCH_TARGET } from '../../theme/a11y';
 import { FormScreen } from '../auth/layouts';
 import { useFocusFirstError } from '../auth/formErrors';
 import { useBack } from '../auth/useBack';
+import { useMyCircles } from '../circles/queries';
 import { fold } from './AreaSheet';
 import { CATEGORIES, CATEGORY_ICON } from './categories';
 import { ConfirmSheet } from './ConfirmSheet';
@@ -137,7 +139,10 @@ function EventForm({ event }: { event?: SparkEvent }) {
   const pickerLocale = locale === 'fr' ? 'fr-FR' : 'en-GB';
   const [now] = useState(() => new Date());
   // `?check=1`: a publish from the draft's page was refused for missing fields (BUG-8).
-  const { check } = useLocalSearchParams<{ check?: string }>();
+  const { check, circle: circleParam } = useLocalSearchParams<{
+    check?: string;
+    circle?: string;
+  }>();
   const router = useRouter();
   const navigation = useNavigation();
   const back = useBack('/');
@@ -149,9 +154,20 @@ function EventForm({ event }: { event?: SparkEvent }) {
 
   // AC-16.1: a new event's language starts as the app language.
   const [appLanguage] = useState(locale);
+  // Circles P7: "Proposer une sortie" from a circle opens the form with that circle ticked.
   const initial = useMemo(
-    () => (event ? formFromEvent(event) : emptyForm(appLanguage)),
-    [event, appLanguage],
+    () =>
+      event
+        ? formFromEvent(event)
+        : circleParam
+          ? { ...emptyForm(appLanguage), visibility: 'circles' as const, circleIds: [circleParam] }
+          : emptyForm(appLanguage),
+    [event, appLanguage, circleParam],
+  );
+  // Circles AC-16.1, AC-16.8: the host's circles (none: the option isn't shown).
+  const myCircles = useMyCircles();
+  const hostCircles = (myCircles.data?.items ?? []).flatMap((item) =>
+    item.state === 'member' ? [item.circle] : [],
   );
   const [values, setValues] = useState<FormValues>(initial);
   // `?check=1`: opened from a refused publish, the missing fields show at once (BUG-8).
@@ -178,6 +194,7 @@ function EventForm({ event }: { event?: SparkEvent }) {
   const addressRef = useRef<TextInput>(null);
   const placesRef = useRef<TextInput>(null);
   const joinRuleRef = useRef<View>(null);
+  const circlesRef = useRef<View>(null);
   const descriptionRef = useRef<TextInput>(null);
   const ageRef = useRef<TextInput>(null);
   const phoneRef = useRef<TextInput>(null);
@@ -191,6 +208,7 @@ function EventForm({ event }: { event?: SparkEvent }) {
     area: areaRef,
     address: addressRef,
     places: placesRef,
+    circles: circlesRef,
     joinRule: joinRuleRef,
     description: descriptionRef,
     age: ageRef,
@@ -217,6 +235,7 @@ function EventForm({ event }: { event?: SparkEvent }) {
     places: t('events.form.places'),
     age: t('events.dropoff.ageRequired'),
     phone: t('events.dropoff.phoneLabel'),
+    circles: t('circles.eventForm.whichCircles'),
   };
 
   // Back with edits: "Leave without saving?" (design E5 "Unsaved changes").
@@ -551,6 +570,38 @@ function EventForm({ event }: { event?: SparkEvent }) {
         testID="form-places"
       />
 
+      {/* Circles AC-16.1, AC-16.2, AC-16.8, AC-16.9: who can see the outing. */}
+      <WhoCanSee
+        values={values}
+        published={published}
+        circles={hostCircles}
+        loading={myCircles.isPending}
+        failed={Boolean(myCircles.error) && !myCircles.data}
+        retry={() => void myCircles.refetch()}
+        error={errors.circles}
+        refView={circlesRef}
+        onVisibility={(visibility) =>
+          setValues((v) => ({
+            ...v,
+            visibility,
+            // P7: a single circle is pre-ticked.
+            circleIds:
+              visibility === 'circles' && v.circleIds.length === 0 && hostCircles.length === 1
+                ? [hostCircles[0]!.id]
+                : v.circleIds,
+          }))
+        }
+        onToggle={(id) =>
+          setValues((v) => ({
+            ...v,
+            circleIds: v.circleIds.includes(id)
+              ? v.circleIds.filter((k) => k !== id)
+              : [...v.circleIds, id],
+          }))
+        }
+        onCreateCircle={() => router.push('/circles/new')}
+      />
+
       {/* AC-17.1: accompanying adult, two choices; drop-off follows from "Facultatif". */}
       <SettingField
         label={t('events.dropoff.adultLabel')}
@@ -610,6 +661,26 @@ function EventForm({ event }: { event?: SparkEvent }) {
             testID="form-host-phone"
           />
         </>
+      ) : values.visibility === 'circles' ? (
+        // Circles AC-16.1: "Tous les membres de ces cercles", fixed (no "anyone", no verified-only).
+        <View className="gap-xs" ref={joinRuleRef}>
+          <Text className="text-body text-ink-2">{t('events.form.joinRule')}</Text>
+          <View
+            accessible
+            className="flex-row items-start gap-md rounded-md bg-shell p-md"
+            testID="form-circle-rule"
+          >
+            <Icon icon={Lock} size={18} color="ink-2" />
+            <View className="flex-1 gap-xs">
+              <Text className="text-body font-medium text-ink">
+                {t('circles.eventForm.joinFixed')}
+              </Text>
+              <Text className="text-caption text-ink-2">
+                {t('circles.eventForm.joinFixedHelp')}
+              </Text>
+            </View>
+          </View>
+        </View>
       ) : (
         <View className="gap-xs" ref={joinRuleRef}>
           <Text className="text-body text-ink-2">{t('events.form.joinRule')}</Text>
@@ -815,7 +886,11 @@ function EventForm({ event }: { event?: SparkEvent }) {
         visible={sheet === 'publish'}
         onClose={() => setSheet(null)}
         title={t('events.form.publishTitle')}
-        body={t('events.dropoff.publishBody')}
+        body={
+          values.visibility === 'circles'
+            ? t('circles.eventForm.publishBody')
+            : t('events.dropoff.publishBody')
+        }
         primary={{
           label: t('events.form.publishConfirm'),
           onPress: () => mutation.mutate('publish'),
@@ -834,6 +909,15 @@ function EventForm({ event }: { event?: SparkEvent }) {
               areaLabel,
             ].join(' · ')}
           </Text>
+          {values.visibility === 'circles'
+            ? hostCircles
+                .filter((circle) => values.circleIds.includes(circle.id))
+                .map((circle) => (
+                  <Text key={circle.id} className="text-caption font-medium text-sky-dark">
+                    {t('circles.event.badge', { name: circle.name })}
+                  </Text>
+                ))
+            : null}
           <Text className="text-caption text-ink-2">
             {values.joinRule === 'anyone' && !dropoff
               ? t('events.form.summaryAnyone', { count: Number(values.places) || 0 })
@@ -846,9 +930,11 @@ function EventForm({ event }: { event?: SparkEvent }) {
           <SummaryRow
             label={t('events.dropoff.summaryRule')}
             value={
-              values.joinRule === 'anyone' && !dropoff
-                ? t('events.form.anyone')
-                : t('events.form.verifiedOnly')
+              values.visibility === 'circles' && !dropoff
+                ? t('circles.eventForm.joinFixed')
+                : values.joinRule === 'anyone' && !dropoff
+                  ? t('events.form.anyone')
+                  : t('events.form.verifiedOnly')
             }
           />
           <SummaryRow
@@ -926,6 +1012,119 @@ function EventForm({ event }: { event?: SparkEvent }) {
         testID="leave-form-sheet"
       />
     </FormScreen>
+  );
+}
+
+/**
+ * Circles design 6a to 6c: "Qui peut voir la sortie ?" (all members / my circles), the
+ * circles to tick, read-only once published (AC-16.9). A host without circle gets the
+ * "Créer un cercle" invitation instead (AC-16.8); circles that fail to load say so.
+ */
+function WhoCanSee({
+  values,
+  published,
+  circles,
+  loading,
+  failed,
+  retry,
+  error,
+  refView,
+  onVisibility,
+  onToggle,
+  onCreateCircle,
+}: {
+  values: FormValues;
+  published: boolean;
+  circles: { id: string; name: string; families_count: number }[];
+  loading: boolean;
+  failed: boolean;
+  retry: () => void;
+  error?: string;
+  refView: RefObject<View | null>;
+  onVisibility: (visibility: FormValues['visibility']) => void;
+  onToggle: (id: string) => void;
+  onCreateCircle: () => void;
+}) {
+  const { t } = useTranslation();
+  if (loading && values.visibility !== 'circles') return null;
+  if (failed) {
+    return (
+      <View className="flex-row flex-wrap items-center gap-xs" testID="form-circles-failed">
+        <Text className="text-caption text-ink-2">{t('circles.eventForm.circlesFailed')}</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={retry}
+          style={{ minHeight: MIN_TOUCH_TARGET }}
+          className="justify-center"
+        >
+          <Text className="text-caption font-medium text-ink underline">
+            {t('circles.eventForm.retry')}
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+  if (circles.length === 0 && values.visibility !== 'circles') {
+    return (
+      <View className="gap-xs rounded-md bg-sky-light p-md" testID="form-no-circle">
+        <Text className="text-body font-medium text-ink">
+          {t('circles.eventForm.noCircleTitle')}
+        </Text>
+        <Text className="text-caption text-sky-dark">{t('circles.eventForm.noCircleBody')}</Text>
+        <View className="items-start">
+          <Button
+            variant="ghost"
+            size="small"
+            label={t('circles.create')}
+            onPress={onCreateCircle}
+          />
+        </View>
+      </View>
+    );
+  }
+  return (
+    <View className="gap-xs" ref={refView} testID="form-who-sees">
+      <Text className="text-body text-ink-2">{t('circles.eventForm.whoSees')}</Text>
+      <View accessibilityRole="radiogroup" accessibilityLabel={t('circles.eventForm.whoSees')}>
+        <RadioRow
+          label={t('circles.eventForm.everyone')}
+          helper={t('circles.eventForm.everyoneHelp')}
+          selected={values.visibility === 'searchable'}
+          disabled={published}
+          onPress={() => onVisibility('searchable')}
+          testID="visibility-everyone"
+        />
+        <RadioRow
+          label={t('circles.eventForm.myCircles')}
+          helper={t('circles.eventForm.myCirclesHelp')}
+          selected={values.visibility === 'circles'}
+          disabled={published}
+          onPress={() => onVisibility('circles')}
+          testID="visibility-circles"
+        />
+      </View>
+      {values.visibility === 'circles' ? (
+        <View className="gap-xs rounded-lg border-[0.5px] border-border-soft bg-surface px-md">
+          <Text className="pt-sm text-caption text-ink-2">
+            {t('circles.eventForm.whichCircles')}
+          </Text>
+          {circles.map((circle) => (
+            <Checkbox
+              key={circle.id}
+              label={`${circle.name} · ${t('circles.families', { count: circle.families_count })}`}
+              accessibilityLabel={circle.name}
+              checked={values.circleIds.includes(circle.id)}
+              onChange={() => !published && onToggle(circle.id)}
+              testID={`form-circle-${circle.id}`}
+            />
+          ))}
+        </View>
+      ) : null}
+      {error ? <FieldError message={error} /> : null}
+      <Text className="text-caption text-ink-3">
+        {published ? t('events.form.readOnly') : t('circles.eventForm.fixedAfterPublish')}
+      </Text>
+    </View>
   );
 }
 

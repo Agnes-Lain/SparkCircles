@@ -1,4 +1,5 @@
 import { Calendar, Clock, Lock, MapPin, ShieldCheck, Users } from 'lucide-react-native';
+import type { TFunction } from 'i18next';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
@@ -21,6 +22,15 @@ import { Badge } from './Badge';
 import { CategoryPill } from './CategoryPill';
 import { Icon } from './Icon';
 import { LanguageTag } from './LanguageTag';
+
+/** "Cercle : Parents CE2", "Cercles : Parents CE2 +1", or null for a searchable event. */
+export function circleBadgeText(event: SparkEvent, t: TFunction): string | null {
+  const circles = event.circles ?? [];
+  if (event.visibility !== 'circles' || circles.length === 0) return null;
+  return circles.length === 1
+    ? t('circles.event.badge', { name: circles[0]!.name })
+    : t('circles.event.badgeMore', { name: circles[0]!.name, more: circles.length - 1 });
+}
 
 /** Room kept at the top right for the future wishlist heart (backlog #24). */
 const HEART_SLOT = 44;
@@ -97,6 +107,7 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
       ? t(`events.language.a11y.${event.language}`)
       : null,
     event.approval_required ? t('events.dropoff.onRequest') : null,
+    circleBadgeText(event, t),
     status?.label,
   ]
     .filter(Boolean)
@@ -126,6 +137,13 @@ export function EventCard({ event, onPress, onBadgePress, mine = false }: EventC
         <Text numberOfLines={2} className="text-h3 text-ink" style={{ paddingRight: HEART_SLOT }}>
           {title}
         </Text>
+        {circleBadgeText(event, t) ? (
+          // Circles AC-16.4, design 6e: "Cercle : Nom" with the users icon, text and icon.
+          <View className="flex-row items-center gap-xs" testID={`event-card-circle-${event.id}`}>
+            <Icon icon={Users} size={14} color="sky-dark" />
+            <Badge kind="badge-sky" label={circleBadgeText(event, t)!} />
+          </View>
+        ) : null}
         {dropoff ? (
           <DropoffLine
             label={t('events.dropoff.cardLine')}

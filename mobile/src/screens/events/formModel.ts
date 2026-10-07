@@ -1,6 +1,12 @@
 import type { TFunction } from 'i18next';
 
-import type { EventLanguage, EventParams, JoinRule, SparkEvent } from '../../api/events';
+import type {
+  EventLanguage,
+  EventParams,
+  EventVisibility,
+  JoinRule,
+  SparkEvent,
+} from '../../api/events';
 import type { FieldErrorKey } from '../../api/types';
 import type { CategoryKey } from '../../components/CategoryPill';
 import { zonedDate, zonedParts, zonedToUtc } from './format';
@@ -44,6 +50,10 @@ export type FormValues = {
   approvalChosen: boolean;
   /** AC-17.9: the host's phone for this event (drop-off only), never from the profile. */
   hostPhone: string;
+  /** Circles AC-16.1: "Tous les membres de SparkCircles" or "Mes cercles". */
+  visibility: EventVisibility;
+  /** Circles AC-16.1: the chosen circles (only circles the host is in). */
+  circleIds: string[];
 };
 
 export type Field =
@@ -54,6 +64,7 @@ export type Field =
   | 'area'
   | 'address'
   | 'places'
+  | 'circles'
   | 'joinRule'
   | 'description'
   | 'age'
@@ -69,6 +80,7 @@ export const FIELD_ORDER: readonly Field[] = [
   'area',
   'address',
   'places',
+  'circles',
   'joinRule',
   'description',
   'age',
@@ -87,6 +99,7 @@ export const DROPOFF_FIELD_ORDER: readonly Field[] = [
   'places',
   'age',
   'phone',
+  'circles',
   'joinRule',
   'description',
   'tags',
@@ -114,6 +127,8 @@ export const EMPTY_FORM: FormValues = {
   approvalRequired: false,
   approvalChosen: false,
   hostPhone: '',
+  visibility: 'searchable',
+  circleIds: [],
 };
 
 /** A new event's form, its language pre-selected from the app language (AC-16.1). */
@@ -150,6 +165,8 @@ export function formFromEvent(event: SparkEvent): FormValues {
     approvalRequired: event.approval_required ?? false,
     approvalChosen: true,
     hostPhone: event.host_phone ? displayPhone(event.host_phone) : '',
+    visibility: event.visibility ?? 'searchable',
+    circleIds: (event.circles ?? []).map((circle) => circle.id),
   };
 }
 
@@ -272,6 +289,10 @@ export function validateForm(
     else if (!normalizePhone(values.hostPhone)) errors.phone = t('events.dropoff.phoneInvalid');
   }
 
+  // Circles AC-16.1: at least one circle for a circle outing.
+  if (values.visibility === 'circles' && values.circleIds.length === 0)
+    errors.circles = t('circles.eventForm.chooseCircle');
+
   if (values.tags.length > LIMITS.tags) errors.tags = t('events.form.tagsMax');
   return errors;
 }
@@ -302,7 +323,14 @@ export function toParams(values: FormValues, { includeRule }: { includeRule: boo
   if (includeRule) {
     params.category = values.category;
     // AC-17.3: a drop-off event is always verified members only.
-    params.join_rule = values.adultRequired ? values.joinRule : 'verified_only';
+    // Circles AC-16.1: the join rule of a circle outing is "all members of these circles".
+    params.join_rule = !values.adultRequired
+      ? 'verified_only'
+      : values.visibility === 'circles'
+        ? 'anyone'
+        : values.joinRule;
+    params.visibility = values.visibility;
+    params.circle_ids = values.visibility === 'circles' ? values.circleIds : [];
     params.adult_required = values.adultRequired;
     params.approval_required = values.approvalRequired;
   }
@@ -327,6 +355,7 @@ export function missingFields(values: FormValues): Field[] {
   if (!values.adultRequired && (!values.ageMin.trim() || !values.ageMax.trim()))
     missing.push('age');
   if (!values.adultRequired && !values.hostPhone.trim()) missing.push('phone');
+  if (values.visibility === 'circles' && values.circleIds.length === 0) missing.push('circles');
   return missing;
 }
 
@@ -350,6 +379,8 @@ const FIELD_OF: Record<string, Field> = {
   tags: 'tags',
   join_rule: 'joinRule',
   host_phone: 'phone',
+  circle_ids: 'circles',
+  visibility: 'circles',
 };
 
 /**
@@ -407,6 +438,8 @@ function fieldMessage(field: Field, key: FieldErrorKey, t: TFunction, placesTake
       return key === 'blank' ? t('events.dropoff.phoneMissing') : t('events.dropoff.phoneInvalid');
     case 'tags':
       return tagMessage(key, t);
+    case 'circles':
+      return t('circles.eventForm.chooseCircle');
     default:
       return t('events.form.readOnly');
   }

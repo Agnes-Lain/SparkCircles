@@ -689,6 +689,23 @@ export function EventDetailScreen() {
           </View>
         </View>
 
+        {/* Circles AC-16.4, design 6f: which circle sees it, before the action. */}
+        {event.visibility === 'circles' && event.circles?.length ? (
+          <View className="gap-xs rounded-md bg-sky-light p-md" accessible testID="detail-circles">
+            <View className="flex-row items-center gap-xs">
+              <Icon icon={Users} size={16} color="sky-dark" />
+              <Text className="flex-1 text-body font-medium text-ink">
+                {event.circles.length === 1
+                  ? t('circles.event.onlyVisible', { names: event.circles[0]!.name })
+                  : t('circles.event.onlyVisibleMany', {
+                      names: event.circles.map((circle) => circle.name).join(' », « '),
+                    })}
+              </Text>
+            </View>
+            <Text className="text-caption text-sky-dark">{t('circles.event.membersCanJoin')}</Text>
+          </View>
+        ) : null}
+
         {/* AC-17.5, AC-17.24: under the title, above the time and the CTA, guests too. */}
         {dropoff ? (
           isHost ? (
