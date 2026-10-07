@@ -89,6 +89,42 @@ RSpec.describe "GET /api/v1/me/agenda (my-space agenda)", type: :request do
     expect(json["events"].first).not_to have_key("exact_address")
   end
 
+  it "AC-8.2 hides circle outings of a host no longer in good standing, also from next_from" do
+    create(:circle_membership, circle: circle, user: parent)
+    lapsed = create(:event, host: circle.created_by, visibility: "circles", chosen_circle_ids: [ circle.id ],
+                            starts_at: 2.days.from_now)
+    create(:event, host: circle.created_by, visibility: "circles", chosen_circle_ids: [ circle.id ], starts_at: 40.days.from_now)
+    joined = create(:event, host: circle.created_by, starts_at: 3.days.from_now)
+    create(:event_participation, event: joined, user: parent)
+    mine = create(:event, host: parent, starts_at: 50.days.from_now)
+    circle.created_by.update_columns(verification_status: "not_verified", verification_expires_on: nil)
+
+    agenda
+    expect(ids).to eq([ joined.id ])
+    expect(ids).not_to include(lapsed.id)
+    expect(json.dig("window", "next_from")).to eq(mine.starts_at.to_date.iso8601)
+  end
+
+  it "loads the page in a constant number of queries (no COUNT per hosted event)" do
+    count_queries = lambda do
+      queries = 0
+      counter = ->(*, payload) { queries += 1 unless payload[:name].in?(%w[SCHEMA TRANSACTION]) || payload[:cached] }
+      ActiveSupport::Notifications.subscribed(counter, "sql.active_record") { agenda }
+      queries
+    end
+    add_hosted = lambda do |count|
+      create_list(:event, count, :dropoff, host: parent, starts_at: 2.days.from_now).each do |event|
+        create(:event_participation, :pending, event: event, user: create(:user, :verified))
+      end
+    end
+
+    add_hosted.call(2)
+    baseline = count_queries.call
+    add_hosted.call(5)
+    expect(count_queries.call).to eq(baseline)
+    expect(json["events"].map { |event| event["pending_requests_count"] }).to all(eq(1))
+  end
+
   it "answers 401 without a token" do
     get "/api/v1/me/agenda"
     expect(response).to have_http_status(:unauthorized)

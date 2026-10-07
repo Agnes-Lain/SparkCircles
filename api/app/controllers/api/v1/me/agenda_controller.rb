@@ -19,12 +19,9 @@ module Api
           return if performed?
 
           window_end = from + WINDOW_DAYS
-          scope = policy_scope(Event, policy_scope_class: AgendaPolicy::Scope)
-          rows = scope.where(starts_at: from.beginning_of_day...window_end.beginning_of_day)
-                      .soonest_first.includes(:host, event_circles: :circle, participations: :user).limit(MAX_EVENTS).to_a
-
-          # AC-8.2: a circle outing whose host stopped being verified is gone, as in search.
-          @events = rows.select { |event| event.hosted_by?(current_user) || event.host_in_good_standing? || joined?(event) }
+          scope = listed(policy_scope(Event, policy_scope_class: AgendaPolicy::Scope))
+          @events = scope.where(starts_at: from.beginning_of_day...window_end.beginning_of_day)
+                         .soonest_first.includes(:host, event_circles: :circle, participations: :user).limit(MAX_EVENTS).to_a
           @viewer = ::Events::Viewer.new(current_user).preload(@events)
           next_event = scope.where(starts_at: window_end.beginning_of_day..).soonest_first.first
           @window = { from: from.iso8601, to: (window_end - 1).iso8601, next_from: next_event&.starts_at&.in_time_zone&.to_date&.iso8601 }
@@ -35,10 +32,12 @@ module Api
 
         def pundit_user = current_user
 
-        def joined?(event) = joined_ids.include?(event.id)
-
-        def joined_ids
-          @joined_ids ||= current_user.event_participations.where(status: "accepted").pluck(:event_id).to_set
+        # AC-8.2: a circle outing whose host stopped being verified is gone, as in search;
+        # the parent's own and joined outings stay. Applied to the window and to `next_from`.
+        def listed(scope)
+          joined_ids = current_user.event_participations.where(status: "accepted").select(:event_id)
+          scope.where(host_id: current_user.id).or(scope.where(id: joined_ids))
+               .or(scope.where(host_id: User.in_good_standing.select(:id)))
         end
 
         def from_date

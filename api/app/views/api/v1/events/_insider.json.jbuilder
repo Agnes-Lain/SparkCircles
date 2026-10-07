@@ -34,7 +34,7 @@ json.my_participation(mine && { adults: mine.adults, children: mine.children, pl
                                 emergency_phone: mine.emergency_phone, pending_change: pending_change || nil })
 if role == :host
   # AC-17.15: the number of requests waiting, for the host only.
-  json.pending_requests_count event.all_participations.awaiting_host.count
+  json.pending_requests_count viewer.pending_requests_count(event)
   json.published_at event.published_at&.utc&.iso8601
   json.cancelled_at event.cancelled_at&.utc&.iso8601
 end

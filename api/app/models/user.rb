@@ -55,6 +55,8 @@ class User < ApplicationRecord
   after_update_commit :sync_events, if: :event_rights_changed?
 
   scope :closed, -> { where.not(closed_at: nil) }
+  # Events AC-8.2: verified and open, as Event#host_in_good_standing? (SQL side of #verified?).
+  scope :in_good_standing, -> { where(verification_status: "verified", closed_at: nil).where(verification_expires_on: Date.current.next_day..) }
   scope :due_for_erasure, -> { closed.where(closed_at: ...CLOSURE_GRACE_PERIOD.ago) }
   scope :unconfirmed_expired, -> { where(confirmed_at: nil, created_at: ...UNCONFIRMED_LIFETIME.ago) }
 

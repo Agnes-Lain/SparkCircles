@@ -10,6 +10,7 @@ module Events
       @user = user
       @areas = Array(areas)
       @participations = {}
+      @pending_counts = {}
     end
 
     def guest? = user.nil?
@@ -21,7 +22,13 @@ module Events
       ids = events.map(&:id) - @participations.keys
       found = user.event_participations.where(event_id: ids).index_by(&:event_id)
       ids.each { |id| @participations[id] = found[id] }
+      preload_pending_counts(events)
       self
+    end
+
+    # AC-17.15: the requests waiting on one of the viewer's hosted events (host only).
+    def pending_requests_count(event)
+      @pending_counts.fetch(event.id) { @pending_counts[event.id] = event.all_participations.awaiting_host.count }
     end
 
     # The viewer's row for the event, whatever its status (requests included).
@@ -103,6 +110,17 @@ module Events
 
     def distance_km(event)
       EventArea.nearest_distance_km(areas, event.area)
+    end
+
+    private
+
+    # One grouped COUNT for the hosted events of a page instead of one per event.
+    def preload_pending_counts(events)
+      ids = events.select { |event| event.hosted_by?(user) }.map(&:id) - @pending_counts.keys
+      return if ids.empty?
+
+      found = EventParticipation.awaiting_host.where(event_id: ids).group(:event_id).count
+      ids.each { |id| @pending_counts[id] = found.fetch(id, 0) }
     end
   end
 end
