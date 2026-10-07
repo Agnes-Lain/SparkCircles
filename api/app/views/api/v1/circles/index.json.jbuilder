@@ -32,6 +32,8 @@ json.items @items do |item|
       json.partial! "api/v1/circles/area", circle: circle
       json.families_count circle.families_count
     end
+  when "declined"
+    json.circle { json.name circle.name }
   else
     json.circle nil
   end

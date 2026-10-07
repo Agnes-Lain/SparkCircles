@@ -24,6 +24,8 @@ en:
       circle_paused: "This circle is paused."
       circle_closed: "This circle is closed."
       circle_forced_private: "SparkCircles made this circle private after a report. It stays private for now."
+      circle_request_declined: "Your request for this circle wasn't accepted. You can't send it again."
+      circle_membership_removed: "You're no longer in this circle."
   circles:
     report_reasons:
       unsafe: "Unsafe or inappropriate"

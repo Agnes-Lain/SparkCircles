@@ -5,19 +5,21 @@ module Circles
   # Each change runs under a row lock on the circle, so two approvals can't pass the
   # 25-family limit (AC-4.5) and a person can't slip past their 5-circle limit (AC-3.4).
   class Requests
+    BLOCKED_ERRORS = { "declined" => :circle_request_declined, "removed" => :circle_membership_removed }.freeze
+
     def initialize(circle)
       @circle = circle
     end
 
-    # AC-2.3, AC-2.7, AC-3.2, AC-3.4, AC-17.6. A declined or removed person gets the same
-    # answer and nothing is created (they are never told they are blocked). Returns the
-    # request, or nil for a silent refusal.
+    # AC-2.3, AC-2.7, AC-3.2, AC-3.4, AC-17.6. A declined or removed person is told so
+    # (PM phone test 2026-10-07: `circle_request_declined`, `circle_membership_removed`) and
+    # nothing is created. Returns the request.
     def ask!(user)
       membership = Circle.transaction do
         @circle.lock!
         user.lock!
         membership = @circle.memberships.find_by(user_id: user.id)
-        next nil if membership&.blocking?
+        raise Error.new(BLOCKED_ERRORS.fetch(membership.status), status: :forbidden) if membership&.blocking?
         raise Error.new(@circle.inactive_error_code, status: :forbidden) unless @circle.active?
         raise Error.new(:already_member) if membership&.active?
         raise Error.new(:already_requested) if membership&.pending?
@@ -29,7 +31,7 @@ module Circles
                            joined_at: nil, seen_at: nil, dismissed_at: nil)
         membership
       end
-      Notifications.request_received(@circle, user) if membership
+      Notifications.request_received(@circle, user)
       membership
     end
 

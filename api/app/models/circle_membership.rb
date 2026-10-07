@@ -2,7 +2,7 @@
 # admin decides, then "active". Rows are never duplicated (one per circle and person):
 #
 # - declined, removed: the person stays blocked for this circle (AC-2.7, AC-5.2); using the
-#   link again creates nothing and they are never told.
+#   link again creates nothing and tells them why (PM phone test 2026-10-07).
 # - expired (AC-2.6), cancelled (AC-3.6), left (AC-5.1): they may ask again.
 #
 # `role` is "admin" or "member"; the circle's creator is an admin with `creator` set.

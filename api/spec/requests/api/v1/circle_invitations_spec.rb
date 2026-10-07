@@ -98,12 +98,22 @@ RSpec.describe "Circle invitations and join requests", type: :request do
       end
     end
 
-    it "AC-2.7 a declined or removed person sees the same answer and no request is created" do
+    it "AC-2.7 a declined person is told so (PM 2026-10-07) and no request is created" do
       blocked = create(:circle_membership, circle: circle, user: parent, status: "declined")
       expect { join(token: circle.invite_token) }.not_to have_enqueued_mail(CircleMailer, :request_received)
-      expect(response).to have_http_status(:created)
-      expect(json).to eq({ "request" => { "status" => "pending" } })
+      expect(response).to have_http_status(:forbidden)
+      expect(json).to eq({ "error" => { "code" => "circle_request_declined",
+                                        "message" => I18n.t("api.errors.circle_request_declined") } })
       expect(blocked.reload.status).to eq("declined")
+    end
+
+    it "AC-2.7 a removed person is told so (PM 2026-10-07) and nothing is created" do
+      blocked = create(:circle_membership, circle: circle, user: parent, status: "removed")
+      expect { join(code: circle.formatted_code) }.not_to have_enqueued_mail(CircleMailer, :request_received)
+      expect(response).to have_http_status(:forbidden)
+      expect(error_code).to eq("circle_membership_removed")
+      expect(json["error"].keys).to eq(%w[code message])
+      expect(blocked.reload.status).to eq("removed")
     end
 
     it "AC-2.9 refuses when the circle is full" do
@@ -140,6 +150,17 @@ RSpec.describe "Circle invitations and join requests", type: :request do
       post "/api/v1/circles/#{circle.id}/join_request", headers: auth_headers(create(:user, :verified))
       expect(response).to have_http_status(:created)
       expect(circle.memberships.pending.count).to eq(1)
+    end
+
+    it "AC-2.7 a declined or removed person asking from the page is told so; nothing is created" do
+      { "declined" => "circle_request_declined", "removed" => "circle_membership_removed" }.each do |status, code|
+        blocked = create(:circle_membership, circle: circle, status: status)
+        expect { post "/api/v1/circles/#{circle.id}/join_request", headers: auth_headers(blocked.user) }
+          .not_to have_enqueued_mail(CircleMailer, :request_received)
+        expect(response).to have_http_status(:forbidden)
+        expect(error_code).to eq(code)
+        expect(blocked.reload.status).to eq(status)
+      end
     end
 
     it "AC-4.6 can't target a private circle" do

@@ -24,6 +24,8 @@ fr:
       circle_paused: "Ce cercle est en pause."
       circle_closed: "Ce cercle est fermé."
       circle_forced_private: "SparkCircles a rendu ce cercle privé après un signalement. Il reste privé pour l’instant."
+      circle_request_declined: "Ta demande pour ce cercle n’a pas été acceptée. Tu ne peux pas la renvoyer."
+      circle_membership_removed: "Tu ne fais plus partie de ce cercle."
   circles:
     report_reasons:
       unsafe: "Dangereux ou inapproprié"

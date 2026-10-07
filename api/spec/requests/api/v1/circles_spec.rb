@@ -208,6 +208,17 @@ RSpec.describe "Circles", type: :request do
       expect(json["items"].sole).to include("state" => "paused", "circle" => nil)
     end
 
+    it "shows a declined request as a status card with the circle name only, until hidden (PM 2026-10-07)" do
+      declined = join(circle, create(:user), status: "declined")
+      get "/api/v1/circles", headers: auth_headers(declined.user)
+      expect(json["items"].sole).to eq({ "id" => declined.id, "state" => "declined", "circle" => { "name" => circle.name } })
+      post "/api/v1/circle_cards/#{declined.id}/dismiss", headers: auth_headers(declined.user)
+      expect(response).to have_http_status(:no_content)
+      get "/api/v1/circles", headers: auth_headers(declined.user)
+      expect(json["items"]).to eq([])
+      expect(declined.reload.status).to eq("declined")
+    end
+
     it "won't hide an active circle's card" do
       post "/api/v1/circle_cards/#{circle.memberships.first.id}/dismiss", headers: auth_headers(admin)
       expect(response).to have_http_status(:not_found)

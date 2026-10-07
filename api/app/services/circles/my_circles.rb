@@ -1,7 +1,8 @@
 module Circles
   # The "My circles" list (spec circles AC-9.1 to AC-9.3, AC-3.6, AC-2.6; design C1):
-  # circles I'm in, my pending and expired requests, and neutral cards (removed, paused,
-  # closed) until I hide them. Neutral cards carry no circle data.
+  # circles I'm in, my pending and expired requests, and neutral cards (declined, removed,
+  # paused, closed) until I hide them. Neutral cards carry no circle data, except the name
+  # on a declined request (the person already knew it; PM phone test 2026-10-07).
   class MyCircles
     Item = Data.define(:membership, :state)
 
@@ -12,7 +13,7 @@ module Circles
     def self.created_count(user) = Circle.where(created_by_id: user.id).where.not(status: "closed").count
 
     def items
-      rows = @user.circle_memberships.where(dismissed_at: nil).where(status: %w[active pending expired removed])
+      rows = @user.circle_memberships.where(dismissed_at: nil).where(status: %w[active pending expired declined removed])
                   .includes(:circle).to_a
       items = rows.filter_map { |membership| Item.new(membership: membership, state: state_for(membership)) }
       member, others = items.partition { |item| item.state == "member" }
@@ -38,7 +39,7 @@ module Circles
     def state_for(membership)
       circle = membership.circle
       case membership.status
-      when "removed" then "removed"
+      when "removed", "declined" then membership.status
       when "pending", "expired" then circle.active? ? membership.status : nil
       else
         return "closed" if circle.closed?

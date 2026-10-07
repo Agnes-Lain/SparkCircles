@@ -75,7 +75,8 @@ RSpec.describe "Circle requests, members and admins", type: :request do
       expect(row.reload.status).to eq("removed")
       expect(AuditEvent.last).to have_attributes(action: "circle_member_removed", actor_id: admin.id, subject_user_id: row.user_id)
       post "/api/v1/circle_invitations/join", params: { code: circle.formatted_code }, headers: auth_headers(row.user), as: :json
-      expect(response).to have_http_status(:created)
+      expect(response).to have_http_status(:forbidden)
+      expect(error_code).to eq("circle_membership_removed")
       expect(row.reload.status).to eq("removed")
     end
 

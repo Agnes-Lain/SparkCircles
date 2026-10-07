@@ -1,7 +1,7 @@
 module Circles
   # The viewer's own status on a public page, a search result or an invitation preview
   # (AC-17.13): never anyone else's. A blocked person (declined or removed) looks like
-  # anyone else and may "ask" again (nothing is created, AC-2.7).
+  # anyone else here; asking answers why they can't (nothing is created, AC-2.7).
   module ViewerStatus
     module_function
 
