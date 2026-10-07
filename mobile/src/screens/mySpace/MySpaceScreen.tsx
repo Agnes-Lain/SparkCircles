@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Bell } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,15 +21,17 @@ import { refetchToday, TodayPanel, useTodayQueries } from './TodayPanel';
 
 export type MySpaceView = 'today' | 'account';
 
-// The segment chosen, kept in memory for the session only (design my-space 1): each app
-// start opens on « Aujourd'hui », coming back to the screen keeps « Mon compte », and logging
-// out or in forgets it with the rest of the query cache.
+// The segment chosen, kept in memory (design my-space 1) so a remount or a screen pushed on
+// top keeps « Mon compte ». Each app start, and each return from another tab, opens on
+// « Aujourd'hui » (spec my-space); logging out or in forgets it with the query cache.
 const VIEW_KEY = ['my-space', 'view'] as const;
 
 /**
  * My space (spec my-space, design my-space 1): H1 and the notifications bell (a placeholder
  * until backlog #17, no unread dot), then « Aujourd'hui | Mon compte » (Lavender). Opens on
- * Today; `?view=account` (the `/account` link) opens « Mon compte » (AC-7.4). One scroll,
+ * Today, also when the tab comes back after another tab; `?view=account` (the `/account`
+ * link) opens « Mon compte » (AC-7.4). Coming back from a screen pushed from « Mon compte »
+ * keeps it. One scroll,
  * pull to refresh, refresh when the tab comes back into view (AC-3.5).
  */
 export function MySpaceScreen() {
@@ -38,6 +40,7 @@ export function MySpaceScreen() {
   const me = useMe();
   const params = useLocalSearchParams<{ view?: string }>();
   const queryClient = useQueryClient();
+  const navigation = useNavigation();
   const [view, setView] = useState<MySpaceView>(() =>
     params.view === 'account'
       ? 'account'
@@ -52,6 +55,17 @@ export function MySpaceScreen() {
   useEffect(() => {
     queryClient.setQueryData(VIEW_KEY, view);
   }, [queryClient, view]);
+  // Reset when another tab takes over; a screen pushed on top (edit profile, agenda…)
+  // leaves the tab navigator on My space, so « Mon compte » stays.
+  useEffect(
+    () =>
+      navigation.addListener('blur', () => {
+        const state = navigation.getState();
+        if (state?.type === 'tab' && state.routes[state.index]?.name !== 'my-space')
+          setView('today');
+      }),
+    [navigation],
+  );
   useEffect(() => {
     // Cleared so the same link works again later.
     if (params.view === 'account') router.setParams({ view: undefined });
