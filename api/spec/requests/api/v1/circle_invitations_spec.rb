@@ -54,6 +54,7 @@ RSpec.describe "Circle invitations and join requests", type: :request do
     it "AC-3.3 works for guests from the app" do
       preview({ code: circle.formatted_code }, guest_headers)
       expect(json.dig("circle", "viewer", "request_blocker")).to eq("account_required")
+      expect(json.dig("circle", "admin")).to be_nil
     end
 
     it "AC-3.5 gives one neutral answer for an unknown, renewed or turned-off invitation, and a paused circle" do
