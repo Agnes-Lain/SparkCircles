@@ -4,11 +4,16 @@ RSpec.describe CircleMailer do
   let(:admin) { create(:user, :verified, locale: "fr") }
   let(:circle) { create(:circle, created_by: admin) }
 
-  it "AC-2.4 tells an admin who asked (first name and initial), with a link to the circle" do
+  it "AC-2.4 tells an admin who asked (first name and initial), with a link to the circle's « Membres »" do
     mail = described_class.request_received(circle, admin, create(:user, first_name: "Inès", last_name: "Bah"))
     expect(mail.subject).to eq("Nouvelle demande pour « #{circle.name} »")
-    expect(mail.text_part.decoded).to include("Inès B.", "circles/#{circle.id}")
+    expect(mail.text_part.decoded).to include("Inès B.", "circles/#{circle.id}/members")
     expect(mail.text_part.decoded).not_to include("Bah")
+  end
+
+  it "AC-2.4 the hourly digest links to the circle's « Membres », where requests are answered" do
+    mail = described_class.requests_digest(circle, admin, 3)
+    expect(mail.text_part.decoded).to include("circles/#{circle.id}/members")
   end
 
   it "AC-2.5 the decline is neutral: no reason, no admin name" do

@@ -8,12 +8,13 @@ class CircleMailer < ApplicationMailer
   end
   self.delivery_job = DeliveryJob
 
-  # AC-2.4: one request, to one admin with rights.
+  # AC-2.4: one request, to one admin with rights. Requests are answered in the circle's
+  # « Membres » tool (PM decision 2026-10-07), so the link opens it.
   def request_received(circle, admin, requester)
     with_recipient(admin) do
       deliver(admin, t("circle_mailer.request_received.subject", name: circle.name),
               t("circle_mailer.request_received.lines", person: requester.display_name, name: circle.name),
-              action: [ "circle_mailer.request_received.action", app_link("circles/#{circle.id}") ])
+              action: [ "circle_mailer.request_received.action", app_link("circles/#{circle.id}/members") ])
     end
   end
 
@@ -22,7 +23,7 @@ class CircleMailer < ApplicationMailer
     with_recipient(admin) do
       deliver(admin, t("circle_mailer.requests_digest.subject", count: count, name: circle.name),
               t("circle_mailer.requests_digest.lines", count: count, name: circle.name),
-              action: [ "circle_mailer.request_received.action", app_link("circles/#{circle.id}") ])
+              action: [ "circle_mailer.request_received.action", app_link("circles/#{circle.id}/members") ])
     end
   end
 

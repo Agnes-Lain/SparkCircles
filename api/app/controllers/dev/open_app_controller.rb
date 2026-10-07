@@ -6,13 +6,13 @@ module Dev
   class OpenAppController < ActionController::Base
     # The routes the app opens from an email link (mobile/src/auth/gate.ts, LINK_ROUTES).
     # The email-change confirmation uses confirm-email too. Event emails open events/<id>,
-    # events, my-events and verification. Circle emails open circles and circles/<id>; an
-    # invitation link is join/<token>.
+    # events, my-events and verification. Circle emails open circles, circles/<id> and
+    # circles/<id>/members (requests to answer); an invitation link is join/<token>.
     PATHS = %w[confirm-email reset-password this-wasnt-me forgot-password my-data events my-events verification circles].freeze
     # Paths with an id: only a UUID (or an invitation token) is accepted after the prefix.
     PATH_PATTERNS = [
       %r{\Aevents/\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z},
-      %r{\Acircles/\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z},
+      %r{\Acircles/\h{8}-\h{4}-\h{4}-\h{4}-\h{12}(/members)?\z},
       %r{\Ajoin/[A-Za-z0-9_-]{16,64}\z}
     ].freeze
 
