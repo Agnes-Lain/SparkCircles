@@ -1,5 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
+import { ScrollView } from 'react-native';
+
 import MySpaceTab from '../../app/(tabs)/my-space';
 import type { MyCircles } from '../../api/circles';
 import type { SparkEvent } from '../../api/events';
@@ -107,7 +109,7 @@ describe('My space header and segments (spec my-space 5, AC-7.3, AC-7.6)', () =>
 });
 
 describe('Next outing (US-1, AC-1.1, AC-1.2, AC-1.4)', () => {
-  it('shows my next outing first with its role, and does not repeat it in the agenda', async () => {
+  it('shows my next outing first with its role, and repeats it in the agenda', async () => {
     const next = outing(hostedEvent, 'h1', onDay(3));
     const later = outing(joinedEvent, 'j1', onDay(4));
     mockMySpace.agenda.mockResolvedValue(
@@ -118,7 +120,9 @@ describe('Next outing (US-1, AC-1.1, AC-1.2, AC-1.4)', () => {
     expect(within(card).getByText('Sortie h1')).toBeOnTheScreen();
     expect(within(card).getByText('Je reçois')).toBeOnTheScreen();
     expect(within(card).queryByTestId('next-outing-soon')).toBeNull();
-    expect(screen.queryByTestId('agenda-row-h1')).toBeNull();
+    expect(
+      within(screen.getByTestId('agenda-list')).getByTestId('agenda-row-h1'),
+    ).toBeOnTheScreen();
     expect(screen.getByTestId('agenda-row-j1')).toBeOnTheScreen();
     expect(within(screen.getAllByTestId('agenda-row-c1')[0]!).getByText('Voir')).toBeOnTheScreen();
   });
@@ -196,10 +200,31 @@ describe('Agenda (PM request 2026-10-07)', () => {
     expect(within(strip).getAllByRole('button')).toHaveLength(7);
     expect(within(strip).getByRole('button', { name: /, 1 sortie annulée$/ })).toBeOnTheScreen();
     expect(within(screen.getByTestId('agenda-row-x')).getByText('Annulée')).toBeOnTheScreen();
-    // 5 day groups inline (the next outing's day isn't repeated), then the full agenda.
-    expect(screen.queryByTestId('agenda-row-d6')).toBeNull();
+    // 5 day groups inline (the next outing's day included), then the full agenda.
+    expect(screen.getByTestId('agenda-row-n')).toBeOnTheScreen();
+    expect(screen.getByTestId('agenda-row-d4')).toBeOnTheScreen();
+    expect(screen.queryByTestId('agenda-row-d5')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: "Voir tout l'agenda" }));
     await waitFor(() => expect(app.getPathname()).toBe('/agenda'));
+  });
+
+  it("tapping the next outing's day scrolls to that day in the agenda, not to its card", async () => {
+    const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo');
+    mockMySpace.agenda.mockResolvedValue(
+      agenda([outing(hostedEvent, 'h1', onDay(2)), outing(joinedEvent, 'j1', onDay(4))]),
+    );
+    await open();
+    const layout = (testID: string, y: number) =>
+      fireEvent(screen.getByTestId(testID), 'layout', { nativeEvent: { layout: { y } } });
+    await screen.findByTestId('agenda-block');
+    await layout('agenda-day-' + addDays(todayInZone(), 2), 40);
+    await layout('agenda-day-' + addDays(todayInZone(), 4), 120);
+    scrollTo.mockClear();
+
+    await fireEvent.press(screen.getByTestId('strip-day-' + addDays(todayInZone(), 2)));
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ y: 40 }));
+    scrollTo.mockRestore();
   });
 
   it('shows the empty agenda box when circles exist but nothing is planned', async () => {

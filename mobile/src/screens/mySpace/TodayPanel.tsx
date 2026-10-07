@@ -176,11 +176,9 @@ export function TodayPanel({
         <AgendaBlock
           queries={queries}
           all={all}
-          next={next}
           today={today}
           announce={firstFailure === agenda}
           onScrollTo={(y) => onScrollTo(agendaY.current + y)}
-          onScrollTop={() => onScrollTo(0)}
         />
       </View>
 
@@ -448,19 +446,15 @@ function VerificationNote({ me }: { me: Me }) {
 function AgendaBlock({
   queries,
   all,
-  next,
   today,
   announce,
   onScrollTo,
-  onScrollTop,
 }: {
   queries: TodayQueries;
   all: SparkEvent[];
-  next: SparkEvent | undefined;
   today: string;
   announce: boolean;
   onScrollTo: (y: number) => void;
-  onScrollTop: () => void;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -495,17 +489,17 @@ function AgendaBlock({
       </View>
     );
 
-  const listed = all.filter((event) => event !== next);
-  const { groups, truncated } = inlineGroups(groupByDay(listed));
-  const byDay = eventsByDay(groupByDay(all));
+  // PM 2026-10-07 (supersedes Q4): the next outing is repeated in the day list, so a day
+  // tapped in the strip always scrolls inside the agenda, never back up to its card.
+  const byDayGroups = groupByDay(all);
+  const { groups, truncated } = inlineGroups(byDayGroups);
+  const byDay = eventsByDay(byDayGroups);
 
   const select = (day: string) => {
     setSelected(day);
     const target = firstDayWithOutings(day, [...byDay.keys()]);
     setNothingThatDay(!byDay.has(day));
     if (!target) return;
-    if (next && target === eventDay(next) && !groups.some((group) => group.day === target))
-      return onScrollTop();
     const y = groupY.current.get(target);
     if (y !== undefined) onScrollTo(listY.current + y);
   };
