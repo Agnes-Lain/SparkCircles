@@ -28,6 +28,10 @@ class User < ApplicationRecord
   has_many :event_participations, dependent: nil
   # Unlinked by the database (reporter_id set to NULL) on erasure; Accounts::Eraser wipes the text first.
   has_many :event_reports, foreign_key: :reporter_id, dependent: nil, inverse_of: false
+  # Circles: memberships and requests go with the account (on delete cascade); reports sent
+  # are unlinked (reporter_id set to NULL), Accounts::Eraser wipes their text first.
+  has_many :circle_memberships, dependent: nil
+  has_many :circle_reports, foreign_key: :reporter_id, dependent: nil, inverse_of: :reporter
 
   attribute :adult_confirmed, :boolean
   attribute :terms_accepted, :boolean
@@ -257,7 +261,11 @@ class User < ApplicationRecord
     saved_change_to_verification_status? || saved_change_to_verification_expires_on? || saved_change_to_closed_at?
   end
 
-  def sync_events = Events::HostStatusSync.new(self).call
+  def sync_events
+    Events::HostStatusSync.new(self).call
+    # Circles AC-6.4: closing an account leaves every circle (admin succession first).
+    Circles::Departure.close_account!(self) if saved_change_to_closed_at? && closed?
+  end
 
   # AC-1.2: both boxes must be ticked; each missing one is reported.
   def required_consents_given

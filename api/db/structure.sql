@@ -125,6 +125,85 @@ CREATE TABLE public.audit_events (
 
 
 --
+-- Name: circle_memberships; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.circle_memberships (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    circle_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    status character varying NOT NULL,
+    role character varying DEFAULT 'member'::character varying NOT NULL,
+    creator boolean DEFAULT false NOT NULL,
+    requested_at timestamp(6) without time zone,
+    decided_at timestamp(6) without time zone,
+    joined_at timestamp(6) without time zone,
+    admin_since timestamp(6) without time zone,
+    seen_at timestamp(6) without time zone,
+    dismissed_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT circle_memberships_admin_active_check CHECK ((((role)::text = 'member'::text) OR ((status)::text = 'active'::text))),
+    CONSTRAINT circle_memberships_role_check CHECK (((role)::text = ANY ((ARRAY['member'::character varying, 'admin'::character varying])::text[]))),
+    CONSTRAINT circle_memberships_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'active'::character varying, 'declined'::character varying, 'expired'::character varying, 'cancelled'::character varying, 'left'::character varying, 'removed'::character varying])::text[])))
+);
+
+
+--
+-- Name: circle_reports; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.circle_reports (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    circle_id uuid NOT NULL,
+    reporter_id uuid,
+    reported_user_id uuid,
+    reason character varying NOT NULL,
+    details text,
+    resolved_at timestamp(6) without time zone,
+    resolved_by_id uuid,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT circle_reports_reason_check CHECK (((reason)::text = ANY ((ARRAY['unsafe'::character varying, 'not_real_group'::character varying, 'inappropriate_behaviour'::character varying, 'child_safety'::character varying, 'fake_identity'::character varying, 'other'::character varying])::text[])))
+);
+
+
+--
+-- Name: circles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.circles (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying(50) NOT NULL,
+    description text,
+    area character varying NOT NULL,
+    visibility character varying DEFAULT 'public'::character varying NOT NULL,
+    premium_entitlement character varying,
+    visibility_changed_at timestamp(6) without time zone,
+    status character varying DEFAULT 'active'::character varying NOT NULL,
+    closes_on date,
+    suspended_at timestamp(6) without time zone,
+    closed_at timestamp(6) without time zone,
+    created_by_id uuid,
+    invite_token text,
+    invite_token_digest character varying NOT NULL,
+    invite_code text,
+    invite_code_digest character varying NOT NULL,
+    invite_enabled boolean DEFAULT true NOT NULL,
+    invite_renewed_at timestamp(6) without time zone NOT NULL,
+    last_request_email_at timestamp(6) without time zone,
+    request_digest_due_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT circles_description_length_check CHECK (((description IS NULL) OR (char_length(description) <= 200))),
+    CONSTRAINT circles_name_length_check CHECK (((char_length((name)::text) >= 3) AND (char_length((name)::text) <= 50))),
+    CONSTRAINT circles_premium_entitlement_check CHECK (((premium_entitlement IS NULL) OR ((premium_entitlement)::text = 'test_phase_free'::text))),
+    CONSTRAINT circles_status_check CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'suspended'::character varying, 'closed'::character varying])::text[]))),
+    CONSTRAINT circles_visibility_check CHECK (((visibility)::text = ANY ((ARRAY['public'::character varying, 'private'::character varying])::text[])))
+);
+
+
+--
 -- Name: closed_account_statistics; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -174,6 +253,17 @@ CREATE TABLE public.email_changes (
 
 
 --
+-- Name: event_circles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.event_circles (
+    event_id uuid NOT NULL,
+    circle_id uuid NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
 -- Name: event_participations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -215,7 +305,7 @@ CREATE TABLE public.event_reports (
     resolved_by_id uuid,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT event_reports_reason_check CHECK (((reason)::text = ANY (ARRAY[('dangerous_place'::character varying)::text, ('suspicious_host'::character varying)::text, ('inappropriate_content'::character varying)::text, ('inappropriate_tag'::character varying)::text, ('other'::character varying)::text])))
+    CONSTRAINT event_reports_reason_check CHECK (((reason)::text = ANY ((ARRAY['dangerous_place'::character varying, 'suspicious_host'::character varying, 'inappropriate_content'::character varying, 'inappropriate_tag'::character varying, 'other'::character varying])::text[])))
 );
 
 
@@ -257,22 +347,22 @@ CREATE TABLE public.events (
     approval_required boolean DEFAULT false NOT NULL,
     host_phone text,
     CONSTRAINT events_age_range_check CHECK ((((age_min IS NULL) OR ((age_min >= 0) AND (age_min <= 17))) AND ((age_max IS NULL) OR ((age_max >= 0) AND (age_max <= 17))) AND ((age_min IS NULL) OR (age_max IS NULL) OR (age_min <= age_max)))),
-    CONSTRAINT events_category_check CHECK (((category)::text = ANY (ARRAY[('sport'::character varying)::text, ('outdoors'::character varying)::text, ('board_games'::character varying)::text, ('video_games'::character varying)::text, ('crafts'::character varying)::text, ('music'::character varying)::text, ('shows'::character varying)::text, ('books'::character varying)::text, ('workshops'::character varying)::text, ('playdates'::character varying)::text, ('other'::character varying)::text]))),
+    CONSTRAINT events_category_check CHECK (((category)::text = ANY ((ARRAY['sport'::character varying, 'outdoors'::character varying, 'board_games'::character varying, 'video_games'::character varying, 'crafts'::character varying, 'music'::character varying, 'shows'::character varying, 'books'::character varying, 'workshops'::character varying, 'playdates'::character varying, 'other'::character varying])::text[]))),
     CONSTRAINT events_description_length_check CHECK (((description IS NULL) OR (char_length(description) <= 1000))),
     CONSTRAINT events_dropoff_join_rule_check CHECK ((adult_required OR ((join_rule)::text = 'verified_only'::text))),
-    CONSTRAINT events_join_rule_check CHECK (((join_rule)::text = ANY (ARRAY[('anyone'::character varying)::text, ('verified_only'::character varying)::text]))),
+    CONSTRAINT events_join_rule_check CHECK (((join_rule)::text = ANY ((ARRAY['anyone'::character varying, 'verified_only'::character varying])::text[]))),
     CONSTRAINT events_language_check CHECK (((language)::text = ANY ((ARRAY['fr'::character varying, 'en'::character varying])::text[]))),
     CONSTRAINT events_places_taken_check CHECK (((places_taken >= 0) AND ((places_total IS NULL) OR (places_taken <= places_total)))),
     CONSTRAINT events_places_total_check CHECK (((places_total IS NULL) OR ((places_total >= 1) AND (places_total <= 100)))),
     CONSTRAINT events_required_unless_draft_check CHECK ((((status)::text = 'draft'::text) OR ((title IS NOT NULL) AND (category IS NOT NULL) AND (starts_at IS NOT NULL) AND (ends_at IS NOT NULL) AND (area IS NOT NULL)))),
-    CONSTRAINT events_source_check CHECK (((source)::text = ANY (ARRAY[('hosted'::character varying)::text, ('open_data'::character varying)::text]))),
+    CONSTRAINT events_source_check CHECK (((source)::text = ANY ((ARRAY['hosted'::character varying, 'open_data'::character varying])::text[]))),
     CONSTRAINT events_source_fields_check CHECK (((((source)::text = 'hosted'::text) AND (host_id IS NOT NULL) AND (((status)::text = 'draft'::text) OR ((exact_address IS NOT NULL) AND (places_total IS NOT NULL)))) OR (((source)::text = 'open_data'::text) AND (external_id IS NOT NULL) AND (source_url IS NOT NULL)))),
-    CONSTRAINT events_status_check CHECK (((status)::text = ANY (ARRAY[('draft'::character varying)::text, ('published'::character varying)::text, ('suspended'::character varying)::text, ('cancelled'::character varying)::text, ('past'::character varying)::text]))),
-    CONSTRAINT events_suspension_reason_check CHECK (((suspension_reason IS NULL) OR ((suspension_reason)::text = ANY (ARRAY[('host_unverified'::character varying)::text, ('admin'::character varying)::text])))),
+    CONSTRAINT events_status_check CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'published'::character varying, 'suspended'::character varying, 'cancelled'::character varying, 'past'::character varying])::text[]))),
+    CONSTRAINT events_suspension_reason_check CHECK (((suspension_reason IS NULL) OR ((suspension_reason)::text = ANY ((ARRAY['host_unverified'::character varying, 'admin'::character varying])::text[])))),
     CONSTRAINT events_tags_count_check CHECK ((cardinality(tags) <= 5)),
     CONSTRAINT events_time_order_check CHECK ((ends_at > starts_at)),
     CONSTRAINT events_title_length_check CHECK (((char_length((title)::text) >= 1) AND (char_length((title)::text) <= 80))),
-    CONSTRAINT events_visibility_check CHECK (((visibility)::text = 'searchable'::text))
+    CONSTRAINT events_visibility_check CHECK (((visibility)::text = ANY ((ARRAY['searchable'::character varying, 'circles'::character varying])::text[])))
 );
 
 
@@ -286,7 +376,7 @@ CREATE TABLE public.guest_access_events (
     ip_hash character varying(32) NOT NULL,
     endpoint character varying(100) NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT guest_access_events_kind_check CHECK (((kind)::text = ANY (ARRAY[('rate_limited'::character varying)::text, ('blocked'::character varying)::text, ('client_refused'::character varying)::text])))
+    CONSTRAINT guest_access_events_kind_check CHECK (((kind)::text = ANY ((ARRAY['rate_limited'::character varying, 'blocked'::character varying, 'client_refused'::character varying])::text[])))
 );
 
 
@@ -304,7 +394,7 @@ CREATE TABLE public.pending_event_notifications (
     throttle_until timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT pending_event_notifications_kind_check CHECK (((kind)::text = ANY (ARRAY[('host_activity'::character varying)::text, ('event_changed'::character varying)::text, ('host_status'::character varying)::text]))),
+    CONSTRAINT pending_event_notifications_kind_check CHECK (((kind)::text = ANY ((ARRAY['host_activity'::character varying, 'event_changed'::character varying, 'host_status'::character varying])::text[]))),
     CONSTRAINT pending_event_notifications_subject_check CHECK (((event_id IS NULL) <> (host_id IS NULL)))
 );
 
@@ -464,6 +554,30 @@ ALTER TABLE ONLY public.audit_events
 
 
 --
+-- Name: circle_memberships circle_memberships_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circle_memberships
+    ADD CONSTRAINT circle_memberships_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: circle_reports circle_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circle_reports
+    ADD CONSTRAINT circle_reports_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: circles circles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circles
+    ADD CONSTRAINT circles_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: closed_account_statistics closed_account_statistics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -485,6 +599,14 @@ ALTER TABLE ONLY public.data_exports
 
 ALTER TABLE ONLY public.email_changes
     ADD CONSTRAINT email_changes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: event_circles event_circles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.event_circles
+    ADD CONSTRAINT event_circles_pkey PRIMARY KEY (event_id, circle_id);
 
 
 --
@@ -644,6 +766,83 @@ CREATE INDEX index_audit_events_on_subject_user_id ON public.audit_events USING 
 
 
 --
+-- Name: index_circle_memberships_on_circle_id_and_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_circle_memberships_on_circle_id_and_status ON public.circle_memberships USING btree (circle_id, status);
+
+
+--
+-- Name: index_circle_memberships_on_circle_id_and_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_circle_memberships_on_circle_id_and_user_id ON public.circle_memberships USING btree (circle_id, user_id);
+
+
+--
+-- Name: index_circle_memberships_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_circle_memberships_on_user_id ON public.circle_memberships USING btree (user_id);
+
+
+--
+-- Name: index_circle_reports_on_circle_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_circle_reports_on_circle_id ON public.circle_reports USING btree (circle_id);
+
+
+--
+-- Name: index_circle_reports_on_reported_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_circle_reports_on_reported_user_id ON public.circle_reports USING btree (reported_user_id);
+
+
+--
+-- Name: index_circle_reports_on_reporter_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_circle_reports_on_reporter_id ON public.circle_reports USING btree (reporter_id);
+
+
+--
+-- Name: index_circle_reports_on_resolved_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_circle_reports_on_resolved_at ON public.circle_reports USING btree (resolved_at);
+
+
+--
+-- Name: index_circles_on_created_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_circles_on_created_by_id ON public.circles USING btree (created_by_id);
+
+
+--
+-- Name: index_circles_on_invite_code_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_circles_on_invite_code_digest ON public.circles USING btree (invite_code_digest);
+
+
+--
+-- Name: index_circles_on_invite_token_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_circles_on_invite_token_digest ON public.circles USING btree (invite_token_digest);
+
+
+--
+-- Name: index_circles_on_visibility_and_status_and_area; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_circles_on_visibility_and_status_and_area ON public.circles USING btree (visibility, status, area);
+
+
+--
 -- Name: index_data_exports_on_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -662,6 +861,13 @@ CREATE INDEX index_email_changes_on_reported_at ON public.email_changes USING bt
 --
 
 CREATE INDEX index_email_changes_on_user_id ON public.email_changes USING btree (user_id);
+
+
+--
+-- Name: index_event_circles_on_circle_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_event_circles_on_circle_id ON public.event_circles USING btree (circle_id);
 
 
 --
@@ -883,6 +1089,14 @@ ALTER TABLE ONLY public.event_reports
 
 
 --
+-- Name: circle_memberships fk_rails_1cb3a082eb; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circle_memberships
+    ADD CONSTRAINT fk_rails_1cb3a082eb FOREIGN KEY (circle_id) REFERENCES public.circles(id) ON DELETE CASCADE;
+
+
+--
 -- Name: event_participations fk_rails_4cdd99d0ec; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -904,6 +1118,22 @@ ALTER TABLE ONLY public.data_exports
 
 ALTER TABLE ONLY public.allowlisted_jwts
     ADD CONSTRAINT fk_rails_77afa78cd5 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: event_circles fk_rails_85858795b2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.event_circles
+    ADD CONSTRAINT fk_rails_85858795b2 FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
+
+
+--
+-- Name: circle_reports fk_rails_85ca54828f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circle_reports
+    ADD CONSTRAINT fk_rails_85ca54828f FOREIGN KEY (reported_user_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -936,6 +1166,30 @@ ALTER TABLE ONLY public.pending_event_notifications
 
 ALTER TABLE ONLY public.event_participations
     ADD CONSTRAINT fk_rails_b0b78337cd FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
+
+
+--
+-- Name: event_circles fk_rails_b1889e72a6; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.event_circles
+    ADD CONSTRAINT fk_rails_b1889e72a6 FOREIGN KEY (circle_id) REFERENCES public.circles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: circle_reports fk_rails_b1a3394781; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circle_reports
+    ADD CONSTRAINT fk_rails_b1a3394781 FOREIGN KEY (reporter_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: circle_memberships fk_rails_c039ff3c03; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circle_memberships
+    ADD CONSTRAINT fk_rails_c039ff3c03 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -979,6 +1233,22 @@ ALTER TABLE ONLY public.verifications
 
 
 --
+-- Name: circles fk_rails_f7bd788044; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circles
+    ADD CONSTRAINT fk_rails_f7bd788044 FOREIGN KEY (created_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: circle_reports fk_rails_fc28992d00; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circle_reports
+    ADD CONSTRAINT fk_rails_fc28992d00 FOREIGN KEY (circle_id) REFERENCES public.circles(id) ON DELETE CASCADE;
+
+
+--
 -- Name: event_reports fk_rails_fc5bb17976; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -993,6 +1263,7 @@ ALTER TABLE ONLY public.event_reports
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261008090000'),
 ('20261007090000'),
 ('20261006180000'),
 ('20261006150000'),
