@@ -13,6 +13,8 @@ module Api
         def create
           raise ActiveRecord::RecordNotFound unless circle_policy.show_public? || circle_policy.member?
 
+          authorize @circle, :join?
+
           ::Circles::Requests.new(@circle).ask!(current_user)
           render json: { request: { status: "pending" } }, status: :created
         end

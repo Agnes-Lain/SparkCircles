@@ -1,7 +1,7 @@
 # Finding a circle and checking what the requester may do with it (CirclePolicy, Pundit).
 # A circle the requester may not see answers 404, like an unknown id (AC-4.6, AC-17.3);
-# a member without the right gets 403 (admin_rights_paused for an admin whose
-# verification lapsed, AC-6.5).
+# a member without the right gets 403 (circle_paused or circle_closed while the circle
+# isn't active, QA B2; admin_rights_paused for an admin whose verification lapsed, AC-6.5).
 module CircleAccess
   extend ActiveSupport::Concern
 
@@ -15,6 +15,8 @@ module CircleAccess
       policy = error.policy
       if policy.is_a?(CirclePolicy) && !policy.member?
         render_error(:not_found, :not_found)
+      elsif policy.is_a?(CirclePolicy) && policy.inactive?
+        render_error(:forbidden, policy.circle.inactive_error_code)
       else
         render_error(:forbidden, policy.is_a?(CirclePolicy) && policy.rights_paused? ? :admin_rights_paused : :forbidden)
       end

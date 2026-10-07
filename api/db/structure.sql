@@ -195,7 +195,9 @@ CREATE TABLE public.circles (
     request_digest_due_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    forced_private_at timestamp(6) without time zone,
     CONSTRAINT circles_description_length_check CHECK (((description IS NULL) OR (char_length(description) <= 200))),
+    CONSTRAINT circles_forced_private_check CHECK (((forced_private_at IS NULL) OR ((visibility)::text = 'private'::text))),
     CONSTRAINT circles_name_length_check CHECK (((char_length((name)::text) >= 3) AND (char_length((name)::text) <= 50))),
     CONSTRAINT circles_premium_entitlement_check CHECK (((premium_entitlement IS NULL) OR ((premium_entitlement)::text = 'test_phase_free'::text))),
     CONSTRAINT circles_status_check CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'suspended'::character varying, 'closed'::character varying])::text[]))),
@@ -1263,6 +1265,7 @@ ALTER TABLE ONLY public.event_reports
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261008100000'),
 ('20261008090000'),
 ('20261007090000'),
 ('20261006180000'),

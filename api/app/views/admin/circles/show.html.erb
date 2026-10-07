@@ -3,6 +3,7 @@
   <h1><%= @circle.name %></h1>
   <span class="badge badge-<%= @circle.active? ? 'green' : 'neutral' %>"><%= @circle.status.capitalize %></span>
   <span class="badge badge-neutral"><%= @circle.visibility.capitalize %></span>
+  <% if @circle.forced_private? %><span class="badge badge-neutral">Forced private</span><% end %>
 </div>
 <p class="caption"><%= admin_icon(:lock, size: 14) %> Your access is recorded: <%= reason_phrase("safety_report") %>.</p>
 
@@ -28,6 +29,9 @@
     <% end %>
     <% if policy.force_private? %>
       <%= button_to "Make private", force_private_admin_circle_path(@circle), method: :post, class: "btn btn-ghost" %>
+    <% end %>
+    <% if policy.lift_private? %>
+      <%= button_to "Let admins make it public", lift_private_admin_circle_path(@circle), method: :post, class: "btn btn-ghost" %>
     <% end %>
     <% if @open_reports.any? %>
       <%= button_to "Mark reports as reviewed", resolve_reports_admin_circle_path(@circle), method: :post, class: "btn btn-ghost" %>

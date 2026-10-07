@@ -62,6 +62,9 @@ module Api
       def update
         authorize @circle
         @circle.assign_attributes(circle_params)
+        # QA B3: staff forced it to private; only staff can lift that.
+        return render_error(:forbidden, :circle_forced_private) if @circle.forced_private? && @circle.public?
+
         was_public = @circle.visibility_in_database == "public"
         return render_validation_errors(@circle) unless @circle.save
 
@@ -103,7 +106,8 @@ module Api
       # AC-17.1: public by default. AC-17.2: creating and editing need a verified parent
       # (require_verified!, CirclePolicy#manage?), so nobody unverified makes a circle public.
       def circle_params
-        permitted = params.require(:circle).permit(:name, :description, :area, :visibility)
+        # QA B4: `expect` answers 400 (bad_request) when `circle` isn't an object.
+        permitted = params.expect(circle: %i[name description area visibility])
         permitted[:visibility] = "public" if action_name == "create" && permitted[:visibility].blank?
         permitted
       end

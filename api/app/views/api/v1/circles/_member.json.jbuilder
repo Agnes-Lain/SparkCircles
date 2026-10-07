@@ -19,6 +19,8 @@ json.description circle.description
 json.partial! "api/v1/circles/area", circle: circle
 json.visibility circle.visibility
 json.premium_entitlement circle.premium_entitlement
+# QA B3: forced to private by SparkCircles; the admins can't make it public until staff lift it.
+json.forced_private circle.forced_private?
 json.families_count members.size
 json.max_families Circle::MAX_FAMILIES
 json.full members.size >= Circle::MAX_FAMILIES

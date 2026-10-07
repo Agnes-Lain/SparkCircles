@@ -136,6 +136,7 @@ Rails.application.routes.draw do
         post :suspend
         post :resume
         post :force_private
+        post :lift_private
         post :resolve_reports
       end
     end

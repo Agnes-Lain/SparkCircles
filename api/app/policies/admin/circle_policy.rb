@@ -13,6 +13,7 @@ module Admin
     def suspend? = index? && circle.active?
     def resume? = index? && circle.suspended?
     def force_private? = index? && circle.public? && !circle.closed?
+    def lift_private? = index? && circle.forced_private?
     def resolve_reports? = index?
   end
 end

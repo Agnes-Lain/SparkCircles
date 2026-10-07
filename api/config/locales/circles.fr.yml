@@ -19,8 +19,11 @@ fr:
       not_verified_member: "Seul un membre vérifié peut devenir admin."
       circle_has_verified_members: "D'autres membres vérifiés peuvent animer ce cercle : nomme plutôt l'un d'eux admin."
       requester_at_limit: "Cette personne fait déjà partie de 5 cercles, c'est le maximum."
-      invitation_invalid: "Cette invitation n'est plus valide. Demande à la personne qui t'a invité."
+      invitation_invalid: "Cette invitation n'est plus valide. Demande à la personne qui t'a envoyé l'invitation."
       too_many_tries: "Trop d'essais. Réessaie dans quelques minutes."
+      circle_paused: "Ce cercle est en pause."
+      circle_closed: "Ce cercle est fermé."
+      circle_forced_private: "SparkCircles a rendu ce cercle privé après un signalement. Il reste privé pour l’instant."
   circles:
     report_reasons:
       unsafe: "Dangereux ou inapproprié"
@@ -34,6 +37,7 @@ fr:
       messages:
         not_allowed: "n'est pas autorisé ici"
         verification_required: "demande une identité vérifiée"
+        forced_private: "reste privé tant que SparkCircles ne lève pas la mesure"
   circle_mailer:
     request_received:
       subject: "Nouvelle demande pour « %{name} »"
@@ -74,7 +78,7 @@ fr:
     new_admin:
       subject: "Tu es maintenant admin de « %{name} »"
       lines:
-        - "La personne admin de « %{name} » a fermé son compte. Comme membre vérifié de longue date, tu es maintenant admin du cercle."
+        - "La personne admin de « %{name} » a fermé son compte. Tu fais partie des membres vérifiés depuis le plus longtemps : tu es maintenant admin du cercle."
         - "Tu peux accepter les demandes, renouveler le lien et gérer le cercle. Tu peux aussi nommer un autre admin."
       action: "Ouvrir le cercle"
     circle_closing:

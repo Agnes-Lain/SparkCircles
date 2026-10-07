@@ -111,9 +111,10 @@ module Api
       end
 
       def event_params
-        params.require(:event).permit(:title, :description, :category, :starts_at, :ends_at, :area, :exact_address,
-                                      :places_total, :age_min, :age_max, :join_rule, :language, :adult_required,
-                                      :approval_required, :host_phone, :visibility, tags: [], circle_ids: []).tap do |permitted|
+        # QA B4: `expect` answers 400 (bad_request) when `event` isn't an object.
+        params.expect(event: [ :title, :description, :category, :starts_at, :ends_at, :area, :exact_address,
+                               :places_total, :age_min, :age_max, :join_rule, :language, :adult_required,
+                               :approval_required, :host_phone, :visibility, tags: [], circle_ids: [] ]).tap do |permitted|
           # US-16: saved with the event (Event#save_chosen_circles), checked by its validations.
           permitted[:chosen_circle_ids] = permitted.delete(:circle_ids) if permitted.key?(:circle_ids)
         end

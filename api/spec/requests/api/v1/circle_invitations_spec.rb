@@ -64,7 +64,7 @@ RSpec.describe "Circle invitations and join requests", type: :request do
       preview(code: circle.formatted_code)
       expect(response).to have_http_status(:gone)
       expect(json).to eq(unknown)
-      expect(json.dig("error", "message")).to eq("Cette invitation n'est plus valide. Demande à la personne qui t'a invité.")
+      expect(json.dig("error", "message")).to eq("Cette invitation n'est plus valide. Demande à la personne qui t'a envoyé l'invitation.")
     end
 
     it "AC-2.8 refuses further tries after 10 wrong codes in an hour" do

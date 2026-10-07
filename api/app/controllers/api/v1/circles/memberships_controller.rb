@@ -14,6 +14,8 @@ module Api
         end
 
         def step_down
+          raise ::Circles::Error.new(@circle.inactive_error_code, status: :forbidden) unless @circle.active?
+
           ::Circles::Roles.new(@circle).step_down!(circle_policy.membership)
           render_circle
         end

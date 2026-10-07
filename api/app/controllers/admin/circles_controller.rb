@@ -31,10 +31,21 @@ module Admin
       end
     end
 
-    # AC-17.7: out of search at once; members, requests and links stay.
+    # AC-17.7: out of search at once; members, requests and links stay. It stays private
+    # until staff lift it (QA B3, PM decision 2026-10-07).
     def force_private
-      act(:force_private?, "circle_forced_private", notice: "Circle made private.") { @circle.update_columns(visibility: "private",
-        premium_entitlement: Circle::PRIVATE_ENTITLEMENT, visibility_changed_at: Time.current, updated_at: Time.current) }
+      act(:force_private?, "circle_forced_private", notice: "Circle made private.") do
+        now = Time.current
+        @circle.update_columns(visibility: "private", premium_entitlement: Circle::PRIVATE_ENTITLEMENT, forced_private_at: now,
+                               visibility_changed_at: now, updated_at: now)
+      end
+    end
+
+    # The circle's admins may make it public again; it stays private until they do.
+    def lift_private
+      act(:lift_private?, "circle_forced_private_lifted", notice: "Circle admins can make it public again.") do
+        @circle.update_columns(forced_private_at: nil, updated_at: Time.current)
+      end
     end
 
     def resolve_reports

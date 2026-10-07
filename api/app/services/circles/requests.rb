@@ -18,6 +18,7 @@ module Circles
         user.lock!
         membership = @circle.memberships.find_by(user_id: user.id)
         next nil if membership&.blocking?
+        raise Error.new(@circle.inactive_error_code, status: :forbidden) unless @circle.active?
         raise Error.new(:already_member) if membership&.active?
         raise Error.new(:already_requested) if membership&.pending?
         raise Error.new(:circle_full) if @circle.full?
@@ -49,6 +50,7 @@ module Circles
       Circle.transaction do
         @circle.lock!
         membership.lock!
+        raise Error.new(@circle.inactive_error_code, status: :forbidden) unless @circle.active?
         raise Error.new(:request_not_pending) unless membership.pending?
         raise Error.new(:circle_full) if @circle.full?
         raise Error.new(:requester_at_limit) if self.class.active_count(membership.user) >= Circle::MAX_CIRCLES_PER_PARENT
@@ -65,6 +67,7 @@ module Circles
       Circle.transaction do
         @circle.lock!
         membership.lock!
+        raise Error.new(@circle.inactive_error_code, status: :forbidden) unless @circle.active?
         raise Error.new(:request_not_pending) unless membership.pending?
 
         membership.update!(status: "declined", decided_at: Time.current)

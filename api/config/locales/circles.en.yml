@@ -21,6 +21,9 @@ en:
       requester_at_limit: "This person is already in 5 circles, the maximum."
       invitation_invalid: "This invitation isn't valid anymore. Ask the person who invited you."
       too_many_tries: "Too many tries. Try again in a few minutes."
+      circle_paused: "This circle is paused."
+      circle_closed: "This circle is closed."
+      circle_forced_private: "SparkCircles made this circle private after a report. It stays private for now."
   circles:
     report_reasons:
       unsafe: "Unsafe or inappropriate"
@@ -34,6 +37,7 @@ en:
       messages:
         not_allowed: "isn't allowed here"
         verification_required: "needs a verified identity"
+        forced_private: "stays private until SparkCircles lifts it"
   circle_mailer:
     request_received:
       subject: "New request for « %{name} »"

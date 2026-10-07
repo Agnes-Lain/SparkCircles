@@ -47,6 +47,7 @@ class Circle < ApplicationRecord
   validates :visibility, inclusion: { in: VISIBILITIES }
   validates :status, inclusion: { in: STATUSES }
   validate :texts_allowed
+  validate :forced_private_kept
 
   scope :active, -> { where(status: "active") }
   scope :listed_public, -> { active.where(visibility: "public") }
@@ -56,6 +57,10 @@ class Circle < ApplicationRecord
   def active? = status == "active"
   def suspended? = status == "suspended"
   def closed? = status == "closed"
+  # QA B3: forced to private by SparkCircles staff (AC-17.7), until staff lift it.
+  def forced_private? = forced_private_at.present?
+  # QA B2: why a paused or closed circle refuses an action (CirclePolicy, Circles::Requests).
+  def inactive_error_code = closed? ? :circle_closed : :circle_paused
 
   # ---- Members (families = active memberships of accounts that aren't closed) ----
 
@@ -116,6 +121,10 @@ class Circle < ApplicationRecord
     self.invite_code = Array.new(CODE_LENGTH) { CODE_ALPHABET[SecureRandom.random_number(CODE_ALPHABET.size)] }.join
     self.invite_code_digest = self.class.digest(invite_code)
     self.invite_renewed_at = Time.current
+  end
+
+  def forced_private_kept
+    errors.add(:visibility, :forced_private) if forced_private? && public?
   end
 
   def texts_allowed

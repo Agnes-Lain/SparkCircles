@@ -31,6 +31,17 @@ RSpec.describe "Back office reported circles", type: :request do
     expect(AuditEvent.last.action).to eq("circle_forced_private")
   end
 
+  it "AC-17.7 (QA B3) forced private holds until staff lift it" do
+    post "/admin/circles/#{circle.id}/force_private"
+    expect(circle.reload).to be_forced_private
+    get "/admin/circles/#{circle.id}"
+    expect(response.body).to include("Forced private", "Let admins make it public")
+    post "/admin/circles/#{circle.id}/lift_private"
+    expect(circle.reload).not_to be_forced_private
+    expect(circle).to be_private
+    expect(AuditEvent.last.action).to eq("circle_forced_private_lifted")
+  end
+
   it "is closed to non-admins" do
     delete "/admin/logout"
     get "/admin/circles"
