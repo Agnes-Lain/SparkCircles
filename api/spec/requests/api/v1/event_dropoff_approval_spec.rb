@@ -143,13 +143,14 @@ RSpec.describe "Events: drop-off and host approval", type: :request do
 
   describe "requests (AC-17.14, AC-17.15)" do
     it "AC-17.14 a join is a pending request that holds no place; AC-17.15 places and full ignore it" do
+      freeze_time
       join_dropoff(parent, adults: 0, children: 3, emergency_phone: "0698765432")
       expect(response).to have_http_status(:created)
       event = json["event"]
       expect(event["places"]).to eq("total" => 6, "taken" => 0, "left" => 6)
       expect(event["viewer"]).to include("role" => "member", "joined" => false, "join_blocker" => "requested")
       expect(event["viewer"]["request"]).to include("status" => "pending", "places" => 3, "adults" => 0, "children" => 3)
-      expect(Time.iso8601(event["viewer"]["request"]["expires_at"])).to be_within(1.second).of(48.hours.from_now)
+      expect(Time.iso8601(event["viewer"]["request"]["expires_at"])).to eq(48.hours.from_now)
       expect(event).not_to have_key("exact_address")
       expect(event).not_to have_key("host_phone")
     end
