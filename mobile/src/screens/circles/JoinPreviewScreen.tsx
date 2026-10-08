@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Info, Link2 } from 'lucide-react-native';
+import { Clock, Info, Link2Off } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
@@ -15,6 +15,7 @@ import { Button } from '../../components/Button';
 import { Header } from '../../components/Header';
 import { Notification } from '../../components/Notification';
 import { SuccessCheckmark } from '../../components/SuccessCheckmark';
+import { TextLink } from '../../components/TextLink';
 import { FormScreen, MessageScreen } from '../auth/layouts';
 import { useBack } from '../auth/useBack';
 import { useGuestAccount } from '../guest/useGuestAccount';
@@ -22,7 +23,7 @@ import {
   Card,
   CardsSkeleton,
   FamiliesLine,
-  joinRefusal,
+  joinRefusalMessage,
   TypeLine,
   VerifiedBadge,
 } from './CircleParts';
@@ -59,12 +60,28 @@ export function JoinPreviewScreen() {
     },
   });
   const seeCircles = () => router.replace('/community');
-  const refusal = joinRefusal(join.error, t);
+  const findCircles = () => router.replace('/community?tab=find');
+  const refusal = joinRefusalMessage(join.error, t);
 
+  // #40 « Message doux »: short H2 title, one-line body, one Sky Module CTA.
   if (refusal) {
     return (
-      <MessageScreen testID="join-refused" onBack={back} icon={Info} title={refusal}>
-        <Button variant="ghost" label={t('circles.join.seeCircles')} onPress={seeCircles} />
+      <MessageScreen
+        testID="join-refused"
+        tone="soft"
+        onBack={back}
+        icon={Info}
+        title={refusal.title}
+        body={refusal.body}
+      >
+        <Button
+          variant="module"
+          module="community"
+          size="large"
+          label={t('circles.join.findAnother')}
+          onPress={findCircles}
+          testID="join-find-another"
+        />
       </MessageScreen>
     );
   }
@@ -89,16 +106,27 @@ export function JoinPreviewScreen() {
     failure?.code === 'too_many_tries' ||
     failure?.status === 404
   ) {
+    const tooMany = failure?.code === 'too_many_tries';
     return (
       <MessageScreen
         testID="join-invalid"
+        tone="soft"
         onBack={back}
-        icon={Link2}
-        title={
-          failure?.code === 'too_many_tries' ? t('circles.join.tooMany') : t('circles.join.invalid')
-        }
+        icon={tooMany ? Clock : Link2Off}
+        title={tooMany ? t('circles.join.tooManyTitle') : t('circles.join.invalidTitle')}
+        body={tooMany ? t('circles.join.tooManyBody') : t('circles.join.invalidBody')}
       >
-        <Button variant="ghost" label={t('circles.join.seeCircles')} onPress={seeCircles} />
+        {tooMany ? (
+          <TextLink quiet label={t('circles.join.seeCircles')} onPress={seeCircles} />
+        ) : (
+          <Button
+            variant="module"
+            module="community"
+            size="large"
+            label={t('circles.join.seeCircles')}
+            onPress={seeCircles}
+          />
+        )}
       </MessageScreen>
     );
   }

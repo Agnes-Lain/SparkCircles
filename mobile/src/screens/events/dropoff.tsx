@@ -139,7 +139,14 @@ export function HostPhoneCard({ event, now = new Date() }: { event: SparkEvent; 
 }
 
 /** The parent's request states on the detail (design 3.4), one at a time. */
-export function RequestNote({ event }: { event: SparkEvent }) {
+export function RequestNote({
+  event,
+  onSeeEvents,
+}: {
+  event: SparkEvent;
+  /** #40: a quiet « Voir les sorties » under a closed or declined request. */
+  onSeeEvents?: () => void;
+}) {
   const { t, i18n } = useTranslation();
   const locale = resolveLocale(i18n.language);
   const request = event.viewer.request;
@@ -167,6 +174,7 @@ export function RequestNote({ event }: { event: SparkEvent }) {
         title={t('events.dropoff.declinedTitle')}
         body={t('events.dropoff.declinedBody')}
         testID="request-declined"
+        onSeeEvents={onSeeEvents}
       />
     );
   if (request.status === 'expired')
@@ -185,13 +193,16 @@ export function RequestNote({ event }: { event: SparkEvent }) {
         title={t('events.dropoff.closedFullTitle')}
         body={t('events.dropoff.closedFullBody')}
         testID="request-closed-full"
+        onSeeEvents={onSeeEvents}
       />
     );
   return (
     <StateNote
       tone="neutral"
       title={t('events.dropoff.closedOtherTitle')}
+      body={t('events.dropoff.closedOtherBody')}
       testID="request-closed"
+      onSeeEvents={onSeeEvents}
     />
   );
 }
@@ -202,13 +213,15 @@ function StateNote({
   title,
   body,
   testID,
+  onSeeEvents,
 }: {
   tone: 'pending' | 'neutral';
   title: string;
   body?: string;
   testID?: string;
+  onSeeEvents?: () => void;
 }) {
-  return (
+  const note = (
     <View
       testID={testID}
       accessible
@@ -227,6 +240,23 @@ function StateNote({
         <Text className="text-body font-medium text-ink">{title}</Text>
         {body ? <Text className="text-caption text-ink-2">{body}</Text> : null}
       </View>
+    </View>
+  );
+  if (!onSeeEvents) return note;
+  return (
+    <View className="gap-xs">
+      {note}
+      <SeeEventsLink onPress={onSeeEvents} />
+    </View>
+  );
+}
+
+/** #40: the quiet next step under a negative notice for a viewer (never the host). */
+export function SeeEventsLink({ onPress }: { onPress: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <View className="items-start">
+      <TextLink quiet label={t('events.detail.seeEvents')} onPress={onPress} testID="see-events" />
     </View>
   );
 }

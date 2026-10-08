@@ -68,6 +68,23 @@ export function joinRefusal(error: ApiError | null | undefined, t: TFunction): s
   return null;
 }
 
+/**
+ * The same refusal as a « Message doux » (polish 2026-10, #40): a short title and a one-line
+ * body, never the circle name.
+ */
+export function joinRefusalMessage(
+  error: ApiError | null | undefined,
+  t: TFunction,
+): { title: string; body: string } | null {
+  if (error?.code === 'circle_request_declined') {
+    return { title: t('circles.join.declinedTitle'), body: t('circles.join.declinedBody') };
+  }
+  if (error?.code === 'circle_membership_removed') {
+    return { title: t('circles.join.removedTitle'), body: t('circles.join.removedBody') };
+  }
+  return null;
+}
+
 /** A plain Surface card (detail sections). */
 export function Card({ children, testID }: { children: ReactNode; testID?: string }) {
   return (

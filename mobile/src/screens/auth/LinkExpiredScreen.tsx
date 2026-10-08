@@ -66,6 +66,7 @@ export function LinkExpiredScreen() {
   return (
     <MessageScreen
       testID="link-expired-screen"
+      tone="soft"
       icon={Clock}
       title={t('linkExpired.title')}
       body={t('linkExpired.body')}

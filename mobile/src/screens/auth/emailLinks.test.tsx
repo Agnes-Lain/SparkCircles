@@ -75,6 +75,13 @@ describe('S8 New password (reset link)', () => {
     );
 
     expect(await screen.findByRole('header', { name: 'Ce lien a expiré' })).toBeOnTheScreen();
+    // #40 « Message doux »: H2 title, the explanation in the body.
+    expect(screen.getByTestId('link-expired-screen-title').props.className).toContain('text-h2');
+    expect(
+      screen.getByText(
+        "Un lien ne fonctionne qu'une fois et pendant une durée limitée. On t'en envoie un nouveau.",
+      ),
+    ).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole('button', { name: "M'envoyer un nouveau lien" }));
     expect(await screen.findByText('route:forgot-password')).toBeOnTheScreen();
   });

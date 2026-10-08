@@ -622,6 +622,11 @@ describe('E2 Event detail, participant', () => {
     expect(await screen.findByText('Cette sortie est annulée')).toBeOnTheScreen();
     expect(screen.queryByTestId('exact-address')).toBeNull();
     expect(screen.getByRole('button', { name: "Voir d'autres sorties" })).toBeOnTheScreen();
+    // #40: neutral body (no « l'organisateur »), a quiet next step under the card.
+    expect(
+      screen.getByText("Tes places sont libérées et l'adresse exacte n'est plus affichée."),
+    ).toBeOnTheScreen();
+    expect(screen.getByRole('link', { name: 'Voir les sorties' })).toBeOnTheScreen();
   });
 
   it('AC-1.4 a draft or removed event is not available', async () => {

@@ -80,7 +80,7 @@ describe('Cercles tab (C1)', () => {
     expect(within(card).getByText('Cercle public')).toBeOnTheScreen();
     expect(screen.getByText('En attente d’approbation')).toBeOnTheScreen();
     // AC-9.3: no name, no data.
-    expect(screen.getByText('Tu ne fais plus partie de ce cercle.')).toBeOnTheScreen();
+    expect(screen.getByText('Tu n’es plus dans ce cercle.')).toBeOnTheScreen();
   });
 
   it('AC-9.3 hides a neutral card with « Masquer »', async () => {
@@ -106,6 +106,17 @@ describe('Cercles tab (C1)', () => {
     ).toBeOnTheScreen();
     await fireEvent.press(within(card).getByTestId('hide-card'));
     await waitFor(() => expect(mockCircles.dismissCard).toHaveBeenCalledWith('item-9'));
+  });
+
+  it('#40 a declined card offers « Trouver un autre cercle », which opens the search', async () => {
+    mockCircles.mine.mockResolvedValue({
+      ...noCircles,
+      items: [{ id: 'item-9', state: 'declined', circle: { name: 'Voisins du square' } }],
+    });
+    await open('/community');
+    const card = await screen.findByTestId('circle-declined');
+    await fireEvent.press(within(card).getByRole('link', { name: 'Trouver un autre cercle' }));
+    expect(await screen.findByTestId('circles-segment-find')).toBeSelected();
   });
 
   it('AC-9.1 empty, verified: create or enter a code (sky module CTA)', async () => {
@@ -346,13 +357,22 @@ describe('Join (C4)', () => {
     await open('/circles/join?code=K7PMQ2XC');
     await fireEvent.press(await screen.findByTestId('join-ask'));
     expect(await screen.findByTestId('join-refused')).toBeOnTheScreen();
+    // #40 « Message doux »: short H2 title, the sentence in the body, a Sky Module CTA.
+    expect(screen.getByRole('header', { name: 'Demande non acceptée' })).toBeOnTheScreen();
+    expect(screen.getByTestId('join-refused-title').props.className).toContain('text-h2');
+    expect(
+      screen.getByRole('button', { name: 'Trouver un autre cercle' }).props.className,
+    ).toContain('bg-sky');
     expect(
       screen.getByText(
-        'Ta demande pour ce cercle n’a pas été acceptée. Tu ne peux pas la renvoyer.',
+        'Ta demande pour rejoindre ce cercle n’a pas été acceptée. Tu ne peux pas la renvoyer, mais d’autres cercles existent.',
       ),
     ).toBeOnTheScreen();
     expect(screen.queryByText('Demande envoyée')).toBeNull();
     expect(screen.queryByText('Claire D.')).toBeNull();
+    expect(screen.queryByText(preview.name)).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Trouver un autre cercle' }));
+    expect(await screen.findByTestId('circles-segment-find')).toBeSelected();
   });
 
   it('AC-2.7, PM 2026-10-07 a removed person reusing the link is told they are no longer in the circle', async () => {
@@ -360,7 +380,12 @@ describe('Join (C4)', () => {
     mockCircles.joinByInvitation.mockRejectedValue(apiError(403, 'circle_membership_removed'));
     await open('/join/abcdefghijklmnopqrstuv');
     await fireEvent.press(await screen.findByTestId('join-ask'));
-    expect(await screen.findByText('Tu ne fais plus partie de ce cercle.')).toBeOnTheScreen();
+    expect(
+      await screen.findByRole('header', { name: 'Tu n’es plus dans ce cercle' }),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByText('Tu ne peux plus le rejoindre avec cette invitation.'),
+    ).toBeOnTheScreen();
     expect(screen.queryByText('Demande envoyée')).toBeNull();
   });
 
@@ -374,10 +399,24 @@ describe('Join (C4)', () => {
     mockCircles.preview.mockRejectedValue(apiError(410, 'invitation_invalid'));
     await open('/join/abcdefghijklmnopqrstuv');
     expect(
-      await screen.findByText(
-        'Cette invitation n’est plus valide. Demande à la personne qui t’a envoyé l’invitation.',
+      await screen.findByRole('header', { name: 'Invitation indisponible' }),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        'Ce lien ou ce code ne fonctionne plus. Demande une nouvelle invitation à la personne qui te l’a envoyée.',
       ),
     ).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Voir mes cercles' })).toBeOnTheScreen();
+  });
+
+  it('#40 too many tries is a soft « Un peu de patience » with a quiet link', async () => {
+    mockCircles.preview.mockRejectedValue(apiError(429, 'too_many_tries'));
+    await open('/join/abcdefghijklmnopqrstuv');
+    expect(await screen.findByRole('header', { name: 'Un peu de patience' })).toBeOnTheScreen();
+    expect(
+      screen.getByText('Il y a eu trop d’essais. Réessaie dans quelques minutes.'),
+    ).toBeOnTheScreen();
+    expect(screen.getByRole('link', { name: 'Voir mes cercles' })).toBeOnTheScreen();
   });
 
   it('AC-3.4 says the 5-circle limit', async () => {

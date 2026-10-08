@@ -201,6 +201,9 @@ describe('US-17 detail', () => {
     await open(`/events/${eid}`);
     expect(await screen.findByTestId('request-declined')).toBeOnTheScreen();
     expect(screen.getByTestId('declined-see-others')).toBeOnTheScreen();
+    // #40: a short neutral title and a quiet « Voir les sorties ».
+    expect(screen.getByText('Demande non acceptée')).toBeOnTheScreen();
+    expect(screen.getByRole('link', { name: 'Voir les sorties' })).toBeOnTheScreen();
     expect(screen.queryByText('Envoyer ma demande')).toBeNull();
   });
 

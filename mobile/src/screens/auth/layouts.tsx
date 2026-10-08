@@ -45,6 +45,25 @@ export function FormScreen({
  * circle with a line icon, centered H1 and Body, the actions, then an optional quiet link at
  * the very bottom.
  */
+type MessageScreenProps = {
+  /** Back button (44 px, header pattern) for screens reached by a push. */
+  onBack?: () => void;
+  icon?: LucideIcon;
+  /** Replaces the icon circle (e.g. a skeleton while loading). */
+  illustration?: ReactNode;
+  title: string;
+  children?: ReactNode;
+  footer?: ReactNode;
+  testID?: string;
+} & (
+  | { tone?: 'default'; body?: ReactNode }
+  /**
+   * « Message doux » (polish 2026-10, #40): a negative outcome the person didn't cause.
+   * The title is H2 and short; the explanation must go in `body`, never in the title.
+   */
+  | { tone: 'soft'; body: ReactNode }
+);
+
 export function MessageScreen({
   icon,
   illustration,
@@ -54,18 +73,8 @@ export function MessageScreen({
   footer,
   onBack,
   testID,
-}: {
-  /** Back button (44 px, header pattern) for screens reached by a push. */
-  onBack?: () => void;
-  icon?: LucideIcon;
-  /** Replaces the icon circle (e.g. a skeleton while loading). */
-  illustration?: ReactNode;
-  title: string;
-  body?: ReactNode;
-  children?: ReactNode;
-  footer?: ReactNode;
-  testID?: string;
-}) {
+  tone = 'default',
+}: MessageScreenProps) {
   const { t } = useTranslation();
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1" testID={testID}>
@@ -83,11 +92,19 @@ export function MessageScreen({
         <View className="items-center gap-lg">
           {illustration ??
             (icon ? (
-              <View className="h-16 w-16 items-center justify-center rounded-full border-[0.5px] border-border-soft bg-surface">
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                className="h-16 w-16 items-center justify-center rounded-full border-[0.5px] border-border-soft bg-surface"
+              >
                 <Icon icon={icon} size={28} color="ink-2" />
               </View>
             ) : null)}
-          <Text accessibilityRole="header" className="text-center text-h1 text-ink">
+          <Text
+            accessibilityRole="header"
+            testID={testID ? `${testID}-title` : undefined}
+            className={`text-center ${tone === 'soft' ? 'text-h2' : 'text-h1'} text-ink`}
+          >
             {title}
           </Text>
           {typeof body === 'string' ? (

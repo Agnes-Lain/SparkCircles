@@ -53,6 +53,7 @@ import {
   PendingBadge,
   PhoneLink,
   RequestNote,
+  SeeEventsLink,
 } from './dropoff';
 import { displayPhone } from './phone';
 import { clockTime, formatKm, formatLongDay, formatTime } from './format';
@@ -361,12 +362,15 @@ export function EventDetailScreen() {
         testID="notice-host-cancelled"
       />
     ) : (
-      <Notification
-        level="reminder"
-        title={t('events.detail.cancelledTitle')}
-        caption={t('events.detail.cancelledBody')}
-        testID="notice-cancelled"
-      />
+      <View className="gap-xs">
+        <Notification
+          level="reminder"
+          title={t('events.detail.cancelledTitle')}
+          caption={t('events.detail.cancelledBody')}
+          testID="notice-cancelled"
+        />
+        <SeeEventsLink onPress={seeOthers} />
+      </View>
     );
   }
 
@@ -743,7 +747,9 @@ export function EventDetailScreen() {
         )}
 
         {/* Design 3.4: the parent's request state, one at a time (never for guests). */}
-        {request && !joined && event.status !== 'cancelled' ? <RequestNote event={event} /> : null}
+        {request && !joined && event.status !== 'cancelled' ? (
+          <RequestNote event={event} onSeeEvents={seeOthers} />
+        ) : null}
 
         <Card testID="where">
           <SectionLabel>{t('events.detail.where')}</SectionLabel>

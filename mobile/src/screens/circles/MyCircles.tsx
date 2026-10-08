@@ -307,7 +307,7 @@ function CircleItem({ item }: { item: MyCircleItem }) {
   }
 
   // AC-9.3, AC-5.2: no name, no data; a declined request only names the circle the person
-  // asked to join (no admin, no reason; PM phone test 2026-10-07).
+  // asked to join (no admin, no reason; PM phone test 2026-10-07) and offers another (#40).
   return (
     <CommunityCard neutral testID={`circle-${item.state}`}>
       <NeutralLine
@@ -317,7 +317,18 @@ function CircleItem({ item }: { item: MyCircleItem }) {
             : t(`circles.neutral.${item.state}`)
         }
       />
-      <View className="items-start" style={{ minHeight: MIN_TOUCH_TARGET }}>
+      <View
+        className="flex-row flex-wrap items-center gap-lg"
+        style={{ minHeight: MIN_TOUCH_TARGET }}
+      >
+        {item.state === 'declined' ? (
+          <TextLink
+            quiet
+            label={t('circles.join.findAnother')}
+            onPress={() => router.navigate('/community?tab=find')}
+            testID="find-another-circle"
+          />
+        ) : null}
         <TextLink
           quiet
           label={t('circles.neutral.hide')}
