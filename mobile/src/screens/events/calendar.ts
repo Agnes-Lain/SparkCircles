@@ -5,7 +5,7 @@ import type { SparkEvent } from '../../api/events';
 import { hasEnded } from './presenters';
 
 /** Fixed domain of the .ics UID, so a re-import updates the same calendar entry. */
-export const ICS_UID_DOMAIN = 'sparkcircles.fr';
+export const ICS_UID_DOMAIN = 'sparkcircles.eu';
 /** Never the address in the file name (design #41, 3). */
 export const ICS_FILE_NAME = 'sortie-sparkcircles.ics';
 const CRLF = '\r\n';

@@ -77,7 +77,7 @@ describe('#41 .ics builder', () => {
     const lines = unfold(ics);
     expect(ics.endsWith('\r\n')).toBe(true);
     expect(lines.filter((line) => line === 'BEGIN:VEVENT')).toHaveLength(1);
-    expect(lines).toContain(`UID:${joinedEvent.id}@sparkcircles.fr`);
+    expect(lines).toContain(`UID:${joinedEvent.id}@sparkcircles.eu`);
     expect(lines).toContain('DTSTAMP:20261009T100000Z');
     expect(lines).toContain('DTSTART:20261010T130000Z');
     expect(lines).toContain('DTEND:20261010T150000Z');
