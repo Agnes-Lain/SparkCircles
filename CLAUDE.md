@@ -12,7 +12,7 @@ Survey insight (80 parents): socializing/organizing events is pain point #1, vac
 ## People and roles
 
 - **The user is the Product Manager (PM).** The PM decides priorities and approves every handoff. Never skip an approval.
-- Five subagents live in `.claude/agents/`: `po`, `designer`, `developer`, `qa`, `marketing`.
+- Six subagents live in `.claude/agents/`: `po`, `designer`, `developer`, `qa`, `marketing`, `legal`. `legal` is a research assistant that prepares questions and drafts for the PM's real lawyer and GDPR advisor; it never gives legal advice.
 - Reply to the PM in the language they write in (French or English). Write files in English.
 
 ## Source of truth
@@ -25,6 +25,7 @@ Survey insight (80 parents): socializing/organizing events is pain point #1, vac
 - Design deliverables: `docs/design/<feature>.md` and `docs/design/mockups/`
 - API contracts: `docs/api/<feature>.md`
 - QA reports: `docs/qa/<feature>.md`
+- Legal reviews and drafts: `docs/legal/` (`legal` agent, to be validated by a lawyer)
 - Marketing drafts (French + English): `docs/marketing/` (release announcements, social posts, newsletters)
 
 ## Workflow (one feature at a time)
