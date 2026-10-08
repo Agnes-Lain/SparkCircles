@@ -84,12 +84,18 @@ class Event < ApplicationRecord
   scope :not_ended, -> { where(ends_at: Time.current..) }
   scope :ended, -> { where(ends_at: ...Time.current) }
   # AC-1.4, AC-1.6, AC-3.6, AC-8.2: what search shows (full events included, marked full).
-  scope :listed, -> { hosted.where(status: "published").not_ended }
+  # Web beta Q2: while drop-off events are switched off, they are listed nowhere.
+  scope :listed, -> { hosted.where(status: "published").not_ended.dropoff_allowed }
+  scope :dropoff_allowed, -> { dropoff_enabled? ? all : where(adult_required: true) }
   scope :upcoming_for_host, -> { where(starts_at: Time.current..) }
   scope :soonest_first, -> { order(:starts_at, :id) }
   scope :expired, -> { where(ends_at: ...RETENTION.ago) }
 
   attr_accessor :publishing
+
+  # Web beta Q2 (PM decision 2026-10-08): the server-side drop-off switch, off by default
+  # (DROPOFF_ENABLED, config/application.rb).
+  def self.dropoff_enabled? = Rails.configuration.x.events.dropoff_enabled == true
   # US-16: the circles sent with the form, saved with the event (see circles_allowed).
   attr_reader :chosen_circle_ids
 
@@ -111,7 +117,7 @@ class Event < ApplicationRecord
   # AC-8.2: a host's events disappear the moment their verification stops (expiry at
   # midnight, closure), not only when the daily job suspends them. The expiry date is
   # encrypted, so this is checked in Ruby (Events::Search filters each page with it).
-  def listed? = hosted? && published? && !ended? && host_in_good_standing?
+  def listed? = hosted? && published? && !ended? && !dropoff_hidden? && host_in_good_standing?
   def joinable? = listed?
   def host_in_good_standing? = host.present? && host.verified? && !host.closed?
   # AC-17.23, AC-8.2: no decision on requests while suspended, or once the host's
@@ -124,6 +130,8 @@ class Event < ApplicationRecord
   def editable? = draft? || (published? && !ended?)
   # AC-17.1, AC-17.2: "accompanying adult optional" makes a drop-off event.
   def dropoff? = adult_required == false
+  # Web beta Q2: switched off, a drop-off event exists only for its host and accepted participants.
+  def dropoff_hidden? = dropoff? && !Event.dropoff_enabled?
   def phone_visible_until = ends_at && ends_at + PHONE_VISIBLE_AFTER_END
   def phone_visible? = phone_visible_until.present? && Time.current < phone_visible_until
   # US-16: visible to the members of the chosen circles only (AC-16.3).

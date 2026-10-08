@@ -8,6 +8,8 @@ json.areas EventArea.all do |area|
   json.label area.label
   json.city area.city
 end
+# Web beta Q2: false hides the "Présence d'un adulte" setting (every event needs an adult).
+json.dropoff_enabled Event.dropoff_enabled?
 json.age_bands Event::AGE_BANDS.keys
 json.report_reasons EventReport::REASONS do |key|
   json.key key

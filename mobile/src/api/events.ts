@@ -138,6 +138,8 @@ export type EventOptions = {
   categories: { key: CategoryKey; label: string; help: string }[];
   areas: { key: string; label: string; city: string }[];
   age_bands: AgeBand[];
+  /** Web beta Q2: false = drop-off events are switched off (no "Présence d'un adulte" setting). */
+  dropoff_enabled: boolean;
   report_reasons: { key: ReportReason; label: string }[];
   limits: {
     title: number;

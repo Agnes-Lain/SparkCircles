@@ -45,6 +45,7 @@ module Api
         # AC-16.1: no language sent → the app's language (Accept-Language), changeable later.
         @event.language = I18n.locale.to_s if params.dig(:event, :language).blank?
         preset_approval
+        refuse_switched_off_dropoff!
         saved = ActiveModel::Type::Boolean.new.cast(params[:publish]) ? @event.publish! : @event.save
         return render_validation_errors(@event) unless saved
 
@@ -64,6 +65,7 @@ module Api
           before = ::Events::Notifications.snapshot(@event)
           @event.assign_attributes(event_params)
           preset_approval if @event.draft?
+          refuse_switched_off_dropoff!
           @event.save
         end
         return render_validation_errors(@event) unless updated
@@ -90,6 +92,7 @@ module Api
       # AC-1.5, AC-1.6: verification checked again (require_verified!), start in the future.
       def publish
         raise ::Events::Error.new(:event_not_draft) unless @event.draft?
+        refuse_switched_off_dropoff!
         return render_validation_errors(@event) unless @event.publish!
 
         render_event
@@ -126,6 +129,16 @@ module Api
         return if params[:event].respond_to?(:key?) && params[:event].key?(:approval_required)
 
         @event.approval_required = true
+      end
+
+      # Web beta Q2: while drop-off events are switched off, none is created, turned into a
+      # drop-off or published (drafts included). A published one stays editable by its host
+      # (its adult setting is locked after publishing, AC-17.13).
+      def refuse_switched_off_dropoff!
+        return if Event.dropoff_enabled? || !@event.dropoff?
+        return unless @event.new_record? || @event.draft? || @event.will_save_change_to_adult_required?
+
+        raise ::Events::Error.new(:dropoff_disabled, status: :unprocessable_content)
       end
 
       def render_event(status: :ok)

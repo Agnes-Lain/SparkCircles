@@ -45,9 +45,11 @@ module Api
         # closed request only while the event is still open.
         def participated_events
           rows = current_user.event_participations
-          held = Event.hosted.where.not(status: "draft").where(id: rows.where(status: %w[accepted pending]).select(:event_id))
-          answered = Event.hosted.where(status: "published").where(id: rows.where(status: %w[declined expired closed]).select(:event_id))
-          held.or(answered)
+          held = Event.hosted.where.not(status: "draft").where(id: rows.where(status: "accepted").select(:event_id))
+          # Web beta Q2: a switched-off drop-off event is listed for its accepted participants only.
+          requested = Event.hosted.dropoff_allowed.where.not(status: "draft").where(id: rows.where(status: "pending").select(:event_id))
+          answered = Event.hosted.dropoff_allowed.where(status: "published").where(id: rows.where(status: %w[declined expired closed]).select(:event_id))
+          held.or(requested).or(answered)
         end
       end
     end

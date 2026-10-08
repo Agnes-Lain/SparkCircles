@@ -32,6 +32,7 @@ en:
       rate_limited: "Too many requests. Try again in a moment."
       event_not_editable: "This event can't be changed anymore."
       event_not_draft: "This only works on a draft."
+      dropoff_disabled: "Events without an accompanying adult aren't available for now. Choose \"Accompanying adult: required\"."
       event_not_joinable: "This event isn't open for joining."
       own_event: "You're hosting this event."
       already_joined: "You're already going."

@@ -368,7 +368,7 @@ RSpec.describe Events::Notifications do
       expect(mails_to(lea).map(&:subject)).to eq([ "Ta demande pour « Football au parc » a expiré" ])
     end
 
-    it "AC-17.22 a request closed for lost verification sends nothing" do
+    it "AC-17.22 a request closed for lost verification sends nothing", dropoff: true do
       locked = create(:event, :dropoff, host: host)
       Events::Participations.new(locked, lea).join!(adults: 1, children: 1, acknowledged: true)
       lea.update!(verification_status: "not_verified", verification_expires_on: nil)

@@ -46,6 +46,7 @@ fr:
       rate_limited: "Trop de demandes. Réessaie dans un instant."
       event_not_editable: "Cette sortie ne peut plus être modifiée."
       event_not_draft: "Possible uniquement sur un brouillon."
+      dropoff_disabled: "Les sorties sans adulte accompagnant ne sont pas disponibles pour le moment. Choisis « Présence d'un adulte : obligatoire »."
       event_not_joinable: "Cette sortie n'est pas ouverte aux inscriptions."
       own_event: "Tu organises cette sortie."
       already_joined: "Tu participes déjà."

@@ -81,7 +81,8 @@ paris = ActiveSupport::TimeZone["Europe/Paris"]
 end
 
 # US-17: a drop-off event with host approval (Claire hosts, Karim can send a request). The
-# phone number is fictional.
+# phone number is fictional. Hidden from everyone but Claire and accepted participants while
+# drop-off events are switched off (DROPOFF_ENABLED, web beta Q2).
 dropoff = Event.find_or_initialize_by(host: claire, title: "Après-midi jeux chez moi")
 if dropoff.new_record? || dropoff.ended?
   starts_at = paris.now.to_date.advance(days: 5).then { |day| paris.local(day.year, day.month, day.day, 15) }

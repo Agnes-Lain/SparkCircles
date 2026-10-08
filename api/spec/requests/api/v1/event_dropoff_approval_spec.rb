@@ -1,7 +1,7 @@
 require "rails_helper"
 
 # US-17: drop-off events and host approval (AC-17.1 to AC-17.25, AC-5.2).
-RSpec.describe "Events: drop-off and host approval", type: :request do
+RSpec.describe "Events: drop-off and host approval", type: :request, dropoff: true do
   let(:host) { create(:user, :verified, first_name: "Camille", last_name: "Dupont") }
   let(:parent) { create(:user, :verified, first_name: "Sofia", last_name: "Rossi") }
   let(:other_parent) { create(:user, :verified, first_name: "Karim", last_name: "Benali") }

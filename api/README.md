@@ -73,6 +73,12 @@ given the role in the back office.
 
 Losing the production encryption keys means losing the encrypted data: store them in two safe places.
 
+## Feature switches
+
+| Env var | Default | Effect |
+|---|---|---|
+| `DROPOFF_ENABLED` | off | `true` turns drop-off events (accompanying adult optional) on. Off: none can be created or published, and existing ones are visible only to their host and accepted participants. |
+
 ## Checks
 
 ```bash

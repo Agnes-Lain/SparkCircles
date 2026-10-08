@@ -874,6 +874,8 @@
       }
     },
     "dropoff": {
+      "disabledTitle": "Les sorties sans adulte ne sont pas disponibles",
+      "disabledBody": "Pour l'instant, chaque sortie demande la présence d'un adulte. Ce que tu as saisi est gardé.",
       "adultLabel": "Présence d'un adulte",
       "adultRequired": "Obligatoire",
       "adultOptional": "Facultatif",

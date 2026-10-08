@@ -4,7 +4,8 @@
 # - hosted: the parent's published events, and cancelled ones (AC-1.5);
 # - joined: events where the parent holds places (accepted), published or cancelled;
 # - circle: published circle-only events of the parent's active circles, not hosted or joined
-#   (circles AC-16.3: exactly the events that member may already find in search).
+#   (circles AC-16.3: exactly the events that member may already find in search), so no
+#   drop-off event while they are switched off (web beta Q2).
 #
 # Drafts, suspended events, pending or declined requests and past events are never listed
 # (AC-1.6). Cancelled events are kept only while they start within CANCELLED_WINDOW.
@@ -41,7 +42,7 @@ class AgendaPolicy
 
     def circle_outings(events)
       circle_ids = @user.circle_memberships.active.joins(:circle).merge(Circle.active).select(:circle_id)
-      events.where(status: "published", visibility: "circles", id: EventCircle.where(circle_id: circle_ids).select(:event_id))
+      events.dropoff_allowed.where(status: "published", visibility: "circles", id: EventCircle.where(circle_id: circle_ids).select(:event_id))
             .where.not(host_id: @user.id).where.not(id: joined_ids)
     end
   end

@@ -1,7 +1,7 @@
 require "rails_helper"
 
 # QA round on US-17: criteria the developer's specs leave uncovered.
-RSpec.describe "QA: drop-off and host approval gaps", type: :request do
+RSpec.describe "QA: drop-off and host approval gaps", type: :request, dropoff: true do
   let(:host) { create(:user, :verified) }
   let(:parent) { create(:user, :verified) }
   let(:other_parent) { create(:user, :verified) }

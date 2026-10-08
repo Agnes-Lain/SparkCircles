@@ -874,6 +874,8 @@
       }
     },
     "dropoff": {
+      "disabledTitle": "Events without an adult aren't available",
+      "disabledBody": "For now, every event needs an accompanying adult. What you typed is kept.",
       "adultLabel": "Accompanying adult",
       "adultRequired": "Required",
       "adultOptional": "Optional",

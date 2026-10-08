@@ -180,6 +180,23 @@ export function withAdultRequired(values: FormValues, adultRequired: boolean): F
   return next;
 }
 
+/**
+ * Web beta Q2: whether the form offers drop-off (`dropoff_enabled` from the event options;
+ * unknown = off). A published drop-off event stays as it is for its host.
+ */
+export function dropoffAllowed(enabled: boolean | undefined, event?: SparkEvent | null): boolean {
+  return (
+    enabled === true || Boolean(event && event.status !== 'draft' && event.adult_required === false)
+  );
+}
+
+/** Web beta Q2: drop-off switched off, every new event or draft needs an accompanying adult. */
+export function withDropoffSwitch(values: FormValues, allowed: boolean): FormValues {
+  return allowed || values.adultRequired
+    ? values
+    : { ...values, adultRequired: true, hostPhone: '' };
+}
+
 /** "2026-10-10" and "09:05" from a picked moment, in the device's local time (what the
  *  native picker shows). */
 export function localDay(moment: Date): string {

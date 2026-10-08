@@ -67,7 +67,8 @@ module Events
       case audience(event)
       when :host then true
       when :participant then !event.draft?
-      else (event.listed? || (request(event)&.pending? && !event.draft?)) && in_audience?(event)
+      # Web beta Q2: a switched-off drop-off event is not found by pending requesters either.
+      else (event.listed? || (request(event)&.pending? && !event.draft? && !event.dropoff_hidden?)) && in_audience?(event)
       end
     end
 

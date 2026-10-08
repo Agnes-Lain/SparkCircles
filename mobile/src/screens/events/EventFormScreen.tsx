@@ -15,7 +15,7 @@ import {
 
 import { events } from '../../api';
 import type { ApiError } from '../../api/errors';
-import type { SparkEvent } from '../../api/events';
+import { EVENT_OPTIONS_KEY, type SparkEvent } from '../../api/events';
 import { useMe } from '../../auth/useMe';
 import { Checkbox } from '../../components/Checkbox';
 import { BottomSheet } from '../../components/BottomSheet';
@@ -52,6 +52,7 @@ import {
   formFromEvent,
   type FormValues,
   LIMITS,
+  dropoffAllowed,
   localClock,
   localDay,
   missingFields,
@@ -63,6 +64,7 @@ import {
   toParams,
   validateForm,
   withAdultRequired,
+  withDropoffSwitch,
 } from './formModel';
 import { hasEnded } from './presenters';
 import { freshEvent, storeEvent, useEvent, useEventOptions } from './queries';
@@ -169,7 +171,10 @@ function EventForm({ event }: { event?: SparkEvent }) {
   const hostCircles = (myCircles.data?.items ?? []).flatMap((item) =>
     item.state === 'member' ? [item.circle] : [],
   );
-  const [values, setValues] = useState<FormValues>(initial);
+  const [formValues, setValues] = useState<FormValues>(initial);
+  // Web beta Q2: drop-off switched off on the server, every event needs an adult.
+  const offerDropoff = dropoffAllowed(options.data?.dropoff_enabled, event);
+  const values = withDropoffSwitch(formValues, offerDropoff);
   // `?check=1`: opened from a refused publish, the missing fields show at once (BUG-8).
   const [errors, setErrors] = useState<FormErrors>(() =>
     check ? validateForm(initial, t, { placesTaken }) : {},
@@ -181,7 +186,7 @@ function EventForm({ event }: { event?: SparkEvent }) {
   const [areaFocused, setAreaFocused] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [problem, setProblem] = useState<
-    'verification' | 'offline' | 'rateLimited' | ClosedReason | null
+    'verification' | 'offline' | 'rateLimited' | 'dropoffDisabled' | ClosedReason | null
   >(null);
   const leaving = useRef<null | (() => void)>(null);
   const saved = useRef(false);
@@ -292,6 +297,10 @@ function EventForm({ event }: { event?: SparkEvent }) {
         setProblem('verification');
       } else if (error.code === 'rate_limited') {
         setProblem('rateLimited');
+      } else if (error.code === 'dropoff_disabled') {
+        // Web beta Q2: switched off meanwhile; the options hide the setting once refreshed.
+        void queryClient.invalidateQueries({ queryKey: EVENT_OPTIONS_KEY });
+        setProblem('dropoffDisabled');
       } else if (isRefusal(error) && event) {
         // BUG-3: the event changed meanwhile (on hold, cancelled, ended, gone): say why.
         void freshEvent(queryClient, event.id).then((fresh) =>
@@ -391,6 +400,13 @@ function EventForm({ event }: { event?: SparkEvent }) {
           title={problem === 'rateLimited' ? t('rateLimited.title') : t('errors.unreachable.title')}
           caption={problem === 'rateLimited' ? t('rateLimited.wait') : t('events.form.keptCaption')}
           testID="form-error"
+        />
+      ) : problem === 'dropoffDisabled' ? (
+        <Notification
+          level="error"
+          title={t('events.dropoff.disabledTitle')}
+          caption={t('events.dropoff.disabledBody')}
+          testID="form-dropoff-disabled"
         />
       ) : problem ? (
         <Notification level="error" {...refusalText(problem, t, true)} testID="form-refused" />
@@ -602,19 +618,22 @@ function EventForm({ event }: { event?: SparkEvent }) {
         onCreateCircle={() => router.push('/circles/new')}
       />
 
-      {/* AC-17.1: accompanying adult, two choices; drop-off follows from "Facultatif". */}
-      <SettingField
-        label={t('events.dropoff.adultLabel')}
-        published={published}
-        value={values.adultRequired ? 'required' : 'optional'}
-        segments={[
-          { key: 'required', label: t('events.dropoff.adultRequired') },
-          { key: 'optional', label: t('events.dropoff.adultOptional') },
-        ]}
-        onChange={(key) => setValues((v) => withAdultRequired(v, key === 'required'))}
-        helper={t('events.dropoff.fixedHelper')}
-        testIDPrefix="adult"
-      />
+      {/* AC-17.1: accompanying adult, two choices; drop-off follows from "Facultatif".
+          Web beta Q2: not offered while drop-off is switched off. */}
+      {offerDropoff ? (
+        <SettingField
+          label={t('events.dropoff.adultLabel')}
+          published={published}
+          value={values.adultRequired ? 'required' : 'optional'}
+          segments={[
+            { key: 'required', label: t('events.dropoff.adultRequired') },
+            { key: 'optional', label: t('events.dropoff.adultOptional') },
+          ]}
+          onChange={(key) => setValues((v) => withAdultRequired(v, key === 'required'))}
+          helper={t('events.dropoff.fixedHelper')}
+          testIDPrefix="adult"
+        />
+      ) : null}
 
       {dropoff ? (
         <>
@@ -923,10 +942,14 @@ function EventForm({ event }: { event?: SparkEvent }) {
               ? t('events.form.summaryAnyone', { count: Number(values.places) || 0 })
               : t('events.form.summaryVerified', { count: Number(values.places) || 0 })}
           </Text>
-          <SummaryRow
-            label={t('events.dropoff.summaryAdult')}
-            value={dropoff ? t('events.dropoff.adultOptional') : t('events.dropoff.adultRequired')}
-          />
+          {offerDropoff ? (
+            <SummaryRow
+              label={t('events.dropoff.summaryAdult')}
+              value={
+                dropoff ? t('events.dropoff.adultOptional') : t('events.dropoff.adultRequired')
+              }
+            />
+          ) : null}
           <SummaryRow
             label={t('events.dropoff.summaryRule')}
             value={

@@ -27,6 +27,7 @@ export type ApiErrorCode =
   | 'client_blocked'
   | 'event_not_editable'
   | 'event_not_draft'
+  | 'dropoff_disabled'
   | 'event_not_joinable'
   | 'own_event'
   | 'already_joined'

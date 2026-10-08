@@ -74,6 +74,7 @@ export const eventOptionsFixture: EventOptions = {
     { key: 'paris-20', label: 'Paris 20e', city: 'Paris' },
   ],
   age_bands: ['0-2', '3-5', '6-8', '9-12', '13+'],
+  dropoff_enabled: true,
   report_reasons: [
     { key: 'dangerous_place', label: 'Lieu dangereux' },
     { key: 'suspicious_host', label: 'Organisateur suspect' },

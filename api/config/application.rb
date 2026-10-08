@@ -85,5 +85,10 @@ module SparkCircles
     config.x.app_link_base = ENV.fetch("APP_LINK_BASE", "http://localhost:8081").chomp("/")
     # Terms and privacy policy versions (AC-5.2, AC-5.5).
     config.x.legal = config_for(:legal)
+    # Drop-off events (events US-17) stay off until the legal advice (web beta spec Q2): when
+    # off, none can be created or published, and the existing ones are hidden from everyone
+    # but their host and accepted participants (Event.dropoff_enabled?). Off unless
+    # DROPOFF_ENABLED=true.
+    config.x.events.dropoff_enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch("DROPOFF_ENABLED", "false")) == true
   end
 end
