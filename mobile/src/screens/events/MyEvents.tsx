@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { type RefObject, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native';
 
 import type { SparkEvent } from '../../api/events';
 import { Button } from '../../components/Button';
@@ -9,6 +9,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { EventCard } from '../../components/EventCard';
 import { FilterChip } from '../../components/FilterChip';
 import { Notification } from '../../components/Notification';
+import { usePullRefresh } from '../../hooks/usePullRefresh';
 import { MIN_TOUCH_TARGET } from '../../theme/a11y';
 import { colorValue } from '../../theme/colors';
 import { BadgeSheet } from '../account/BadgeSheet';
@@ -29,6 +30,7 @@ export function MyEvents() {
   const [when, setWhen] = useState<When>('upcoming');
   const hosting = useMyEvents('host', when);
   const going = useMyEvents('participant', when);
+  const pull = usePullRefresh(() => Promise.all([hosting.refetch(), going.refetch()]), 'events');
   const [badgeOpener, setBadgeOpener] = useState<RefObject<View | null> | null>(null);
 
   const rows = useMemo(() => {
@@ -103,6 +105,7 @@ export function MyEvents() {
     <View className="flex-1">
       <FlatList
         testID="my-events-list"
+        refreshControl={<RefreshControl {...pull} />}
         data={rows}
         keyExtractor={(row) => row.key}
         ListHeaderComponent={header}

@@ -10,7 +10,15 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import type { AgeBand, EventLanguage, EventSearch, SparkEvent } from '../../api/events';
 import { rememberFilters, type SavedFilters, takeRestoredFilters } from '../../auth/returnTo';
@@ -37,6 +45,7 @@ import { EventListSkeleton } from './EventCardSkeleton';
 import { FiltersSheet, normaliseTag, RADIUS_CHOICES, type SheetFilters } from './FiltersSheet';
 import { clockTime, formatLongDay, weekendRange, zonedDate, zonedToday } from './format';
 import { useEventOptions, useEventSearch } from './queries';
+import { usePullRefresh } from '../../hooks/usePullRefresh';
 import { PickDateChip } from './PickDateChip';
 import { useGuestAccount } from '../guest/useGuestAccount';
 
@@ -212,6 +221,7 @@ export function DiscoverList({
   ]);
 
   const query = useEventSearch(search, areaLoaded);
+  const pull = usePullRefresh(() => query.refetch(), 'events');
   const events = useMemo(
     () => query.data?.pages.flatMap((page) => page.events) ?? [],
     [query.data],
@@ -611,6 +621,7 @@ export function DiscoverList({
     <View className="flex-1">
       <FlatList
         testID="events-list"
+        refreshControl={<RefreshControl {...pull} />}
         data={rows}
         keyExtractor={(row) => row.key}
         ListHeaderComponent={header}

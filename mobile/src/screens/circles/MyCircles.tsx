@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Clock, UserPlus } from 'lucide-react-native';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { circles } from '../../api';
 import type { MyCircleItem } from '../../api/circles';
 import { useMe } from '../../auth/useMe';
+import { usePullRefresh } from '../../hooks/usePullRefresh';
 import { Avatar } from '../../components/Avatar';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -40,14 +40,7 @@ export function MyCirclesList() {
   const router = useRouter();
   const me = useMe();
   const query = useMyCircles();
-  // Only a pull shows the spinner: a background refetch (screen focus) must not, or iOS
-  // keeps the RefreshControl spinning until the next scroll (PM phone test 2026-10-08).
-  const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await query.refetch();
-    setRefreshing(false);
-  };
+  const pull = usePullRefresh(() => query.refetch(), 'circles');
   const verified = me.data?.verification.verified ?? false;
   const data = query.data;
   const items = data?.items ?? [];
@@ -154,7 +147,7 @@ export function MyCirclesList() {
   return (
     <ScrollView
       contentContainerClassName="gap-md px-lg pb-3xl"
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />}
+      refreshControl={<RefreshControl {...pull} />}
       testID="my-circles"
     >
       {body}
