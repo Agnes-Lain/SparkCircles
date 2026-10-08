@@ -22,6 +22,7 @@ import { EventDetailScreen } from './EventDetailScreen';
 import { EventFormScreen } from './EventFormScreen';
 import { EMPTY_FORM, toParams, validateForm, withAdultRequired } from './formModel';
 import { displayPhone, normalizePhone } from './phone';
+import { hostPartyText, partyText, partyTotals } from './presenters';
 import { withinPhoneWindow, withoutPhones } from './queries';
 import { allFit, RequestsScreen } from './RequestsScreen';
 
@@ -278,10 +279,59 @@ describe('US-17 join sheet', () => {
   });
 });
 
+describe('AC-6.4b party totals for the host', () => {
+  it('the host variant always shows children, with FR and EN plurals', async () => {
+    const tt = i18n.t.bind(i18n);
+    expect(hostPartyText(1, 0, tt)).toBe('1 adulte · 0 enfant');
+    expect(partyText(1, 0, tt)).toBe('1 adulte');
+    expect(
+      partyTotals([
+        { adults: 2, children: 1 },
+        { adults: 1, children: 0 },
+      ]),
+    ).toEqual({
+      adults: 3,
+      children: 1,
+    });
+    await i18n.changeLanguage('en');
+    expect(hostPartyText(1, 0, i18n.t.bind(i18n))).toBe('1 adult · 0 children');
+    expect(hostPartyText(2, 1, i18n.t.bind(i18n))).toBe('2 adults · 1 child');
+  });
+
+  it('the host sees « N personnes : N adultes · M enfants » under the participants', async () => {
+    const hugo = hostedDropoffEvent.participants![0]!;
+    show({
+      ...hostedDropoffEvent,
+      participants: [
+        { ...hugo, adults: 2, children: 3 },
+        { ...hugo, first_name: 'Lina', adults: 1, children: 0 },
+      ],
+    });
+    await open(`/events/${eid}`);
+    expect(await screen.findByTestId('party-total')).toHaveTextContent(
+      '6 personnes : 3 adultes · 3 enfants',
+    );
+    expect(screen.getByTestId('party-total')).toHaveProp(
+      'accessibilityLabel',
+      '6 personnes : 3 adultes, 3 enfants',
+    );
+    expect(screen.getByText('1 adulte · 0 enfant')).toBeOnTheScreen();
+  });
+
+  it('participants keep the short party text and see no total', async () => {
+    const hugo = hostedDropoffEvent.participants![0]!;
+    show({ ...acceptedDropoffEvent, participants: [{ ...hugo, adults: 1, children: 0 }] });
+    await open(`/events/${eid}`);
+    expect(await screen.findByText('1 adulte')).toBeOnTheScreen();
+    expect(screen.queryByTestId('party-total')).toBeNull();
+  });
+});
+
 describe('US-17 host request list', () => {
   const list = (overrides: Partial<RequestList> = {}): RequestList => ({
     places_left: 6,
     frozen: false,
+    totals: { adults: 2, children: 1 },
     requests: [
       {
         id: 'r1',
@@ -294,6 +344,7 @@ describe('US-17 host request list', () => {
         children: 2,
         places: 2,
         current_places: 0,
+        if_accepted: { adults: 2, children: 3 },
         requested_at: '2026-10-09T08:00:00Z',
         expires_at: '2026-10-10T13:00:00Z',
       },
@@ -308,6 +359,7 @@ describe('US-17 host request list', () => {
         children: 1,
         places: 2,
         current_places: 0,
+        if_accepted: { adults: 3, children: 2 },
         requested_at: '2026-10-09T05:00:00Z',
         expires_at: '2026-10-10T13:00:00Z',
       },
@@ -329,6 +381,22 @@ describe('US-17 host request list', () => {
     ).toHaveLength(2);
     await fireEvent.press(screen.getByTestId('accept-r1'));
     await waitFor(() => expect(mockEvents.acceptRequest).toHaveBeenCalledWith(eid, 'r1'));
+  });
+
+  it('AC-6.4b each request shows its adults and children, and the totals if accepted', async () => {
+    mockEvents.requests.mockResolvedValue(list());
+    await open(`/events/${eid}/requests`);
+    expect(await screen.findByTestId('request-r1')).toHaveTextContent(
+      /0 adulte · 2 enfants · 2 places/,
+    );
+    expect(screen.getByTestId('request-r2')).toHaveTextContent(/1 adulte · 1 enfant · 2 places/);
+    expect(screen.getByTestId('request-if-accepted-r2')).toHaveTextContent(
+      'Si tu acceptes : 3 adultes · 2 enfants',
+    );
+    expect(screen.getByTestId('request-if-accepted-r1')).toHaveProp(
+      'accessibilityLabel',
+      'Si tu acceptes : 2 adultes, 3 enfants',
+    );
   });
 
   it('AC-17.16 "Je décline" asks once, the safe option first', async () => {

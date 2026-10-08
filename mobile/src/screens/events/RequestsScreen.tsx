@@ -31,7 +31,7 @@ import { shadows } from '../../theme/colors';
 import { useBack } from '../auth/useBack';
 import { ConfirmSheet } from './ConfirmSheet';
 import { isDropoff } from './dropoff';
-import { partyText, personName } from './presenters';
+import { hostPartyText, personName } from './presenters';
 import { refreshEvents, storeEvent, useEvent, useEventRequests } from './queries';
 
 /** "Terminées" shows this many rows, then « Voir les N autres » (design 3.5). */
@@ -336,7 +336,9 @@ function RequestRow({
   const { t } = useTranslation();
   const name = personName(request, t);
   const tooMany = request.places > left;
-  const party = partyText(request.adults, request.children, t);
+  // AC-6.4b: children always shown, and the totals if this request is accepted.
+  const party = hostPartyText(request.adults, request.children, t);
+  const { adults, children } = request.if_accepted;
   return (
     <View
       testID={`request-${request.id}`}
@@ -356,6 +358,15 @@ function RequestRow({
             {request.extra
               ? t('events.dropoff.rowExtra', { party, count: request.places })
               : t('events.dropoff.rowPlaces', { party, count: request.places })}
+          </Text>
+          <Text
+            className="text-caption text-ink-2"
+            accessibilityLabel={t('events.dropoff.ifAccepted', {
+              party: hostPartyText(adults, children, t, ', '),
+            })}
+            testID={`request-if-accepted-${request.id}`}
+          >
+            {t('events.dropoff.ifAccepted', { party: hostPartyText(adults, children, t) })}
           </Text>
           <Text className="text-caption text-ink-3">{sentText(request.requested_at, now, t)}</Text>
           {dropoff ? (

@@ -60,7 +60,16 @@ import {
 import { displayPhone } from './phone';
 import { clockTime, formatKm, formatLongDay, formatTime } from './format';
 import { JoinSheet } from './JoinSheet';
-import { hasEnded, partyText, personName, placesText, statusBadge, titleText } from './presenters';
+import {
+  hasEnded,
+  hostPartyText,
+  partyText,
+  partyTotals,
+  personName,
+  placesText,
+  statusBadge,
+  titleText,
+} from './presenters';
 import { forgetParticipation, freshEvent, refreshEvents, storeEvent, useEvent } from './queries';
 import { type ClosedReason, closedReason, isRefusal, refusalText } from './refusals';
 import { ReportSheet } from './ReportSheet';
@@ -324,6 +333,7 @@ export function EventDetailScreen() {
   const date = event.starts_at ? formatLongDay(event.starts_at, event.time_zone, locale) : null;
   const title = titleText(event, t);
   const participants = event.participants ?? [];
+  const totals = partyTotals(participants);
   // US-17
   const dropoff = isDropoff(event);
   const approval = event.approval_required;
@@ -954,7 +964,9 @@ export function EventDetailScreen() {
                   <View className="flex-1">
                     <Text className="text-body font-medium text-ink">{personName(person, t)}</Text>
                     <Text className="text-caption text-ink-2">
-                      {partyText(person.adults, person.children, t)}
+                      {isHost
+                        ? hostPartyText(person.adults, person.children, t)
+                        : partyText(person.adults, person.children, t)}
                     </Text>
                     {/* AC-17.10: the emergency number, host only, after accepting. */}
                     {isHost && person.emergency_phone && phonesShown ? (
@@ -978,6 +990,22 @@ export function EventDetailScreen() {
                   ) : null}
                 </View>
               ))}
+              {isHost ? (
+                // AC-6.4b: the accepted party, people then the split, children always shown.
+                <Text
+                  className="text-body font-medium text-ink"
+                  accessibilityLabel={t('events.detail.partyTotal', {
+                    count: totals.adults + totals.children,
+                    party: hostPartyText(totals.adults, totals.children, t, ', '),
+                  })}
+                  testID="party-total"
+                >
+                  {t('events.detail.partyTotal', {
+                    count: totals.adults + totals.children,
+                    party: hostPartyText(totals.adults, totals.children, t),
+                  })}
+                </Text>
+              ) : null}
               {isHost ? (
                 <Text className="text-caption text-ink-3">{t('events.detail.ownParty')}</Text>
               ) : null}

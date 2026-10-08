@@ -92,3 +92,33 @@ export function partyText(adults: number, children: number, t: TFunction): strin
   if (children > 0) parts.push(t('events.detail.children', { count: children }));
   return parts.join(', ');
 }
+
+/**
+ * AC-6.4b: the host's variant, children always shown: "1 adulte · 0 enfant". `separator`
+ * ", " for screen readers.
+ */
+export function hostPartyText(
+  adults: number,
+  children: number,
+  t: TFunction,
+  separator = ' · ',
+): string {
+  return [
+    t('events.detail.adults', { count: adults }),
+    t('events.detail.children', { count: children }),
+  ].join(separator);
+}
+
+/** AC-6.4b: the adults and children of the accepted party. */
+export function partyTotals(participants: { adults: number; children: number }[]): {
+  adults: number;
+  children: number;
+} {
+  return participants.reduce(
+    (sum, person) => ({
+      adults: sum.adults + person.adults,
+      children: sum.children + person.children,
+    }),
+    { adults: 0, children: 0 },
+  );
+}

@@ -212,6 +212,8 @@ export type HostRequest = {
   children: number;
   places: number;
   current_places: number;
+  /** AC-6.4b: the accepted adults and children if this request is accepted. */
+  if_accepted: { adults: number; children: number };
   requested_at: string | null;
   expires_at: string | null;
 };
@@ -232,6 +234,8 @@ export type DoneRequest = {
 export type RequestList = {
   places_left: number;
   frozen: boolean;
+  /** AC-6.4b: the accepted adults and children now. */
+  totals: { adults: number; children: number };
   requests: HostRequest[];
   done: DoneRequest[];
 };

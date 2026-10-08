@@ -2,6 +2,8 @@
 # badge and counts only; no phone number before accepting, no children's names or ages.
 json.places_left @event.places_left
 json.frozen @event.requests_frozen?
+# AC-6.4b: accepted adults and children now, and per request the totals if it is accepted.
+json.totals @totals
 json.requests @waiting do |participation|
   json.partial! "api/v1/events/requests/person", user: participation.user
   json.id participation.id
@@ -11,6 +13,9 @@ json.requests @waiting do |participation|
   json.children extra ? participation.pending_children : participation.children
   json.places participation.asked_places
   json.current_places(extra ? participation.requested_places : 0)
+  if_adults = @totals[:adults] + (extra ? participation.pending_adults - participation.adults : participation.adults)
+  if_children = @totals[:children] + (extra ? participation.pending_children - participation.children : participation.children)
+  json.if_accepted({ adults: if_adults, children: if_children })
   json.requested_at participation.requested_at&.utc&.iso8601
   json.expires_at participation.expires_at&.utc&.iso8601
 end
