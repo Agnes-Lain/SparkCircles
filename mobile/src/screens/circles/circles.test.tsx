@@ -563,6 +563,54 @@ describe('Circle detail (C5)', () => {
     expect(await screen.findByText('Tes droits d’admin sont en pause')).toBeOnTheScreen();
   });
 
+  it('#38 AC-6.5 no verified admin: an unverified member sees the notice and can get verified', async () => {
+    mockCircles.get.mockResolvedValue({
+      circle: {
+        ...memberCircle,
+        visibility: 'private',
+        has_verified_admin: false,
+        discoverable: false,
+        members: memberCircle.members.map((m) => (m.me ? { ...m, verified: false } : m)),
+      },
+    });
+    await open(`/circles/${memberCircle.id}`, unverifiedMe);
+    const notice = await screen.findByTestId('notice-no-admin');
+    expect(notice).toHaveTextContent(/Ce cercle n'a plus de personne admin vérifiée/);
+    expect(notice).toHaveTextContent(/Un membre peut en reprendre la gestion/);
+    await fireEvent.press(screen.getByTestId('notice-no-admin-verify'));
+    expect(await screen.findByText('route:verify')).toBeOnTheScreen();
+  });
+
+  it('#38 a verified member sees the notice without the verify button', async () => {
+    mockCircles.get.mockResolvedValue({
+      circle: {
+        ...memberCircle,
+        has_verified_admin: false,
+        members: memberCircle.members.map((m) => (m.me ? { ...m, verified: true } : m)),
+      },
+    });
+    await open(`/circles/${memberCircle.id}`);
+    expect(await screen.findByTestId('notice-no-admin')).toHaveTextContent(
+      /La gestion revient automatiquement/,
+    );
+    expect(screen.queryByTestId('notice-no-admin-verify')).toBeNull();
+  });
+
+  it('#38 the paused-rights card replaces the notice, never both', async () => {
+    mockCircles.get.mockResolvedValue({
+      circle: {
+        ...adminCircle,
+        has_verified_admin: false,
+        admin_rights_paused: true,
+        requests: [],
+        can: { ...adminCircle.can, manage: false, invite: false },
+      },
+    });
+    await open(`/circles/${adminCircle.id}`);
+    expect(await screen.findByTestId('admin-paused')).toBeOnTheScreen();
+    expect(screen.queryByTestId('notice-no-admin')).toBeNull();
+  });
+
   it('AC-7.1, AC-7.4 reports the circle', async () => {
     mockCircles.get.mockResolvedValue({ circle: memberCircle });
     mockCircles.report.mockResolvedValue({ report: { id: 'x', created_at: '' } });

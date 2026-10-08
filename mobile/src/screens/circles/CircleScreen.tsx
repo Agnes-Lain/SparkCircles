@@ -7,6 +7,7 @@ import {
   Info,
   Pencil,
   Search,
+  ShieldCheck,
   Trash2,
   UserPlus,
 } from 'lucide-react-native';
@@ -24,6 +25,7 @@ import {
 } from '../../api/circles';
 import type { ApiError } from '../../api/errors';
 import { useIsGuest } from '../../auth/GateContext';
+import { useMe } from '../../auth/useMe';
 import { Badge } from '../../components/Badge';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
@@ -34,6 +36,7 @@ import { Skeleton } from '../../components/Skeleton';
 import { SuccessCheckmark } from '../../components/SuccessCheckmark';
 import { TextLink } from '../../components/TextLink';
 import { useToast } from '../../components/ToastProvider';
+import { ownerVerificationState } from '../account/verification';
 import { MessageScreen } from '../auth/layouts';
 import { useBack } from '../auth/useBack';
 import { ConfirmSheet } from '../events/ConfirmSheet';
@@ -446,6 +449,14 @@ function MemberCircleView({ circle }: { circle: MemberCircle }) {
 
   const me = circle.members.find((member) => member.me);
   const verifiedMe = me?.verified ?? false;
+  const account = useMe().data;
+  const verificationPending = account
+    ? ownerVerificationState(account.verification) === 'pending' ||
+      account.verification.renewal?.status === 'pending'
+    : false;
+  // Backlog #38 (circles AC-6.5): no verified admin left. An admin whose own rights are
+  // paused sees the paused card instead, never both.
+  const noVerifiedAdmin = !circle.has_verified_admin && !circle.admin_rights_paused;
   const joinedOutings = circle.events.filter((event) => event.joined).length;
   const candidates = circle.members.filter(
     (member) => !member.me && member.verified && member.role === 'member',
@@ -497,7 +508,34 @@ function MemberCircleView({ circle }: { circle: MemberCircle }) {
             testID="admin-paused"
           />
         ) : null}
-        {manage && circle.visibility === 'public' && !circle.discoverable ? (
+        {noVerifiedAdmin ? (
+          <Notification
+            level="reminder"
+            title={t('circles.detail.noAdminTitle')}
+            caption={
+              verifiedMe
+                ? t('circles.detail.noAdminBodyVerified')
+                : verificationPending
+                  ? `${t('circles.detail.noAdminBody')} ${t('circles.detail.noAdminPending')}`
+                  : t('circles.detail.noAdminBody')
+            }
+            action={
+              verifiedMe || verificationPending ? undefined : (
+                <Button
+                  variant="secondary"
+                  size="small"
+                  icon={ShieldCheck}
+                  label={t('circles.detail.noAdminCta')}
+                  onPress={() => router.push('/verify')}
+                  testID="notice-no-admin-verify"
+                />
+              )
+            }
+            testID="notice-no-admin"
+          />
+        ) : null}
+        {/* Merged into the notice above when no admin is verified (design polish #38). */}
+        {manage && !noVerifiedAdmin && circle.visibility === 'public' && !circle.discoverable ? (
           <Notification level="reminder" title={t('circles.detail.hiddenFromSearch')} />
         ) : null}
 

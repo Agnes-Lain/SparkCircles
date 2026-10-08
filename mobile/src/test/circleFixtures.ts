@@ -21,6 +21,7 @@ export const adminCircle: MemberCircle = {
   my_role: 'admin',
   creator: true,
   admin_rights_paused: false,
+  has_verified_admin: true,
   discoverable: true,
   accepting_requests: true,
   next_event: null,

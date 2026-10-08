@@ -94,6 +94,8 @@ export type MemberCircle = {
   my_role: CircleRole;
   creator: boolean;
   admin_rights_paused: boolean;
+  /** Circles AC-6.5 (revised 2026-10-08): false when no admin is verified. */
+  has_verified_admin: boolean;
   discoverable: boolean;
   accepting_requests: boolean;
   next_event: CircleEventSummary | null;
