@@ -575,7 +575,7 @@ describe('Circle detail (C5)', () => {
     });
     await open(`/circles/${memberCircle.id}`, unverifiedMe);
     const notice = await screen.findByTestId('notice-no-admin');
-    expect(notice).toHaveTextContent(/Ce cercle n'a plus de personne admin vérifiée/);
+    expect(notice).toHaveTextContent(/Ce cercle n’a plus de personne admin vérifiée/);
     expect(notice).toHaveTextContent(/Un membre peut en reprendre la gestion/);
     await fireEvent.press(screen.getByTestId('notice-no-admin-verify'));
     expect(await screen.findByText('route:verify')).toBeOnTheScreen();
