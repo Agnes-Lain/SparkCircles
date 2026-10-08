@@ -40,6 +40,8 @@ import { shadows } from '../../theme/colors';
 import { BadgeSheet } from '../account/BadgeSheet';
 import { MessageScreen } from '../auth/layouts';
 import { useBack } from '../auth/useBack';
+import { AddToCalendar } from './AddToCalendar';
+import { canAddToCalendar } from './calendar';
 import { CATEGORY_ICON } from './categories';
 import { ConfirmSheet } from './ConfirmSheet';
 import { Confetti } from './Confetti';
@@ -745,6 +747,9 @@ export function EventDetailScreen() {
         ) : (
           <Text className="text-body font-medium text-ink-2">{t('events.noDate')}</Text>
         )}
+
+        {/* #41 step 1: host and accepted participants, under the date, before « Où ». */}
+        {canAddToCalendar(event) ? <AddToCalendar event={event} /> : null}
 
         {/* Design 3.4: the parent's request state, one at a time (never for guests). */}
         {request && !joined && event.status !== 'cancelled' ? (

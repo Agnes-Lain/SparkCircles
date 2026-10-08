@@ -1006,6 +1006,13 @@
       "frozenTitle": "Sortie en pause",
       "frozenBody": "Les demandes sont gelées et ne peuvent pas être traitées avant la reprise.",
       "loading": "Chargement des demandes"
+    },
+    "calendar": {
+      "add": "Ajouter à mon calendrier",
+      "addA11y": "Ajouter {{title}} à mon calendrier",
+      "ready": "Sortie prête pour ton calendrier",
+      "fallback": "On n'a pas pu créer le fichier. Réessaie, ou note la date : {{date}}.",
+      "description": "Sortie SparkCircles. Ouvre l'app pour les détails."
     }
   },
   "guest": {

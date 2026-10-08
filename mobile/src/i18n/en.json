@@ -1006,6 +1006,13 @@
       "frozenTitle": "Event on hold",
       "frozenBody": "Requests are frozen and can't be decided until it resumes.",
       "loading": "Loading the requests"
+    },
+    "calendar": {
+      "add": "Add to my calendar",
+      "addA11y": "Add {{title}} to my calendar",
+      "ready": "Event ready for your calendar",
+      "fallback": "We couldn't create the file. Try again, or note the date: {{date}}.",
+      "description": "SparkCircles outing. Open the app for details."
     }
   },
   "guest": {

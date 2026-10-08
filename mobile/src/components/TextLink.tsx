@@ -17,6 +17,10 @@ export type TextLinkProps = {
   disabled?: boolean;
   /** Leading line icon, 16 px in the label colour with a 4 px gap (guest « Créer ma sortie »). */
   icon?: LucideIcon;
+  /** Icon size in px (default 16; 18 for the « Ajouter à mon calendrier » row). */
+  iconSize?: number;
+  /** Screen reader label when it says more than the visible label (default: the label). */
+  accessibilityLabel?: string;
   /** 'button' when the link triggers an action rather than navigating (default 'link'). */
   accessibilityRole?: 'link' | 'button';
   /** Language of the label when it differs from the app's (VoiceOver pronunciation). */
@@ -32,6 +36,8 @@ export function TextLink({
   small = false,
   disabled = false,
   icon,
+  iconSize = 16,
+  accessibilityLabel,
   accessibilityRole = 'link',
   accessibilityLanguage,
   ref,
@@ -43,7 +49,7 @@ export function TextLink({
       ref={ref}
       testID={testID}
       accessibilityRole={accessibilityRole}
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled }}
       accessibilityLanguage={accessibilityLanguage}
       disabled={disabled}
@@ -52,7 +58,7 @@ export function TextLink({
       style={{ minHeight: MIN_TOUCH_TARGET, minWidth: MIN_TOUCH_TARGET }}
     >
       <View className="flex-row items-center gap-xs">
-        {icon ? <Icon icon={icon} size={16} color={quiet ? 'ink-2' : 'green-dark'} /> : null}
+        {icon ? <Icon icon={icon} size={iconSize} color={quiet ? 'ink-2' : 'green-dark'} /> : null}
         <Text
           className={quiet ? `${size} text-ink-2 underline` : `${size} font-medium text-green-dark`}
         >
