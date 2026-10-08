@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import type { TFunction } from 'i18next';
-import { Fragment, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import {
@@ -36,6 +36,7 @@ import {
   stripCellParts,
   windowDays,
   windowMonthLabel,
+  windowMonthShort,
   windowRangeLabel,
 } from './agenda';
 import { Card } from './parts';
@@ -438,15 +439,22 @@ export function AgendaWindow({
 
   return (
     <View testID="agenda-window" className="gap-xs p-sm">
-      {/* Wraps to a second line on narrow screens or large text instead of squeezing. */}
-      <View className="flex-row flex-wrap items-center justify-between gap-x-md px-sm">
-        <Text accessibilityRole="header" className="shrink text-h3 text-ink">
-          {windowMonthLabel(first, last, locale)}
+      {/* One line of fixed height (PM phone test 2026-10-09): a short month label, the links
+          at the right with the same inset as the label, so nothing moves when they appear. */}
+      <View
+        className="flex-row items-center justify-between gap-md px-sm"
+        style={{ minHeight: MIN_TOUCH_TARGET }}
+      >
+        <Text
+          accessibilityRole="header"
+          accessibilityLabel={windowMonthLabel(first, last, locale)}
+          numberOfLines={1}
+          className="shrink text-h3 text-ink"
+        >
+          {windowMonthShort(first, last, locale)}
         </Text>
-        {/* Both links always take their place (hidden when not needed), so the strip and
-            the list never move when « Aujourd'hui » appears (PM phone test 2026-10-09). */}
-        <View className="ml-auto flex-row items-center gap-md">
-          <Reserved shown={canGoBack}>
+        <View className="flex-row items-center gap-md">
+          {canGoBack ? (
             <TextLink
               label={t('mySpace.agenda.today')}
               accessibilityLabel={t('mySpace.agenda.backToToday')}
@@ -454,15 +462,15 @@ export function AgendaWindow({
               onPress={() => moveTo(0)}
               testID="agenda-window-today"
             />
-          </Reserved>
-          <Reserved shown={Boolean(selected)}>
+          ) : null}
+          {selected ? (
             <TextLink
               quiet
               label={t('mySpace.agenda.allDays')}
               onPress={onClear}
               testID="agenda-all-days"
             />
-          </Reserved>
+          ) : null}
         </View>
       </View>
       <View className="flex-row items-center">
@@ -514,19 +522,4 @@ export function useDayFilter(agenda: ReturnType<typeof useAgenda>) {
   );
   const clear = useCallback(() => setSelected(null), []);
   return { selected, waiting, toggle, clear };
-}
-
-/** Keeps a control's space when it is hidden: invisible, untappable and silent. */
-function Reserved({ shown, children }: { shown: boolean; children: ReactNode }) {
-  if (shown) return <>{children}</>;
-  return (
-    <View
-      style={{ opacity: 0 }}
-      pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
-      {children}
-    </View>
-  );
 }

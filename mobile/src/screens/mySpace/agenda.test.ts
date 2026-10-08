@@ -15,6 +15,7 @@ import {
   todayInZone,
   windowDays,
   windowMonthLabel,
+  windowMonthShort,
   windowRangeLabel,
   windowSize,
 } from './agenda';
@@ -156,6 +157,10 @@ describe('Agenda week navigation helpers (design 2026-10-08)', () => {
     expect(windowMonthLabel('2026-10-08', '2026-10-12', 'en')).toBe('October 2026');
     expect(windowMonthLabel('2026-10-30', '2026-11-03', 'fr')).toBe('octobre – novembre 2026');
     expect(windowMonthLabel('2026-12-30', '2027-01-03', 'fr')).toBe('décembre 2026 – janvier 2027');
+    expect(windowMonthShort('2026-10-08', '2026-10-12', 'fr')).toBe('oct. 26');
+    expect(windowMonthShort('2026-10-30', '2026-11-03', 'fr')).toBe('oct. – nov. 26');
+    expect(windowMonthShort('2026-12-30', '2027-01-03', 'fr')).toBe('déc. 26 – janv. 27');
+    expect(windowMonthShort('2026-10-08', '2026-10-12', 'en')).toMatch(/^Oct 26$/);
   });
 
   it('announces the new range to VoiceOver', async () => {

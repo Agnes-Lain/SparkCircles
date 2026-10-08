@@ -181,6 +181,20 @@ export function windowMonthLabel(first: string, last: string, locale: Locale): s
   return `${monthYear(first)} – ${monthYear(last)}`;
 }
 
+/**
+ * The short month label shown above the full Agenda strip (PM phone test 2026-10-09):
+ * « oct. 26 », « oct. – nov. 26 », « déc. 26 – janv. 27 », so it never pushes the header
+ * links to a second line. Screen readers get `windowMonthLabel` instead.
+ */
+export function windowMonthShort(first: string, last: string, locale: Locale): string {
+  const month = (day: string) => dayPart(day, locale, { month: 'short' });
+  const year = (day: string) => day.slice(2, 4);
+  if (first.slice(0, 7) === last.slice(0, 7)) return `${month(first)} ${year(first)}`;
+  if (first.slice(0, 4) === last.slice(0, 4))
+    return `${month(first)} – ${month(last)} ${year(last)}`;
+  return `${month(first)} ${year(first)} – ${month(last)} ${year(last)}`;
+}
+
 /** VoiceOver after an arrow: « Du jeudi 8 au lundi 12 octobre ». */
 export function windowRangeLabel(first: string, last: string, locale: Locale, t: TFunction) {
   const name = (day: string, withMonth: boolean) => {

@@ -355,7 +355,7 @@ describe('Agenda week navigation (design 2026-10-08, option A)', () => {
     await open('/agenda');
     await screen.findByTestId('agenda-row-h1');
     const window = screen.getByTestId('agenda-window');
-    expect(within(window).getByRole('header')).toHaveTextContent(/\d{4}$/);
+    expect(within(window).getByRole('header')).toHaveTextContent(/^[a-zéû.]+ \d{2}$/i);
     expect(within(window).getAllByTestId(/^strip-day-/)).toHaveLength(5);
     expect(screen.getByTestId(day(0))).toBeOnTheScreen();
     expect(screen.queryByTestId(day(5))).toBeNull();
