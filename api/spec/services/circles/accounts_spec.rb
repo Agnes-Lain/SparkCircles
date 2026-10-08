@@ -25,6 +25,16 @@ RSpec.describe "Circles and accounts (closure, erasure, data copy)" do
     end
   end
 
+  it "AC-6.5 (PM 2026-10-08) with only unverified co-admins left, the circle stays open with no verified admin" do
+    co_admin = create(:circle_membership, :admin, circle: circle, user: create(:user, :verified))
+    co_admin.user.update_columns(verification_status: "expired") # verification lapsed since promotion
+    expect { close!(admin) }.not_to have_enqueued_mail(CircleMailer, :circle_closing)
+    expect(circle.reload.closes_on).to be_nil
+    expect(circle).not_to be_closed
+    expect(circle).not_to be_managed
+    expect(co_admin.reload).to have_attributes(status: "active", role: "admin")
+  end
+
   it "a circle with no member left is deleted at closure; pending requests are cancelled" do
     circle
     request_row = create(:circle_membership, :pending, circle: create(:circle), user: admin)

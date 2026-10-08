@@ -85,7 +85,11 @@ module Circles
         # AC-6.5: other admins without rights don't count; the succession is shared.
         if membership.admin? && others.admins.includes(:user).none? { |admin| admin.user.verified? }
           successor = Succession.new(@circle).hand_over!(except: membership)
-          @circle.update!(closes_on: Date.current + Circle::CLOSING_NOTICE) if successor.nil? && others.any?
+          # PM 2026-10-08 ("keep open"): unverified co-admins remaining keep the circle open in
+          # the no-verified-admin state (AC-6.5); only a circle left with no admin at all closes.
+          if successor.nil? && others.any? && others.admins.none?
+            @circle.update!(closes_on: Date.current + Circle::CLOSING_NOTICE)
+          end
         end
         end_membership!(membership, "left")
         others.none?
