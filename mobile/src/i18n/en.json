@@ -68,7 +68,11 @@
       "dayCancelled_other": "{{count}} cancelled outings",
       "legend": "Green dot: your outing · blue: circle outing · empty ring: cancelled",
       "nextWeek": "Next week",
-      "previousWeek": "Previous week"
+      "previousWeek": "Previous week",
+      "windowRange": "From {{from}} to {{to}}",
+      "previousDays": "Previous days",
+      "nextDays": "Next days",
+      "backToToday": "Back to today"
     },
     "verify": {
       "title": "Verify your identity to host outings",

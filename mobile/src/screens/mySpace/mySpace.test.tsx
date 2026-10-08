@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
-import { AccessibilityInfo, ScrollView } from 'react-native';
+import { AccessibilityInfo, Dimensions, ScrollView } from 'react-native';
 
 import MySpaceTab from '../../app/(tabs)/my-space';
 import type { MyCircles } from '../../api/circles';
@@ -278,17 +278,17 @@ describe('Agenda (PM request 2026-10-07)', () => {
 
   it('AC-1.3b the full Agenda filters by the tapped day the same way', async () => {
     mockMySpace.agenda.mockResolvedValue(
-      agenda([outing(hostedEvent, 'h1', onDay(2)), outing(joinedEvent, 'j1', onDay(4))]),
+      agenda([outing(hostedEvent, 'h1', onDay(2)), outing(joinedEvent, 'j1', onDay(1))]),
     );
     await open('/agenda');
     await screen.findByTestId('agenda-row-j1');
-    const day = screen.getByTestId('strip-day-' + addDays(todayInZone(), 4));
+    const day = screen.getByTestId('strip-day-' + addDays(todayInZone(), 1));
     await fireEvent.press(day);
     expect(screen.queryByTestId('agenda-row-h1')).toBeNull();
     expect(screen.getByTestId('agenda-row-j1')).toBeOnTheScreen();
     expect(day).toBeSelected();
 
-    await fireEvent.press(screen.getByTestId('strip-day-' + addDays(todayInZone(), 5)));
+    await fireEvent.press(screen.getByTestId('strip-day-' + addDays(todayInZone(), 0)));
     expect(screen.getByText('Rien de prévu ce jour-là')).toBeOnTheScreen();
 
     await fireEvent.press(screen.getByRole('link', { name: 'Tous les jours' }));
@@ -332,6 +332,125 @@ describe('Agenda (PM request 2026-10-07)', () => {
     expect(await screen.findByTestId('agenda-row-p1')).toBeOnTheScreen();
     expect(await screen.findByTestId('agenda-row-p2')).toBeOnTheScreen();
     expect(await screen.findByText("C'est tout pour l'instant")).toBeOnTheScreen();
+  });
+});
+
+describe('Agenda week navigation (design 2026-10-08, option A)', () => {
+  const day = (offset: number) => 'strip-day-' + addDays(todayInZone(), offset);
+  const textSize = (fontScale: number) => {
+    const size = { width: 375, height: 812, scale: 3, fontScale };
+    Dimensions.set({ window: size, screen: size });
+  };
+
+  // The React Native jest mock reports a fontScale of 2 (accessibility sizes): default text here.
+  beforeEach(() => textSize(1));
+  afterEach(() => {
+    screen.unmount();
+    textSize(2);
+  });
+
+  it('shows a month label and 5 days, previous disabled at today, next moving by 5', async () => {
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
+    mockMySpace.agenda.mockResolvedValue(agenda([outing(hostedEvent, 'h1', onDay(6))]));
+    await open('/agenda');
+    await screen.findByTestId('agenda-row-h1');
+    const window = screen.getByTestId('agenda-window');
+    expect(within(window).getByRole('header')).toHaveTextContent(/\d{4}$/);
+    expect(within(window).getAllByTestId(/^strip-day-/)).toHaveLength(5);
+    expect(screen.getByTestId(day(0))).toBeOnTheScreen();
+    expect(screen.queryByTestId(day(5))).toBeNull();
+    expect(
+      screen.getByTestId('agenda-window-previous', { includeHiddenElements: true }),
+    ).toBeDisabled();
+    expect(screen.queryByTestId('agenda-window-today')).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Jours suivants' }));
+    expect(screen.queryByTestId(day(0))).toBeNull();
+    expect(screen.getByTestId(day(5))).toBeOnTheScreen();
+    expect(screen.getByTestId(day(9))).toBeOnTheScreen();
+    expect(announce).toHaveBeenLastCalledWith(expect.stringMatching(/^Du \S+ \d+ .*au \S+ \d+ /));
+    expect(
+      screen.getByTestId('agenda-window-previous', { includeHiddenElements: true }),
+    ).toBeEnabled();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Jours précédents' }));
+    expect(screen.getByTestId(day(0))).toBeOnTheScreen();
+    expect(
+      screen.getByTestId('agenda-window-previous', { includeHiddenElements: true }),
+    ).toBeDisabled();
+  });
+
+  it("« Aujourd'hui » shows only when today is out of view and moves the window only", async () => {
+    mockMySpace.agenda.mockResolvedValue(agenda([outing(hostedEvent, 'h1', onDay(1))]));
+    await open('/agenda');
+    await screen.findByTestId('agenda-row-h1');
+    await fireEvent.press(screen.getByTestId(day(1)));
+    await fireEvent.press(screen.getByRole('button', { name: 'Jours suivants' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Jours suivants' }));
+
+    await fireEvent.press(screen.getByRole('button', { name: "Revenir à aujourd'hui" }));
+    expect(screen.getByTestId(day(0))).not.toBeSelected();
+    expect(screen.getByTestId(day(1))).toBeSelected();
+    expect(screen.queryByTestId('agenda-window-today')).toBeNull();
+  });
+
+  it('keeps the day filter when the window moves; « Tous les jours » still clears it', async () => {
+    mockMySpace.agenda.mockResolvedValue(
+      agenda([outing(hostedEvent, 'h1', onDay(2)), outing(joinedEvent, 'j1', onDay(7))]),
+    );
+    await open('/agenda');
+    await screen.findByTestId('agenda-row-j1');
+    await fireEvent.press(screen.getByTestId(day(2)));
+    await fireEvent.press(screen.getByRole('button', { name: 'Jours suivants' }));
+
+    expect(screen.queryByTestId(day(2))).toBeNull();
+    expect(screen.getByTestId('agenda-row-h1')).toBeOnTheScreen();
+    expect(screen.queryByTestId('agenda-row-j1')).toBeNull();
+    // Strip and list stay one Agenda card.
+    const card = screen.getByTestId('agenda-card');
+    expect(within(card).getByTestId('agenda-window')).toBeOnTheScreen();
+    expect(within(card).getByTestId('agenda-row-h1')).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('link', { name: 'Tous les jours' }));
+    expect(screen.getByTestId('agenda-row-h1')).toBeOnTheScreen();
+    expect(screen.getByTestId('agenda-row-j1')).toBeOnTheScreen();
+    expect(screen.getByTestId(day(5))).toBeOnTheScreen();
+  });
+
+  it('has no swipe handler on the strip (the iOS back gesture always wins)', async () => {
+    await open('/agenda');
+    const window = await screen.findByTestId('agenda-window');
+    const card = screen.getByTestId('agenda-card');
+    for (const node of [window, card, ...within(window).getAllByTestId(/^strip-day-/)])
+      expect(node.props.onMoveShouldSetResponder).toBeUndefined();
+    expect(window.props.onResponderRelease).toBeUndefined();
+  });
+
+  it('loads further pages when the window moves past the loaded days', async () => {
+    mockMySpace.agenda
+      .mockResolvedValueOnce(
+        agenda([outing(hostedEvent, 'h1', onDay(2))], addDays(todayInZone(), 30)),
+      )
+      .mockResolvedValueOnce(agenda([outing(joinedEvent, 'far', onDay(31))]));
+    await open('/agenda');
+    await screen.findByTestId('agenda-row-h1');
+    await fireEvent.press(screen.getByTestId(day(2)));
+    for (let step = 0; step < 6; step += 1)
+      await fireEvent.press(screen.getByRole('button', { name: 'Jours suivants' }));
+    await waitFor(() => expect(mockMySpace.agenda).toHaveBeenCalledTimes(2));
+    expect(
+      await screen.findByRole('button', { name: /, 1 sortie : Sortie far$/ }),
+    ).toBeOnTheScreen();
+    expect(screen.getByTestId('agenda-row-h1')).toBeOnTheScreen();
+  });
+
+  it('shows 3 days at accessibility text sizes', async () => {
+    textSize(2);
+    await open('/agenda');
+    const window = await screen.findByTestId('agenda-window');
+    expect(within(window).getAllByTestId(/^strip-day-/)).toHaveLength(3);
+    await fireEvent.press(screen.getByRole('button', { name: 'Jours suivants' }));
+    expect(screen.getByTestId(day(3))).toBeOnTheScreen();
   });
 });
 

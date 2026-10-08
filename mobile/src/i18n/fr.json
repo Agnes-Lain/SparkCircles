@@ -68,7 +68,11 @@
       "dayCancelled_other": "{{count}} sorties annulées",
       "legend": "Point plein vert : ta sortie · bleu : sortie de cercle · cercle vide : annulée",
       "nextWeek": "Semaine suivante",
-      "previousWeek": "Semaine précédente"
+      "previousWeek": "Semaine précédente",
+      "windowRange": "Du {{from}} au {{to}}",
+      "previousDays": "Jours précédents",
+      "nextDays": "Jours suivants",
+      "backToToday": "Revenir à aujourd'hui"
     },
     "verify": {
       "title": "Vérifie ton identité pour organiser des sorties",

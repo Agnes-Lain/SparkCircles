@@ -13,6 +13,10 @@ import {
   stripCellLabel,
   stripDays,
   todayInZone,
+  windowDays,
+  windowMonthLabel,
+  windowRangeLabel,
+  windowSize,
 } from './agenda';
 
 const at = (event: SparkEvent, id: string, startsAt: string): SparkEvent => ({
@@ -131,5 +135,39 @@ describe('agenda helpers (design my-space 2.3)', () => {
 
   it('knows today in Paris', () => {
     expect(todayInZone(new Date('2026-10-07T22:30:00Z'))).toBe('2026-10-08');
+  });
+});
+
+describe('Agenda week navigation helpers (design 2026-10-08)', () => {
+  it('shows 5 days, 3 at accessibility sizes, from the window offset', () => {
+    expect(windowSize(1)).toBe(5);
+    expect(windowSize(1.5)).toBe(3);
+    expect(windowDays('2026-10-08', 5, 5)).toEqual([
+      '2026-10-13',
+      '2026-10-14',
+      '2026-10-15',
+      '2026-10-16',
+      '2026-10-17',
+    ]);
+  });
+
+  it('labels the month of the window in French and English', () => {
+    expect(windowMonthLabel('2026-10-08', '2026-10-12', 'fr')).toBe('octobre 2026');
+    expect(windowMonthLabel('2026-10-08', '2026-10-12', 'en')).toBe('October 2026');
+    expect(windowMonthLabel('2026-10-30', '2026-11-03', 'fr')).toBe('octobre – novembre 2026');
+    expect(windowMonthLabel('2026-12-30', '2027-01-03', 'fr')).toBe('décembre 2026 – janvier 2027');
+  });
+
+  it('announces the new range to VoiceOver', async () => {
+    expect(windowRangeLabel('2026-10-08', '2026-10-12', 'fr', i18n.t)).toBe(
+      'Du jeudi 8 au lundi 12 octobre',
+    );
+    expect(windowRangeLabel('2026-10-30', '2026-11-03', 'fr', i18n.t)).toBe(
+      'Du vendredi 30 octobre au mardi 3 novembre',
+    );
+    await i18n.changeLanguage('en');
+    expect(windowRangeLabel('2026-10-08', '2026-10-12', 'en', i18n.t)).toBe(
+      'From Thursday 8 to Monday 12 October',
+    );
   });
 });

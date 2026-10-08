@@ -28,11 +28,20 @@ export function BlockHeading({
 }
 
 /** Surface card of the Today blocks. */
-export function Card({ children, testID }: { children: ReactNode; testID?: string }) {
+export function Card({
+  children,
+  testID,
+  className = '',
+}: {
+  children: ReactNode;
+  testID?: string;
+  /** Extra layout classes (the full Agenda card fills the screen: `flex-1`). */
+  className?: string;
+}) {
   return (
     <View
       testID={testID}
-      className="rounded-lg border-[0.5px] border-border-soft bg-surface"
+      className={`rounded-lg border-[0.5px] border-border-soft bg-surface ${className}`}
       style={{ boxShadow: shadows.card }}
     >
       {children}

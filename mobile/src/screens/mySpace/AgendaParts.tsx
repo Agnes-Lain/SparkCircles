@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
 import type { TFunction } from 'i18next';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import {
   AccessibilityInfo,
+  Animated,
   PanResponder,
   Pressable,
   ScrollView,
@@ -14,7 +16,9 @@ import {
 
 import type { SparkEvent } from '../../api/events';
 import { Badge, type BadgeKind } from '../../components/Badge';
+import { Icon } from '../../components/Icon';
 import { TextLink } from '../../components/TextLink';
+import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { resolveLocale } from '../../i18n';
 import { MIN_TOUCH_TARGET } from '../../theme/a11y';
 import { formatTime } from '../events/format';
@@ -30,6 +34,9 @@ import {
   monthHeader,
   stripCellLabel,
   stripCellParts,
+  windowDays,
+  windowMonthLabel,
+  windowRangeLabel,
 } from './agenda';
 import { Card } from './parts';
 import { agendaLoadedUntil, type useAgenda } from './queries';
@@ -189,6 +196,80 @@ const DOT: Record<AgendaKind, string> = {
 };
 
 /**
+ * One strip day (design 2.3): weekday, number and up to 3 dots; Lavender when selected, a
+ * Lavender Dark ring on today. Shared by the Today strip and the full Agenda window.
+ */
+function StripDay({
+  day,
+  today,
+  events,
+  selected,
+  large,
+  onPress,
+  accessibilityActions,
+  onAccessibilityAction,
+  className,
+  minWidth,
+}: {
+  day: string;
+  today: string;
+  events: SparkEvent[];
+  selected: boolean;
+  large: boolean;
+  onPress: () => void;
+  accessibilityActions?: { name: string; label: string }[];
+  onAccessibilityAction?: (name: string) => void;
+  className: string;
+  minWidth: number;
+}) {
+  const { t, i18n } = useTranslation();
+  const locale = resolveLocale(i18n.language);
+  const { weekday, number } = stripCellParts(day, locale);
+  const box = selected
+    ? 'bg-lavender'
+    : day === today
+      ? 'bg-lavender-light border-[1.5px] border-lavender-dark'
+      : '';
+  return (
+    <Pressable
+      testID={`strip-day-${day}`}
+      accessibilityRole="button"
+      accessibilityLabel={stripCellLabel(day, today, events, locale, t)}
+      accessibilityState={{ selected }}
+      accessibilityActions={accessibilityActions}
+      onAccessibilityAction={
+        onAccessibilityAction && ((e) => onAccessibilityAction(e.nativeEvent.actionName))
+      }
+      onPress={onPress}
+      className={`items-center justify-center gap-xs rounded-md py-xs ${box} ${className}`}
+      style={{ minHeight: 60, minWidth }}
+    >
+      {large ? (
+        <>
+          <Text className="text-[15px] font-medium text-ink">{number}</Text>
+          <Text className="text-center text-[11px] text-ink-2">{weekday}</Text>
+        </>
+      ) : (
+        <>
+          <Text className="text-[11px] text-ink-2">{weekday}</Text>
+          <Text className="text-[15px] font-medium text-ink">{number}</Text>
+        </>
+      )}
+      <View
+        className="h-1.5 flex-row gap-0.5"
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
+      >
+        {dayDots(events).map((kind, index) => (
+          <View key={index} className={`h-1.5 w-1.5 rounded-full ${DOT[kind]}`} />
+        ))}
+      </View>
+    </Pressable>
+  );
+}
+
+/**
  * Week strip (design 2.3): 7 days rolling from today, dots (max 3), swipe for ±7 days (never
  * before today). From accessibility text sizes it scrolls sideways with 64 px cells.
  */
@@ -212,8 +293,7 @@ export function WeekStrip({
   /** Inside the Agenda card (Today): no frame of its own. */
   inCard?: boolean;
 }) {
-  const { t, i18n } = useTranslation();
-  const locale = resolveLocale(i18n.language);
+  const { t } = useTranslation();
   const { fontScale } = useWindowDimensions();
   const large = fontScale >= 1.5;
   const pan = useMemo(
@@ -234,56 +314,24 @@ export function WeekStrip({
     ...(week > 0 ? [{ name: 'previousWeek', label: t('mySpace.agenda.previousWeek') }] : []),
   ];
 
-  const cells = days.map((day) => {
-    const events = byDay.get(day) ?? [];
-    const { weekday, number } = stripCellParts(day, locale);
-    const isToday = day === today;
-    const isSelected = day === selected;
-    const box = isSelected
-      ? 'bg-lavender'
-      : isToday
-        ? 'bg-lavender-light border-[1.5px] border-lavender-dark'
-        : '';
-    return (
-      <Pressable
-        key={day}
-        testID={`strip-day-${day}`}
-        accessibilityRole="button"
-        accessibilityLabel={stripCellLabel(day, today, events, locale, t)}
-        accessibilityState={{ selected: isSelected }}
-        accessibilityActions={actions}
-        onAccessibilityAction={(e) => {
-          if (e.nativeEvent.actionName === 'nextWeek') onWeekChange(week + 1);
-          if (e.nativeEvent.actionName === 'previousWeek') onWeekChange(Math.max(0, week - 1));
-        }}
-        onPress={() => onSelect(day)}
-        className={`items-center justify-center gap-xs rounded-md py-xs ${box} ${large ? '' : 'flex-1'}`}
-        style={{ minHeight: 60, minWidth: large ? 64 : MIN_TOUCH_TARGET }}
-      >
-        {large ? (
-          <>
-            <Text className="text-[15px] font-medium text-ink">{number}</Text>
-            <Text className="text-center text-[11px] text-ink-2">{weekday}</Text>
-          </>
-        ) : (
-          <>
-            <Text className="text-[11px] text-ink-2">{weekday}</Text>
-            <Text className="text-[15px] font-medium text-ink">{number}</Text>
-          </>
-        )}
-        <View
-          className="h-1.5 flex-row gap-0.5"
-          accessible={false}
-          importantForAccessibility="no-hide-descendants"
-          accessibilityElementsHidden
-        >
-          {dayDots(events).map((kind, index) => (
-            <View key={index} className={`h-1.5 w-1.5 rounded-full ${DOT[kind]}`} />
-          ))}
-        </View>
-      </Pressable>
-    );
-  });
+  const cells = days.map((day) => (
+    <StripDay
+      key={day}
+      day={day}
+      today={today}
+      events={byDay.get(day) ?? []}
+      selected={day === selected}
+      large={large}
+      onPress={() => onSelect(day)}
+      accessibilityActions={actions}
+      onAccessibilityAction={(name) => {
+        if (name === 'nextWeek') onWeekChange(week + 1);
+        if (name === 'previousWeek') onWeekChange(Math.max(0, week - 1));
+      }}
+      className={large ? '' : 'flex-1'}
+      minWidth={large ? 64 : MIN_TOUCH_TARGET}
+    />
+  ));
 
   return (
     <View
@@ -301,6 +349,143 @@ export function WeekStrip({
       ) : (
         <View className="flex-row gap-xs">{cells}</View>
       )}
+    </View>
+  );
+}
+
+/** « Suivant » stops 6 months ahead (design « Agenda week navigation »). */
+const MAX_AHEAD_DAYS = 183;
+const FADE_MS = 150;
+
+/**
+ * Full Agenda window (design « Agenda week navigation », option A): month label, « Aujourd'hui »
+ * when today is out of view, « Tous les jours » while a day is selected, then 44 px chevrons
+ * around 5 days (3 at accessibility sizes). The arrows move the window by its size; no swipe, so
+ * the iOS back gesture always wins. Moving never changes the day filter.
+ */
+export function AgendaWindow({
+  today,
+  offset,
+  size,
+  byDay,
+  selected,
+  onSelect,
+  onClear,
+  onOffsetChange,
+}: {
+  today: string;
+  /** Days from today to the window's first day (0 = starts on today). */
+  offset: number;
+  size: number;
+  byDay: Map<string, SparkEvent[]>;
+  selected: string | null;
+  onSelect: (day: string) => void;
+  onClear: () => void;
+  onOffsetChange: (offset: number) => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const locale = resolveLocale(i18n.language);
+  const reduceMotion = useReduceMotion();
+  const [opacity] = useState(() => new Animated.Value(1));
+  const days = windowDays(today, offset, size);
+  const first = days[0] ?? today;
+  const last = days[days.length - 1] ?? today;
+  const canGoBack = offset > 0;
+  const canGoForward = offset + size < MAX_AHEAD_DAYS;
+
+  // A 150 ms cross-fade on each move; an instant swap under Reduce Motion.
+  const shown = useRef(first);
+  useEffect(() => {
+    if (shown.current === first) return;
+    shown.current = first;
+    if (reduceMotion !== false) return;
+    opacity.setValue(0);
+    Animated.timing(opacity, { toValue: 1, duration: FADE_MS, useNativeDriver: true }).start();
+  }, [first, reduceMotion, opacity]);
+
+  const moveTo = (next: number) => {
+    onOffsetChange(next);
+    const range = windowDays(today, next, size);
+    AccessibilityInfo.announceForAccessibility(
+      windowRangeLabel(range[0] ?? today, range[range.length - 1] ?? today, locale, t),
+    );
+  };
+
+  const arrow = (direction: 'previous' | 'next') => {
+    const enabled = direction === 'previous' ? canGoBack : canGoForward;
+    return (
+      <Pressable
+        testID={`agenda-window-${direction}`}
+        accessibilityRole="button"
+        accessibilityLabel={t(
+          direction === 'previous' ? 'mySpace.agenda.previousDays' : 'mySpace.agenda.nextDays',
+        )}
+        accessibilityState={{ disabled: !enabled }}
+        // Disabled: dimmed and skipped by VoiceOver (design).
+        accessibilityElementsHidden={!enabled}
+        importantForAccessibility={enabled ? 'auto' : 'no-hide-descendants'}
+        disabled={!enabled}
+        onPress={() =>
+          moveTo(direction === 'previous' ? Math.max(0, offset - size) : offset + size)
+        }
+        className="items-center justify-center"
+        style={{ width: MIN_TOUCH_TARGET, height: MIN_TOUCH_TARGET, opacity: enabled ? 1 : 0.4 }}
+      >
+        <Icon icon={direction === 'previous' ? ChevronLeft : ChevronRight} color="lavender-dark" />
+      </Pressable>
+    );
+  };
+
+  return (
+    <View testID="agenda-window" className="gap-xs p-sm">
+      {/* Wraps to a second line on narrow screens or large text instead of squeezing. */}
+      <View className="flex-row flex-wrap items-center justify-between gap-x-md px-sm">
+        <Text accessibilityRole="header" className="shrink text-h3 text-ink">
+          {windowMonthLabel(first, last, locale)}
+        </Text>
+        {canGoBack || selected ? (
+          <View className="ml-auto flex-row items-center gap-md">
+            {canGoBack ? (
+              <TextLink
+                label={t('mySpace.agenda.today')}
+                accessibilityLabel={t('mySpace.agenda.backToToday')}
+                accessibilityRole="button"
+                onPress={() => moveTo(0)}
+                testID="agenda-window-today"
+              />
+            ) : null}
+            {selected ? (
+              <TextLink
+                quiet
+                label={t('mySpace.agenda.allDays')}
+                onPress={onClear}
+                testID="agenda-all-days"
+              />
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+      <View className="flex-row items-center">
+        {arrow('previous')}
+        <Animated.View style={{ flex: 1, opacity }}>
+          <View className="flex-row gap-xs">
+            {days.map((day) => (
+              <StripDay
+                key={day}
+                day={day}
+                today={today}
+                events={byDay.get(day) ?? []}
+                selected={day === selected}
+                large={size < 5}
+                onPress={() => onSelect(day)}
+                className="flex-1"
+                minWidth={MIN_TOUCH_TARGET}
+              />
+            ))}
+          </View>
+        </Animated.View>
+        {arrow('next')}
+      </View>
     </View>
   );
 }

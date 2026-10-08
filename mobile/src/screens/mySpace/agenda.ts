@@ -155,3 +155,40 @@ export function stripCellLabel(
   if (cancelled) parts.push(t('mySpace.agenda.dayCancelled', { count: cancelled }));
   return parts.join(', ');
 }
+
+/** Full Agenda window (design « Agenda week navigation »): 5 days, 3 at accessibility sizes. */
+export const windowSize = (fontScale: number) => (fontScale >= 1.5 ? 3 : 5);
+
+/** The window's days: `size` days starting `offset` days after today. */
+export function windowDays(today: string, offset: number, size: number): string[] {
+  return Array.from({ length: size }, (_, index) => addDays(today, offset + index));
+}
+
+const intlTag = (locale: Locale) => (locale === 'en' ? 'en-GB' : 'fr-FR');
+
+function dayPart(day: string, locale: Locale, options: Intl.DateTimeFormatOptions): string {
+  return new Intl.DateTimeFormat(intlTag(locale), { timeZone: 'UTC', ...options }).format(
+    new Date(noon(day)),
+  );
+}
+
+/** Window month label: « octobre 2026 », « octobre – novembre 2026 », "October 2026". */
+export function windowMonthLabel(first: string, last: string, locale: Locale): string {
+  const monthYear = (day: string) => dayPart(day, locale, { month: 'long', year: 'numeric' });
+  if (first.slice(0, 7) === last.slice(0, 7)) return monthYear(first);
+  if (first.slice(0, 4) === last.slice(0, 4))
+    return `${dayPart(first, locale, { month: 'long' })} – ${monthYear(last)}`;
+  return `${monthYear(first)} – ${monthYear(last)}`;
+}
+
+/** VoiceOver after an arrow: « Du jeudi 8 au lundi 12 octobre ». */
+export function windowRangeLabel(first: string, last: string, locale: Locale, t: TFunction) {
+  const name = (day: string, withMonth: boolean) => {
+    const weekday = dayPart(day, locale, { weekday: 'long' });
+    const number = String(Number(day.slice(8, 10)));
+    const month = withMonth ? ` ${dayPart(day, locale, { month: 'long' })}` : '';
+    return `${weekday} ${number}${month}`;
+  };
+  const sameMonth = first.slice(0, 7) === last.slice(0, 7);
+  return t('mySpace.agenda.windowRange', { from: name(first, !sameMonth), to: name(last, true) });
+}
