@@ -105,6 +105,18 @@ RSpec.describe "GET /api/v1/me/agenda (my-space agenda)", type: :request do
     expect(json.dig("window", "next_from")).to eq(mine.starts_at.to_date.iso8601)
   end
 
+  it "AC-8.2 hides a circle outing whose host's verification expired before the daily job ran" do
+    create(:circle_membership, circle: circle, user: parent)
+    lapsed = create(:event, host: circle.created_by, visibility: "circles", chosen_circle_ids: [ circle.id ], starts_at: 2.days.from_now)
+    later = create(:event, host: circle.created_by, visibility: "circles", chosen_circle_ids: [ circle.id ], starts_at: 40.days.from_now)
+    # The daily VerificationExpiryJob hasn't run yet: the status still says "verified".
+    circle.created_by.update_columns(verification_expires_on: Date.current)
+    expect(circle.created_by.reload.verification_status).to eq("verified")
+    agenda
+    expect(ids).not_to include(lapsed.id, later.id)
+    expect(json.dig("window", "next_from")).to be_nil
+  end
+
   it "loads the page in a constant number of queries (no COUNT per hosted event)" do
     count_queries = lambda do
       queries = 0

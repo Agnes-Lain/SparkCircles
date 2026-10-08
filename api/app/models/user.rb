@@ -55,8 +55,10 @@ class User < ApplicationRecord
   after_update_commit :sync_events, if: :event_rights_changed?
 
   scope :closed, -> { where.not(closed_at: nil) }
-  # Events AC-8.2: verified and open, as Event#host_in_good_standing? (SQL side of #verified?).
-  scope :in_good_standing, -> { where(verification_status: "verified", closed_at: nil).where(verification_expires_on: Date.current.next_day..) }
+  # Events AC-8.2: candidates for "verified and open" (SQL side of #verified?). The expiry
+  # date is encrypted, so SQL can't compare it: callers check #verified? (or
+  # Event#host_in_good_standing?) in Ruby; VerificationExpiryJob also flips the status daily.
+  scope :in_good_standing, -> { where(verification_status: "verified", closed_at: nil) }
   scope :due_for_erasure, -> { closed.where(closed_at: ...CLOSURE_GRACE_PERIOD.ago) }
   scope :unconfirmed_expired, -> { where(confirmed_at: nil, created_at: ...UNCONFIRMED_LIFETIME.ago) }
 
