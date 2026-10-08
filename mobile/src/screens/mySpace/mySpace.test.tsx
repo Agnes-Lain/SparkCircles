@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from 'expo-router/testing-library';
 
-import { ScrollView } from 'react-native';
+import { AccessibilityInfo, ScrollView } from 'react-native';
 
 import MySpaceTab from '../../app/(tabs)/my-space';
 import type { MyCircles } from '../../api/circles';
@@ -208,23 +208,111 @@ describe('Agenda (PM request 2026-10-07)', () => {
     await waitFor(() => expect(app.getPathname()).toBe('/agenda'));
   });
 
-  it("tapping the next outing's day scrolls to that day in the agenda, not to its card", async () => {
-    const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo');
+  it('AC-1.3b by default no day is selected and the list shows the coming days', async () => {
     mockMySpace.agenda.mockResolvedValue(
       agenda([outing(hostedEvent, 'h1', onDay(2)), outing(joinedEvent, 'j1', onDay(4))]),
     );
     await open();
-    const layout = (testID: string, y: number) =>
-      fireEvent(screen.getByTestId(testID), 'layout', { nativeEvent: { layout: { y } } });
-    await screen.findByTestId('agenda-block');
-    await layout('agenda-day-' + addDays(todayInZone(), 2), 40);
-    await layout('agenda-day-' + addDays(todayInZone(), 4), 120);
+    const strip = await screen.findByTestId('week-strip');
+    expect(within(strip).queryByRole('button', { selected: true })).toBeNull();
+    expect(screen.getByTestId('agenda-row-j1')).toBeOnTheScreen();
+    expect(screen.getByRole('link', { name: 'Tout voir' })).toBeOnTheScreen();
+    // One Agenda block: the strip and the list share the same card.
+    const card = screen.getByTestId('agenda-card');
+    expect(within(card).getByTestId('week-strip')).toBeOnTheScreen();
+    expect(within(card).getByTestId('agenda-list')).toBeOnTheScreen();
+  });
+
+  it('AC-1.3b tapping a day filters the list to it without scrolling; tapping again clears', async () => {
+    const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo');
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
+    mockMySpace.agenda.mockResolvedValue(
+      agenda([
+        outing(hostedEvent, 'h1', onDay(2)),
+        outing(joinedEvent, 'h2', onDay(2, 15)),
+        outing(joinedEvent, 'j1', onDay(4)),
+      ]),
+    );
+    await open();
+    const day = screen.getByTestId('strip-day-' + addDays(todayInZone(), 2));
+    await screen.findByTestId('agenda-row-j1');
     scrollTo.mockClear();
 
-    await fireEvent.press(screen.getByTestId('strip-day-' + addDays(todayInZone(), 2)));
-    expect(scrollTo).toHaveBeenCalledTimes(1);
-    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ y: 40 }));
+    await fireEvent.press(day);
+    expect(screen.getByTestId('agenda-row-h1')).toBeOnTheScreen();
+    expect(screen.getByTestId('agenda-row-h2')).toBeOnTheScreen();
+    expect(screen.queryByTestId('agenda-row-j1')).toBeNull();
+    expect(day).toBeSelected();
+    expect(screen.queryByRole('link', { name: 'Tout voir' })).toBeNull();
+    expect(screen.queryByTestId('agenda-see-full')).toBeNull();
+    expect(announce).toHaveBeenCalledWith(expect.stringMatching(/^2 sorties le \p{Ll}/u));
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    await fireEvent.press(day);
+    expect(screen.getByTestId('agenda-row-j1')).toBeOnTheScreen();
+    expect(day).not.toBeSelected();
+
+    await fireEvent.press(day);
+    await fireEvent.press(screen.getByRole('link', { name: 'Tous les jours' }));
+    expect(screen.getByTestId('agenda-row-j1')).toBeOnTheScreen();
+    expect(screen.getByRole('link', { name: 'Tout voir' })).toBeOnTheScreen();
+    expect(scrollTo).not.toHaveBeenCalled();
     scrollTo.mockRestore();
+    announce.mockRestore();
+  });
+
+  it('AC-1.3b an empty selected day says so and offers « Trouver une sortie »', async () => {
+    mockMySpace.agenda.mockResolvedValue(agenda([outing(hostedEvent, 'h1', onDay(2))]));
+    const { app } = await open();
+    await screen.findByTestId('agenda-row-h1');
+    await fireEvent.press(screen.getByTestId('strip-day-' + addDays(todayInZone(), 3)));
+    expect(screen.getByText('Rien de prévu ce jour-là')).toBeOnTheScreen();
+    expect(screen.queryByTestId('agenda-row-h1')).toBeNull();
+    await fireEvent.press(
+      within(screen.getByTestId('agenda-day-empty')).getByRole('link', {
+        name: 'Trouver une sortie',
+      }),
+    );
+    await waitFor(() => expect(app.getPathname()).toBe('/'));
+  });
+
+  it('AC-1.3b the full Agenda filters by the tapped day the same way', async () => {
+    mockMySpace.agenda.mockResolvedValue(
+      agenda([outing(hostedEvent, 'h1', onDay(2)), outing(joinedEvent, 'j1', onDay(4))]),
+    );
+    await open('/agenda');
+    await screen.findByTestId('agenda-row-j1');
+    const day = screen.getByTestId('strip-day-' + addDays(todayInZone(), 4));
+    await fireEvent.press(day);
+    expect(screen.queryByTestId('agenda-row-h1')).toBeNull();
+    expect(screen.getByTestId('agenda-row-j1')).toBeOnTheScreen();
+    expect(day).toBeSelected();
+
+    await fireEvent.press(screen.getByTestId('strip-day-' + addDays(todayInZone(), 5)));
+    expect(screen.getByText('Rien de prévu ce jour-là')).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('link', { name: 'Tous les jours' }));
+    expect(screen.getByTestId('agenda-row-h1')).toBeOnTheScreen();
+    expect(screen.getByTestId('agenda-row-j1')).toBeOnTheScreen();
+  });
+
+  it('AC-1.3b a day past the loaded pages loads them before filtering', async () => {
+    mockMySpace.agenda
+      .mockResolvedValueOnce(
+        agenda([outing(hostedEvent, 'h1', onDay(2))], addDays(todayInZone(), 30)),
+      )
+      .mockResolvedValueOnce(agenda([outing(joinedEvent, 'far', onDay(35))]));
+    await open();
+    await screen.findByTestId('agenda-row-h1');
+    for (let week = 0; week < 5; week += 1)
+      await fireEvent(
+        screen.getByTestId('strip-day-' + addDays(todayInZone(), week * 7)),
+        'accessibilityAction',
+        { nativeEvent: { actionName: 'nextWeek' } },
+      );
+    await fireEvent.press(await screen.findByTestId('strip-day-' + addDays(todayInZone(), 35)));
+    expect(await screen.findByTestId('agenda-row-far')).toBeOnTheScreen();
+    expect(screen.queryByTestId('agenda-row-h1')).toBeNull();
   });
 
   it('shows the empty agenda box when circles exist but nothing is planned', async () => {
@@ -320,6 +408,17 @@ describe('Empty, loading and errors (US-6)', () => {
 });
 
 describe('English copy', () => {
+  it('AC-1.3b « All days » and the empty day in English', async () => {
+    await act(() => i18n.changeLanguage('en'));
+    mockMySpace.agenda.mockResolvedValue(agenda([outing(hostedEvent, 'h1', onDay(2))]));
+    await open();
+    await screen.findByTestId('agenda-row-h1');
+    await fireEvent.press(screen.getByTestId('strip-day-' + addDays(todayInZone(), 3)));
+    expect(screen.getByText('Nothing planned that day')).toBeOnTheScreen();
+    expect(screen.getByRole('link', { name: 'Find an outing' })).toBeOnTheScreen();
+    expect(screen.getByRole('link', { name: 'All days' })).toBeOnTheScreen();
+  });
+
   it('M-21 shows My space in English', async () => {
     await act(() => i18n.changeLanguage('en'));
     await open();

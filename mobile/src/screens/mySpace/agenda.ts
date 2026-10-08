@@ -70,12 +70,23 @@ export function dayDots(events: SparkEvent[]): AgendaKind[] {
   return events.slice(0, 3).map(agendaKind);
 }
 
-/** The first day from `day` (included) that has an outing, among `days`. */
-export function firstDayWithOutings(day: string, days: string[]): string | undefined {
-  return [...days].sort().find((candidate) => candidate >= day);
-}
-
 const noon = (day: string) => `${day}T12:00:00Z`;
+
+/**
+ * What VoiceOver hears when a tapped day filters the list (AC-1.3b, design 2.3):
+ * « 2 sorties le mercredi 7 octobre », or « Rien de prévu ce jour-là ».
+ */
+export function dayFilterAnnouncement(
+  day: string,
+  count: number,
+  locale: Locale,
+  t: TFunction,
+): string {
+  if (count === 0) return t('mySpace.agenda.nothingThatDay');
+  const long = formatLongDay(noon(day), 'UTC', locale);
+  const shown = locale === 'fr' ? long.charAt(0).toLowerCase() + long.slice(1) : long;
+  return t('mySpace.agenda.dayFiltered', { count, day: shown });
+}
 
 /** Strip cell: weekday abbreviation ("mer.", "Wed") and day number ("7"). */
 export function stripCellParts(day: string, locale: Locale) {

@@ -6,11 +6,14 @@ import MySpaceTab from '../../app/(tabs)/my-space';
 import AccountLink from '../../app/account/index';
 import { ME_KEY } from '../../auth/useMe';
 import i18n from '../../i18n';
-import { mockCircles, resetApiMock } from '../../test/apiMock';
+import { mockCircles, mockMySpace, resetApiMock } from '../../test/apiMock';
 import { myCircles } from '../../test/circleFixtures';
+import { hostedEvent, joinedEvent } from '../../test/eventFixtures';
 import { meFixture } from '../../test/fixtures';
 import { createTestQueryClient } from '../../test/render';
 import { renderScreen, routeStub } from '../../test/renderScreen';
+import { addDays } from '../events/format';
+import { todayInZone } from './agenda';
 
 jest.mock('../../api', () => jest.requireActual('../../test/apiMock').apiModule);
 
@@ -75,5 +78,29 @@ describe('My space segment (spec my-space: always opens on « Aujourd’hui »)'
     await act(() => router.navigate('/account'));
     expect(await screen.findByTestId('account-panel')).toBeOnTheScreen();
     expect(segment('Mon compte')).toBeOnTheScreen();
+  });
+
+  it('AC-1.3b the agenda day filter resets when leaving My space', async () => {
+    const day = (offset: number) => addDays(todayInZone(), offset);
+    const outing = (base: typeof hostedEvent, id: string, offset: number) => ({
+      ...base,
+      id,
+      starts_at: `${day(offset)}T09:00:00Z`,
+      ends_at: `${day(offset)}T09:00:00Z`,
+    });
+    mockMySpace.agenda.mockResolvedValue({
+      events: [outing(hostedEvent, 'h1', 2), outing(joinedEvent, 'j1', 4)],
+      window: { from: day(0), to: day(29), next_from: null },
+    });
+    await open('/my-space');
+    await screen.findByTestId('agenda-row-j1');
+    await fireEvent.press(screen.getByTestId(`strip-day-${day(2)}`));
+    expect(screen.queryByTestId('agenda-row-j1')).toBeNull();
+
+    await fireEvent.press(tabBar().getByRole('tab', { name: 'Sorties' }));
+    expect(await screen.findByText('route:events')).toBeOnTheScreen();
+    await fireEvent.press(tabBar().getByRole('tab', { name: 'Mon espace' }));
+    expect(await screen.findByTestId('agenda-row-j1')).toBeOnTheScreen();
+    expect(screen.getByTestId(`strip-day-${day(2)}`)).not.toBeSelected();
   });
 });

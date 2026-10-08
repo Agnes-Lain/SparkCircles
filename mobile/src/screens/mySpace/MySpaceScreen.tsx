@@ -73,8 +73,6 @@ export function MySpaceScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const queries = useTodayQueries();
-  const scroll = useRef<ScrollView>(null);
-  const panelY = useRef(0);
   const { takeCelebration } = useToast();
   // Email just confirmed: the success checkmark plays when My space comes into view (design P1, S3).
   const [celebrating, setCelebrating] = useState(false);
@@ -142,7 +140,6 @@ export function MySpaceScreen() {
         />
       </View>
       <ScrollView
-        ref={scroll}
         contentContainerClassName="gap-lg px-lg pb-3xl"
         testID="my-space-scroll"
         refreshControl={
@@ -160,11 +157,7 @@ export function MySpaceScreen() {
           </View>
         ) : null}
 
-        <View
-          onLayout={(e) => {
-            panelY.current = e.nativeEvent.layout.y;
-          }}
-        >
+        <View>
           {!user ? (
             me.isError ? (
               <UnreachableNotification onRetry={() => void me.refetch()} retrying={me.isFetching} />
@@ -172,15 +165,7 @@ export function MySpaceScreen() {
           ) : view === 'account' ? (
             <AccountPanel me={user} />
           ) : (
-            <TodayPanel
-              me={user}
-              queries={queries}
-              today={todayInZone(now)}
-              now={now}
-              onScrollTo={(y) =>
-                scroll.current?.scrollTo({ y: panelY.current + y, animated: false })
-              }
-            />
+            <TodayPanel me={user} queries={queries} today={todayInZone(now)} now={now} />
           )}
         </View>
 

@@ -1,8 +1,8 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Calendar, ChevronRight, Clock, MapPin, ShieldCheck } from 'lucide-react-native';
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import type { MyCircleItem } from '../../api/circles';
 import type { SparkEvent } from '../../api/events';
@@ -14,22 +14,22 @@ import { Icon } from '../../components/Icon';
 import { IconSquare } from '../../components/IconSquare';
 import { resolveLocale } from '../../i18n';
 import { formatDayMonth } from '../../i18n/format';
-import { shadows } from '../../theme/colors';
+import { colorValue, shadows } from '../../theme/colors';
 import { ownerVerificationState } from '../account/verification';
 import { useMyCircles } from '../circles/queries';
 import { clockTime } from '../events/format';
 import { titleText, whenText } from '../events/presenters';
 import { useMyEvents } from '../events/queries';
+import { agendaKind, eventDay, groupByDay, inlineGroups, nextOuting, stripDays } from './agenda';
 import {
-  agendaKind,
-  eventDay,
-  firstDayWithOutings,
-  groupByDay,
-  inlineGroups,
-  nextOuting,
-  stripDays,
-} from './agenda';
-import { AgendaRow, DayList, eventsByDay, roleBadge, WeekStrip } from './AgendaParts';
+  AgendaRow,
+  DayFilterResult,
+  DayList,
+  eventsByDay,
+  roleBadge,
+  useDayFilter,
+  WeekStrip,
+} from './AgendaParts';
 import { BlockError, BlockHeading, BlockSkeleton, Card, GhostBox, OfflineBanner } from './parts';
 import { agendaEvents, useAgenda } from './queries';
 
@@ -64,18 +64,14 @@ export function TodayPanel({
   queries,
   today,
   now,
-  onScrollTo,
 }: {
   me: Me;
   queries: TodayQueries;
   today: string;
   now: Date;
-  /** Scrolls the screen to a y inside this panel. */
-  onScrollTo: (y: number) => void;
 }) {
   const { t } = useTranslation();
   const { agenda, hosted, joined, circles } = queries;
-  const agendaY = useRef(0);
 
   const all = useMemo(() => agendaEvents(agenda.data), [agenda.data]);
   const next = nextOuting(all);
@@ -168,19 +164,7 @@ export function TodayPanel({
 
       <VerificationNote me={me} />
 
-      <View
-        onLayout={(e) => {
-          agendaY.current = e.nativeEvent.layout.y;
-        }}
-      >
-        <AgendaBlock
-          queries={queries}
-          all={all}
-          today={today}
-          announce={firstFailure === agenda}
-          onScrollTo={(y) => onScrollTo(agendaY.current + y)}
-        />
-      </View>
+      <AgendaBlock queries={queries} all={all} today={today} announce={firstFailure === agenda} />
 
       <CirclesBlock
         queries={queries}
@@ -442,37 +426,42 @@ function VerificationNote({ me }: { me: Me }) {
   );
 }
 
-/** Agenda (design 2.3): week strip + up to 5 day groups, then the full Agenda screen. */
+/**
+ * Agenda (design 2.3): one card with the week strip and the list of up to 5 day groups, then
+ * the full Agenda screen. Tap a day = filter (AC-1.3b): the list shows only that day, the
+ * screen never moves; the filter resets when leaving My space.
+ */
 function AgendaBlock({
   queries,
   all,
   today,
   announce,
-  onScrollTo,
 }: {
   queries: TodayQueries;
   all: SparkEvent[];
   today: string;
   announce: boolean;
-  onScrollTo: (y: number) => void;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { agenda } = queries;
   const [week, setWeek] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [nothingThatDay, setNothingThatDay] = useState(false);
-  const listY = useRef(0);
-  const groupY = useRef(new Map<string, number>());
+  const { selected, waiting, toggle, clear } = useDayFilter(agenda);
+  // Local to the screen: leaving My space (blur) clears it.
+  useFocusEffect(useCallback(() => clear, [clear]));
 
   const heading = (
     <BlockHeading
       title={t('mySpace.agenda.title')}
-      link={{
-        label: t('mySpace.agenda.seeAll'),
-        onPress: () => router.push('/agenda'),
-        testID: 'agenda-see-all',
-      }}
+      link={
+        selected
+          ? { label: t('mySpace.agenda.allDays'), onPress: clear, testID: 'agenda-all-days' }
+          : {
+              label: t('mySpace.agenda.seeAll'),
+              onPress: () => router.push('/agenda'),
+              testID: 'agenda-see-all',
+            }
+      }
     />
   );
 
@@ -489,59 +478,57 @@ function AgendaBlock({
       </View>
     );
 
-  // PM 2026-10-07 (supersedes Q4): the next outing is repeated in the day list, so a day
-  // tapped in the strip always scrolls inside the agenda, never back up to its card.
+  // PM 2026-10-07 (supersedes Q4): the next outing is repeated in the day list.
   const byDayGroups = groupByDay(all);
   const { groups, truncated } = inlineGroups(byDayGroups);
   const byDay = eventsByDay(byDayGroups);
 
-  const select = (day: string) => {
-    setSelected(day);
-    const target = firstDayWithOutings(day, [...byDay.keys()]);
-    setNothingThatDay(!byDay.has(day));
-    if (!target) return;
-    const y = groupY.current.get(target);
-    if (y !== undefined) onScrollTo(listY.current + y);
-  };
+  const list = selected ? (
+    waiting && agenda.isError ? (
+      <View className="p-md">
+        <BlockError testID="agenda-day-error" onRetry={() => void agenda.fetchNextPage()} />
+      </View>
+    ) : waiting ? (
+      <View className="py-lg">
+        <ActivityIndicator color={colorValue('lavender-dark')} />
+      </View>
+    ) : (
+      <DayFilterResult day={selected} events={byDay.get(selected) ?? []} today={today} bare />
+    )
+  ) : groups.length ? (
+    <DayList groups={groups} today={today} bare />
+  ) : null;
 
   return (
     <View className="gap-md" testID="agenda-block">
       {heading}
-      <WeekStrip
-        days={stripDays(today, week)}
-        today={today}
-        byDay={byDay}
-        selected={selected}
-        onSelect={select}
-        week={week}
-        onWeekChange={setWeek}
-      />
-      {nothingThatDay ? (
-        <Text className="text-caption text-ink-2" accessibilityLiveRegion="polite">
-          {t('mySpace.agenda.nothingThatDay')}
-        </Text>
-      ) : null}
-      {all.length === 0 ? (
+      <Card testID="agenda-card">
+        <WeekStrip
+          days={stripDays(today, week)}
+          today={today}
+          byDay={byDay}
+          selected={selected}
+          onSelect={toggle}
+          week={week}
+          onWeekChange={setWeek}
+          inCard
+        />
+        {list ? (
+          <>
+            <View className="h-[0.5px] bg-border-soft" />
+            <View className="pb-sm">{list}</View>
+          </>
+        ) : null}
+      </Card>
+      {!selected && all.length === 0 ? (
         <GhostBox
           testID="agenda-empty"
           icon={Calendar}
           text={t('mySpace.agenda.empty')}
           link={{ label: t('mySpace.agenda.findOuting'), onPress: () => router.navigate('/') }}
         />
-      ) : groups.length ? (
-        <View
-          onLayout={(e) => {
-            listY.current = e.nativeEvent.layout.y;
-          }}
-        >
-          <DayList
-            groups={groups}
-            today={today}
-            onGroupLayout={(day, y) => groupY.current.set(day, y)}
-          />
-        </View>
       ) : null}
-      {truncated || agenda.hasNextPage ? (
+      {!selected && (truncated || agenda.hasNextPage) ? (
         <Button
           variant="ghost"
           label={t('mySpace.agenda.seeFull')}

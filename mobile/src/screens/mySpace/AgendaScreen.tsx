@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Header } from '../../components/Header';
+import { TextLink } from '../../components/TextLink';
 import { colorValue } from '../../theme/colors';
 import { useBack } from '../auth/useBack';
-import { firstDayWithOutings, groupByDay, stripDays, todayInZone } from './agenda';
-import { DayList, eventsByDay, WeekStrip } from './AgendaParts';
+import { groupByDay, stripDays, todayInZone } from './agenda';
+import { DayFilterResult, DayList, eventsByDay, useDayFilter, WeekStrip } from './AgendaParts';
 import { BlockError, BlockSkeleton } from './parts';
 import { agendaEvents, useAgenda } from './queries';
 
@@ -27,19 +28,17 @@ export function AgendaScreen() {
   const agenda = useAgenda();
   const today = todayInZone();
   const [week, setWeek] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [nothingThatDay, setNothingThatDay] = useState(false);
-  const scroll = useRef<ScrollView>(null);
+  // AC-1.3b: tap a day = filter, as on Today; the list never scrolls to it.
+  const { selected, waiting, toggle, clear } = useDayFilter(agenda);
   const { height } = useWindowDimensions();
-  const listY = useRef(0);
-  const groupY = useRef(new Map<string, number>());
 
   const all = useMemo(() => agendaEvents(agenda.data), [agenda.data]);
   const groups = useMemo(() => groupByDay(all), [all]);
   const byDay = useMemo(() => eventsByDay(groups), [groups]);
 
+  // While a day is selected, only that day's pages load (useDayFilter), not the endless list.
   const loadMore = () => {
-    if (agenda.hasNextPage && !agenda.isFetchingNextPage && !agenda.isError)
+    if (!selected && agenda.hasNextPage && !agenda.isFetchingNextPage && !agenda.isError)
       void agenda.fetchNextPage();
   };
 
@@ -50,14 +49,6 @@ export function AgendaScreen() {
       void fetchNextPage();
   }, [all.length, hasNextPage, isFetchingNextPage, isError, fetchNextPage]);
 
-  const select = (day: string) => {
-    setSelected(day);
-    setNothingThatDay(!byDay.has(day));
-    const target = firstDayWithOutings(day, [...byDay.keys()]);
-    const y = target ? groupY.current.get(target) : undefined;
-    if (y !== undefined) scroll.current?.scrollTo({ y: listY.current + y, animated: false });
-  };
-
   return (
     <SafeAreaView edges={['top', 'bottom']} className="flex-1" testID="agenda-screen">
       <View className="gap-md px-lg pb-md pt-lg">
@@ -67,7 +58,7 @@ export function AgendaScreen() {
           today={today}
           byDay={byDay}
           selected={selected}
-          onSelect={select}
+          onSelect={toggle}
           week={week}
           onWeekChange={(next) => {
             setWeek(next);
@@ -75,15 +66,19 @@ export function AgendaScreen() {
             if (next > week) loadMore();
           }}
         />
-        <Text className="text-caption text-ink-2">{t('mySpace.agenda.legend')}</Text>
-        {nothingThatDay ? (
-          <Text className="text-caption text-ink-2" accessibilityLiveRegion="polite">
-            {t('mySpace.agenda.nothingThatDay')}
-          </Text>
-        ) : null}
+        <View className="flex-row items-center justify-between gap-md">
+          <Text className="flex-1 text-caption text-ink-2">{t('mySpace.agenda.legend')}</Text>
+          {selected ? (
+            <TextLink
+              quiet
+              label={t('mySpace.agenda.allDays')}
+              onPress={clear}
+              testID="agenda-all-days"
+            />
+          ) : null}
+        </View>
       </View>
       <ScrollView
-        ref={scroll}
         contentContainerClassName="gap-lg px-lg pb-3xl"
         scrollEventThrottle={200}
         onContentSizeChange={(_, contentHeight) => {
@@ -98,21 +93,12 @@ export function AgendaScreen() {
           <BlockSkeleton testID="agenda-screen-loading" />
         ) : agenda.isError && !agenda.data ? (
           <BlockError announce onRetry={() => void agenda.refetch()} testID="agenda-screen-error" />
+        ) : selected && !waiting ? (
+          <DayFilterResult day={selected} events={byDay.get(selected) ?? []} today={today} />
         ) : (
           <>
-            {groups.length ? (
-              <View
-                onLayout={(e) => {
-                  listY.current = e.nativeEvent.layout.y;
-                }}
-              >
-                <DayList
-                  groups={groups}
-                  today={today}
-                  withMonths
-                  onGroupLayout={(day, y) => groupY.current.set(day, y)}
-                />
-              </View>
+            {groups.length && !selected ? (
+              <DayList groups={groups} today={today} withMonths />
             ) : null}
             {agenda.isFetchingNextPage ? (
               <ActivityIndicator color={colorValue('lavender-dark')} />

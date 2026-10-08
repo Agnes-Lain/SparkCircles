@@ -4,8 +4,8 @@ import { eventFixture, hostedEvent, joinedEvent } from '../../test/eventFixtures
 import {
   agendaKind,
   dayDots,
+  dayFilterAnnouncement,
   dayHeader,
-  firstDayWithOutings,
   groupByDay,
   inlineGroups,
   monthHeader,
@@ -84,11 +84,25 @@ describe('agenda helpers (design my-space 2.3)', () => {
     expect(stripDays('2026-10-28', 1)[0]).toBe('2026-11-04');
   });
 
-  it('shows at most 3 dots and finds the next day with outings', () => {
+  it('shows at most 3 dots', () => {
     const many = [1, 2, 3, 4].map((i) => at(hostedEvent, `m${i}`, '2026-10-10T08:00:00Z'));
     expect(dayDots(many)).toEqual(['mine', 'mine', 'mine']);
-    expect(firstDayWithOutings('2026-10-08', ['2026-10-12', '2026-10-10'])).toBe('2026-10-10');
-    expect(firstDayWithOutings('2026-10-13', ['2026-10-10'])).toBeUndefined();
+  });
+
+  it('AC-1.3b announces the filtered day in French and English', () => {
+    const t = i18n.t.bind(i18n);
+    expect(dayFilterAnnouncement('2026-10-07', 2, 'fr', t)).toBe('2 sorties le mercredi 7 octobre');
+    expect(dayFilterAnnouncement('2026-10-07', 1, 'fr', t)).toBe('1 sortie le mercredi 7 octobre');
+    expect(dayFilterAnnouncement('2026-10-08', 0, 'fr', t)).toBe('Rien de prévu ce jour-là');
+  });
+
+  it('AC-1.3b announces the filtered day in English', async () => {
+    await i18n.changeLanguage('en');
+    const t = i18n.t.bind(i18n);
+    expect(dayFilterAnnouncement('2026-10-07', 2, 'en', t)).toBe(
+      '2 outings on Wednesday 7 October',
+    );
+    expect(dayFilterAnnouncement('2026-10-08', 0, 'en', t)).toBe('Nothing planned that day');
   });
 
   it('writes day and month headers in French and English', () => {

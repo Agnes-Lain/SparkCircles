@@ -1,11 +1,20 @@
 import { useRouter } from 'expo-router';
 import type { TFunction } from 'i18next';
-import { Fragment, useMemo } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PanResponder, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  PanResponder,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 
 import type { SparkEvent } from '../../api/events';
 import { Badge, type BadgeKind } from '../../components/Badge';
+import { TextLink } from '../../components/TextLink';
 import { resolveLocale } from '../../i18n';
 import { MIN_TOUCH_TARGET } from '../../theme/a11y';
 import { formatTime } from '../events/format';
@@ -16,12 +25,14 @@ import {
   type AgendaKind,
   dayDots,
   dayHeader,
+  dayFilterAnnouncement,
   type DayGroup,
   monthHeader,
   stripCellLabel,
   stripCellParts,
 } from './agenda';
 import { Card } from './parts';
+import { agendaLoadedUntil, type useAgenda } from './queries';
 
 /** Role badge of an outing (design 2.1, 2.3). */
 export function roleBadge(event: SparkEvent, t: TFunction): { kind: BadgeKind; label: string } {
@@ -85,34 +96,31 @@ export function AgendaRow({ event }: { event: SparkEvent }) {
 }
 
 /**
- * The day-grouped list (design 2.3): one Surface card, day headers (level-3 headings so screen
- * readers jump day by day), month headers in the long list. Reports where each day starts.
+ * The day-grouped list (design 2.3): day headers (level-3 headings so screen readers jump day
+ * by day), month headers in the long list. Its own Surface card, or `bare` inside the Agenda card.
  */
 export function DayList({
   groups,
   today,
   withMonths = false,
-  onGroupLayout,
+  bare = false,
 }: {
   groups: DayGroup[];
   today: string;
   withMonths?: boolean;
-  onGroupLayout?: (day: string, y: number) => void;
+  bare?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const locale = resolveLocale(i18n.language);
+  const Wrapper = bare ? View : Card;
   return (
-    <Card testID="agenda-list">
+    <Wrapper testID="agenda-list">
       {groups.map((group, index) => {
         const previous = groups[index - 1];
         const newMonth =
           withMonths && previous && previous.day.slice(0, 7) !== group.day.slice(0, 7);
         return (
-          <View
-            key={group.day}
-            testID={`agenda-day-${group.day}`}
-            onLayout={(e) => onGroupLayout?.(group.day, e.nativeEvent.layout.y)}
-          >
+          <View key={group.day} testID={`agenda-day-${group.day}`}>
             {index > 0 ? <View className="h-[0.5px] bg-border-soft" /> : null}
             {newMonth ? (
               <Text accessibilityRole="header" className="px-lg pt-md text-h3 text-ink">
@@ -136,8 +144,42 @@ export function DayList({
           </View>
         );
       })}
-    </Card>
+    </Wrapper>
   );
+}
+
+/**
+ * The list filtered to the tapped day (AC-1.3b, design 2.3): that day's outings, or
+ * « Rien de prévu ce jour-là » with a quiet « Trouver une sortie ». Announced to VoiceOver
+ * (« 2 sorties le mercredi 7 octobre ») since the screen itself doesn't move.
+ */
+export function DayFilterResult({
+  day,
+  events,
+  today,
+  bare = false,
+}: {
+  day: string;
+  events: SparkEvent[];
+  today: string;
+  bare?: boolean;
+}) {
+  const { t, i18n } = useTranslation();
+  const router = useRouter();
+  const locale = resolveLocale(i18n.language);
+  const announcement = dayFilterAnnouncement(day, events.length, locale, t);
+  useEffect(() => {
+    AccessibilityInfo.announceForAccessibility(announcement);
+  }, [announcement]);
+
+  if (events.length) return <DayList groups={[{ day, events }]} today={today} bare={bare} />;
+  const empty = (
+    <View testID="agenda-day-empty" className="items-center gap-xs px-lg pb-sm pt-lg">
+      <Text className="text-center text-body text-ink-2">{t('mySpace.agenda.nothingThatDay')}</Text>
+      <TextLink quiet label={t('mySpace.agenda.findOuting')} onPress={() => router.navigate('/')} />
+    </View>
+  );
+  return bare ? empty : <Card>{empty}</Card>;
 }
 
 const DOT: Record<AgendaKind, string> = {
@@ -158,6 +200,7 @@ export function WeekStrip({
   onSelect,
   week,
   onWeekChange,
+  inCard = false,
 }: {
   days: string[];
   today: string;
@@ -166,6 +209,8 @@ export function WeekStrip({
   onSelect: (day: string) => void;
   week: number;
   onWeekChange: (week: number) => void;
+  /** Inside the Agenda card (Today): no frame of its own. */
+  inCard?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const locale = resolveLocale(i18n.language);
@@ -247,7 +292,7 @@ export function WeekStrip({
       accessibilityRole="list"
       accessibilityLabel={t('mySpace.agenda.stripLabel')}
       accessibilityHint={t('mySpace.agenda.stripHint')}
-      className="rounded-lg border-[0.5px] border-border-soft bg-surface p-sm"
+      className={inCard ? 'p-sm' : 'rounded-lg border-[0.5px] border-border-soft bg-surface p-sm'}
     >
       {large ? (
         <ScrollView horizontal contentContainerClassName="gap-xs">
@@ -263,4 +308,25 @@ export function WeekStrip({
 /** Outings by Paris day, for the strip. */
 export function eventsByDay(groups: DayGroup[]): Map<string, SparkEvent[]> {
   return new Map(groups.map((group) => [group.day, group.events]));
+}
+
+/**
+ * Tap a day = filter (AC-1.3b): no day selected by default; tapping a day selects it, tapping
+ * it again clears it. A day past the loaded pages loads them (`waiting` meanwhile).
+ */
+export function useDayFilter(agenda: ReturnType<typeof useAgenda>) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const until = agendaLoadedUntil(agenda.data);
+  const waiting =
+    selected !== null && agenda.hasNextPage && (until === undefined || selected > until);
+  const { isFetchingNextPage, isError, fetchNextPage } = agenda;
+  useEffect(() => {
+    if (waiting && !isFetchingNextPage && !isError) void fetchNextPage();
+  }, [waiting, isFetchingNextPage, isError, fetchNextPage]);
+  const toggle = useCallback(
+    (day: string) => setSelected((current) => (current === day ? null : day)),
+    [],
+  );
+  const clear = useCallback(() => setSelected(null), []);
+  return { selected, waiting, toggle, clear };
 }

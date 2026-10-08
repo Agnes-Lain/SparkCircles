@@ -28,3 +28,7 @@ export function useAgenda() {
 /** Every outing of the loaded pages, soonest first. */
 export const agendaEvents = (data: InfiniteData<AgendaPage> | undefined) =>
   data?.pages.flatMap((page) => page.events) ?? [];
+
+/** The last day the loaded pages cover ("2026-11-05"), or undefined before the first page. */
+export const agendaLoadedUntil = (data: InfiniteData<AgendaPage> | undefined) =>
+  data?.pages[data.pages.length - 1]?.window.to;
