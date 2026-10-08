@@ -52,6 +52,7 @@ describe('S8 New password (reset link)', () => {
     await waitFor(() => expect(app.getPathnameWithParams()).not.toContain('reset-123'));
 
     await fireEvent.changeText(screen.getByLabelText('Nouveau mot de passe'), PASSWORD);
+    await fireEvent.changeText(screen.getByLabelText('Confirme ton mot de passe'), PASSWORD);
     await fireEvent.press(
       screen.getByRole('button', { name: 'Enregistrer mon nouveau mot de passe' }),
     );
@@ -68,6 +69,7 @@ describe('S8 New password (reset link)', () => {
     await renderScreen(ROUTES, { url: '/reset-password?token=old' });
 
     await fireEvent.changeText(screen.getByLabelText('Nouveau mot de passe'), PASSWORD);
+    await fireEvent.changeText(screen.getByLabelText('Confirme ton mot de passe'), PASSWORD);
     await fireEvent.press(
       screen.getByRole('button', { name: 'Enregistrer mon nouveau mot de passe' }),
     );
@@ -77,6 +79,25 @@ describe('S8 New password (reset link)', () => {
     expect(await screen.findByText('route:forgot-password')).toBeOnTheScreen();
   });
 
+  it('#42 asks for the password twice with a live "doesn\'t match" and an eye on both', async () => {
+    await renderScreen(ROUTES, { url: '/reset-password?token=t' });
+
+    expect(screen.getAllByRole('button', { name: 'Afficher le mot de passe' })).toHaveLength(2);
+    await fireEvent.changeText(screen.getByLabelText('Nouveau mot de passe'), PASSWORD);
+    const confirm = screen.getByLabelText('Confirme ton mot de passe');
+    await fireEvent.changeText(confirm, PASSWORD.slice(0, 3));
+    expect(screen.queryByText('Ce mot de passe ne correspond pas.')).toBeNull();
+    await fireEvent.changeText(confirm, 'autre-chose-123');
+    expect(screen.getByText('Ce mot de passe ne correspond pas.')).toBeOnTheScreen();
+
+    await fireEvent.changeText(confirm, PASSWORD.slice(0, 3));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Enregistrer mon nouveau mot de passe' }),
+    );
+    expect(screen.getByText('Ce mot de passe ne correspond pas.')).toBeOnTheScreen();
+    expect(mockAuth.resetPassword).not.toHaveBeenCalled();
+  });
+
   it('AC-1.4 keeps the password rules on the new password', async () => {
     mockAuth.resetPassword.mockRejectedValue(
       new ApiError(422, 'validation_failed', 'x', { password: ['too_common'] }),
@@ -84,6 +105,7 @@ describe('S8 New password (reset link)', () => {
     await renderScreen(ROUTES, { url: '/reset-password?token=t' });
 
     await fireEvent.changeText(screen.getByLabelText('Nouveau mot de passe'), 'motdepasse123');
+    await fireEvent.changeText(screen.getByLabelText('Confirme ton mot de passe'), 'motdepasse123');
     await fireEvent.press(
       screen.getByRole('button', { name: 'Enregistrer mon nouveau mot de passe' }),
     );

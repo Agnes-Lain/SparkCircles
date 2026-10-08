@@ -19,6 +19,7 @@ import { useToast } from '../../components/ToastProvider';
 import { currentLocale } from '../../i18n';
 import { openLegalDocument } from './external';
 import {
+  confirmationMismatch,
   type FieldErrors,
   looksLikeEmail,
   MIN_PASSWORD_LENGTH,
@@ -30,8 +31,16 @@ import { UnreachableNotification } from './UnreachableNotification';
 import { useSubmitOnce } from './useSubmitOnce';
 import { useBack } from './useBack';
 
-type Field = 'firstName' | 'lastName' | 'email' | 'password' | 'adult' | 'terms';
-const ORDER: readonly Field[] = ['firstName', 'lastName', 'email', 'password', 'adult', 'terms'];
+type Field = 'firstName' | 'lastName' | 'email' | 'password' | 'confirmation' | 'adult' | 'terms';
+const ORDER: readonly Field[] = [
+  'firstName',
+  'lastName',
+  'email',
+  'password',
+  'confirmation',
+  'adult',
+  'terms',
+];
 const API_FIELDS: Record<string, Field> = {
   first_name: 'firstName',
   last_name: 'lastName',
@@ -56,6 +65,7 @@ export function SignUpScreen() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
   const [adult, setAdult] = useState(false);
   const [terms, setTerms] = useState(false);
   const [marketing, setMarketing] = useState(false);
@@ -65,6 +75,7 @@ export function SignUpScreen() {
   const lastNameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
+  const confirmationRef = useRef<TextInput>(null);
   const adultRef = useRef<View>(null);
   const termsRef = useRef<View>(null);
   const focusFirstError = useFocusFirstError(ORDER, {
@@ -72,6 +83,7 @@ export function SignUpScreen() {
     lastName: lastNameRef,
     email: emailRef,
     password: passwordRef,
+    confirmation: confirmationRef,
     adult: adultRef,
     terms: termsRef,
   });
@@ -83,6 +95,7 @@ export function SignUpScreen() {
         lastName: t('fieldErrors.lastName'),
         email: t('fieldErrors.email'),
         password: t('fieldErrors.password'),
+        confirmation: t('fieldErrors.passwordMismatch'),
         adult: t('fieldErrors.adult'),
         terms: t('fieldErrors.terms'),
       }) satisfies Record<Field, string>,
@@ -122,6 +135,8 @@ export function SignUpScreen() {
     if (!lastName.trim()) next.lastName = message.lastName;
     if (!looksLikeEmail(email)) next.email = message.email;
     if (password.length < MIN_PASSWORD_LENGTH) next.password = message.password;
+    if (confirmationMismatch(password, confirmation, true))
+      next.confirmation = message.confirmation;
     if (!adult) next.adult = message.adult;
     if (!terms) next.terms = message.terms;
     return next;
@@ -232,6 +247,20 @@ export function SignUpScreen() {
           value={password}
           onChangeText={update(setPassword, 'password')}
           error={errors.password}
+          returnKeyType="next"
+          onSubmitEditing={() => confirmationRef.current?.focus()}
+        />
+        <TextField
+          ref={confirmationRef}
+          testID="password-confirmation"
+          label={t('signUp.confirmPassword')}
+          kind="newPassword"
+          value={confirmation}
+          onChangeText={update(setConfirmation, 'confirmation')}
+          error={
+            errors.confirmation ??
+            (confirmationMismatch(password, confirmation) ? message.confirmation : undefined)
+          }
           returnKeyType="done"
         />
 

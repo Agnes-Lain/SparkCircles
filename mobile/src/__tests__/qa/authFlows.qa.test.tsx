@@ -46,8 +46,9 @@ describe('QA auth flows', () => {
       { url: '/reset-password?token=abc' },
     );
     await fireEvent.changeText(screen.getByLabelText('Nouveau mot de passe'), PASSWORD);
-    await fireEvent(screen.getByLabelText('Nouveau mot de passe'), 'submitEditing');
-    await fireEvent(screen.getByLabelText('Nouveau mot de passe'), 'submitEditing');
+    await fireEvent.changeText(screen.getByLabelText('Confirme ton mot de passe'), PASSWORD);
+    await fireEvent(screen.getByLabelText('Confirme ton mot de passe'), 'submitEditing');
+    await fireEvent(screen.getByLabelText('Confirme ton mot de passe'), 'submitEditing');
 
     expect(mockAuth.resetPassword).toHaveBeenCalledTimes(1);
   });
@@ -89,6 +90,7 @@ describe('QA auth flows', () => {
     await fireEvent.changeText(screen.getByLabelText('Nom'), 'Martin');
     await fireEvent.changeText(screen.getByLabelText('E-mail'), 'used@example.com');
     await fireEvent.changeText(screen.getByLabelText('Mot de passe'), PASSWORD);
+    await fireEvent.changeText(screen.getByLabelText('Confirme ton mot de passe'), PASSWORD);
     await fireEvent.press(screen.getByRole('checkbox', { name: "J'ai 18 ans ou plus" }));
     await fireEvent.press(
       screen.getByRole('checkbox', {
@@ -114,6 +116,7 @@ describe('QA auth flows', () => {
     );
     await waitFor(() => expect(app.getPathnameWithParams()).not.toContain('secret-link-token'));
     await fireEvent.changeText(screen.getByLabelText('Nouveau mot de passe'), PASSWORD);
+    await fireEvent.changeText(screen.getByLabelText('Confirme ton mot de passe'), PASSWORD);
     await fireEvent.press(
       screen.getByRole('button', { name: 'Enregistrer mon nouveau mot de passe' }),
     );

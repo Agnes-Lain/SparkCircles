@@ -15,6 +15,23 @@ export function looksLikeEmail(value: string): boolean {
 /** Passwords need at least 10 characters (AC-1.4); the breached list is checked by the API. */
 export const MIN_PASSWORD_LENGTH = 10;
 
+/**
+ * Backlog #42: the confirmation field shows "doesn't match" live, but stays quiet while the
+ * person is still typing the start of the same password. On submit any difference counts.
+ */
+export function confirmationMismatch(
+  password: string,
+  confirmation: string,
+  submitted = false,
+): boolean {
+  if (confirmation === password) return false;
+  if (submitted) return true;
+  return (
+    confirmation.length > 0 &&
+    (confirmation.length >= password.length || !password.startsWith(confirmation))
+  );
+}
+
 /** API `details` (field → keys) restricted to the fields a form shows. */
 export function serverFieldErrors<F extends string>(
   details: Record<string, FieldErrorKey[]> | undefined,

@@ -16,7 +16,12 @@ import { Header } from '../../components/Header';
 import { Notification } from '../../components/Notification';
 import { TextField } from '../../components/TextField';
 import { useToast } from '../../components/ToastProvider';
-import { type FieldErrors, MIN_PASSWORD_LENGTH, useFocusFirstError } from './formErrors';
+import {
+  confirmationMismatch,
+  type FieldErrors,
+  MIN_PASSWORD_LENGTH,
+  useFocusFirstError,
+} from './formErrors';
 import { FormScreen } from './layouts';
 import { UnreachableNotification } from './UnreachableNotification';
 import { useSubmitOnce } from './useSubmitOnce';
@@ -24,8 +29,12 @@ import { useLinkToken } from './useLinkToken';
 
 /**
  * S8 New password, opened from the reset link (AC-4.2, 4.3): every other device is logged
- * out, this one is logged in. An expired or used link leads to S4.
+ * out, this one is logged in. An expired or used link leads to S4. The password is typed
+ * twice (backlog #42): the API still gets it once.
  */
+type Field = 'password' | 'confirmation';
+const FIELDS: readonly Field[] = ['password', 'confirmation'];
+
 export function NewPasswordScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -34,10 +43,15 @@ export function NewPasswordScreen() {
   const { signIn } = useSession();
   const { showToast } = useToast();
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<FieldErrors<'password'>>({});
+  const [confirmation, setConfirmation] = useState('');
+  const [errors, setErrors] = useState<FieldErrors<Field>>({});
   const [done, setDone] = useState(false);
   const passwordRef = useRef<TextInput>(null);
-  const focusFirstError = useFocusFirstError(['password'] as const, { password: passwordRef });
+  const confirmationRef = useRef<TextInput>(null);
+  const focusFirstError = useFocusFirstError(FIELDS, {
+    password: passwordRef,
+    confirmation: confirmationRef,
+  });
   useLeaveWhenGateMoves(done);
 
   useAfterMount(() => {
@@ -66,10 +80,13 @@ export function NewPasswordScreen() {
 
   const submit = () => {
     if (done) return; // the link is used: a second send would only find it expired
-    const next: FieldErrors<'password'> =
-      password.length >= MIN_PASSWORD_LENGTH ? {} : { password: t('fieldErrors.password') };
+    const next: FieldErrors<Field> = {};
+    if (password.length < MIN_PASSWORD_LENGTH) next.password = t('fieldErrors.password');
+    if (confirmationMismatch(password, confirmation, true)) {
+      next.confirmation = t('fieldErrors.passwordMismatch');
+    }
     setErrors(next);
-    if (next.password) return focusFirstError(next);
+    if (next.password || next.confirmation) return focusFirstError(next);
     sendReset();
   };
 
@@ -95,9 +112,28 @@ export function NewPasswordScreen() {
         value={password}
         onChangeText={(value) => {
           setPassword(value);
-          if (errors.password) setErrors({});
+          if (errors.password) setErrors({ ...errors, password: undefined });
         }}
         error={errors.password}
+        returnKeyType="next"
+        onSubmitEditing={() => confirmationRef.current?.focus()}
+      />
+      <TextField
+        ref={confirmationRef}
+        testID="password-confirmation"
+        label={t('newPassword.confirmLabel')}
+        kind="newPassword"
+        value={confirmation}
+        onChangeText={(value) => {
+          setConfirmation(value);
+          if (errors.confirmation) setErrors({ ...errors, confirmation: undefined });
+        }}
+        error={
+          errors.confirmation ??
+          (confirmationMismatch(password, confirmation)
+            ? t('fieldErrors.passwordMismatch')
+            : undefined)
+        }
         returnKeyType="done"
         onSubmitEditing={submit}
       />

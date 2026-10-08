@@ -35,6 +35,7 @@ async function fillValidForm() {
   await fireEvent.changeText(screen.getByLabelText('Nom'), 'Martin');
   await fireEvent.changeText(screen.getByLabelText('E-mail'), ' claire@gmail.com ');
   await fireEvent.changeText(screen.getByLabelText('Mot de passe'), PASSWORD);
+  await fireEvent.changeText(screen.getByLabelText('Confirme ton mot de passe'), PASSWORD);
   await fireEvent.press(screen.getByRole('checkbox', { name: "J'ai 18 ans ou plus" }));
   await fireEvent.press(
     screen.getByRole('checkbox', {
@@ -44,23 +45,43 @@ async function fillValidForm() {
 }
 
 describe('S2 Sign up', () => {
+  it('#42 shows "doesn\'t match" live, keeps an eye on both fields and blocks the send', async () => {
+    resetApiMock();
+    await i18n.changeLanguage('fr');
+    await open();
+    await fillValidForm();
+    expect(screen.getAllByRole('button', { name: 'Afficher le mot de passe' })).toHaveLength(2);
+
+    const confirm = screen.getByLabelText('Confirme ton mot de passe');
+    await fireEvent.changeText(confirm, PASSWORD.slice(0, 4));
+    expect(screen.queryByText('Ce mot de passe ne correspond pas.')).toBeNull();
+    await fireEvent.changeText(confirm, `${PASSWORD}x`);
+    expect(screen.getByText('Ce mot de passe ne correspond pas.')).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
+    expect(mockAuth.register).not.toHaveBeenCalled();
+
+    await fireEvent.changeText(confirm, PASSWORD);
+    expect(screen.queryByText('Ce mot de passe ne correspond pas.')).toBeNull();
+  });
+
   beforeEach(async () => {
     resetApiMock();
     setPendingEmail(null);
     await i18n.changeLanguage('fr');
   });
 
-  it('AC-1.6 asks only first name, last name, email and password, with visible labels', async () => {
+  it('AC-1.6 asks only first name, last name, email and password (typed twice, #42), with visible labels', async () => {
     await open();
 
     expect(screen.getByRole('header', { name: 'Crée ton compte' })).toBeOnTheScreen();
-    ['Prénom', 'Nom', 'E-mail', 'Mot de passe'].forEach((label) => {
+    ['Prénom', 'Nom', 'E-mail', 'Mot de passe', 'Confirme ton mot de passe'].forEach((label) => {
       expect(screen.getByText(label)).toBeOnTheScreen();
       expect(screen.getByLabelText(label)).toBeOnTheScreen();
     });
     expect(
       screen.getAllByLabelText(/./, { exact: false }).filter((e) => e.type === 'TextInput'),
-    ).toHaveLength(4);
+    ).toHaveLength(5);
     expect(screen.getByText('Les autres ne voient que la première lettre.')).toBeOnTheScreen();
   });
 
@@ -84,6 +105,7 @@ describe('S2 Sign up', () => {
     await fireEvent.changeText(screen.getByLabelText('Nom'), 'Martin');
     await fireEvent.changeText(screen.getByLabelText('E-mail'), 'claire@gmail.com');
     await fireEvent.changeText(screen.getByLabelText('Mot de passe'), PASSWORD);
+    await fireEvent.changeText(screen.getByLabelText('Confirme ton mot de passe'), PASSWORD);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
 
@@ -104,6 +126,7 @@ describe('S2 Sign up', () => {
     await open();
     await fillValidForm();
     await fireEvent.changeText(screen.getByLabelText('Mot de passe'), 'court');
+    await fireEvent.changeText(screen.getByLabelText(/^Confirme ton mot de passe/), 'court');
 
     await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
 
@@ -117,6 +140,10 @@ describe('S2 Sign up', () => {
     );
     // While in error, the field's label also reads the error (QA BUG-A05).
     await fireEvent.changeText(screen.getByLabelText(`Mot de passe. ${message}`), 'motdepasse123');
+    await fireEvent.changeText(
+      screen.getByLabelText(/^Confirme ton mot de passe/),
+      'motdepasse123',
+    );
     await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
 
     expect(await screen.findByText(message)).toBeOnTheScreen();

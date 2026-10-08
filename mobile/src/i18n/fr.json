@@ -175,6 +175,7 @@
     "password": "Mot de passe",
     "passwordPlaceholder": "Au moins 10 caractères",
     "passwordHelper": "Au moins 10 caractères. Évite les mots de passe courants.",
+    "confirmPassword": "Confirme ton mot de passe",
     "adult": "J'ai 18 ans ou plus",
     "terms": "J'accepte les <terms>conditions d'utilisation</terms> et la <privacy>politique de confidentialité</privacy>",
     "termsPlain": "J'accepte les conditions d'utilisation et la politique de confidentialité",
@@ -241,6 +242,7 @@
   "newPassword": {
     "title": "Choisis un nouveau mot de passe",
     "label": "Nouveau mot de passe",
+    "confirmLabel": "Confirme ton mot de passe",
     "submit": "Enregistrer mon nouveau mot de passe",
     "caption": "Tes autres appareils seront déconnectés.",
     "changed": "Mot de passe modifié"
