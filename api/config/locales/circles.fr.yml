@@ -80,8 +80,12 @@ fr:
     new_admin:
       subject: "Tu es maintenant admin de « %{name} »"
       lines:
-        - "La personne admin de « %{name} » a fermé son compte. Tu fais partie des membres vérifiés depuis le plus longtemps : tu es maintenant admin du cercle."
-        - "Tu peux accepter les demandes, renouveler le lien et gérer le cercle. Tu peux aussi nommer un autre admin."
+        closed_account:
+          - "La personne admin de « %{name} » a fermé son compte. Tu fais partie des membres vérifiés depuis le plus longtemps : tu es maintenant admin du cercle."
+          - "Tu peux accepter les demandes, renouveler le lien et gérer le cercle. Tu peux aussi nommer un autre admin."
+        no_verified_admin:
+          - "« %{name} » n’avait plus de personne admin vérifiée. Ton compte est vérifié : tu es maintenant admin du cercle."
+          - "Tu peux accepter les demandes, renouveler le lien et gérer le cercle. Tu peux aussi nommer un autre admin."
       action: "Ouvrir le cercle"
     circle_closing:
       subject: "« %{name} » va fermer"

@@ -80,8 +80,12 @@ en:
     new_admin:
       subject: "You're now admin of « %{name} »"
       lines:
-        - "The admin of « %{name} » closed their account. As a long-standing verified member, you're now its admin."
-        - "You can approve requests, renew the link and manage the circle. You can also name another admin."
+        closed_account:
+          - "The admin of « %{name} » closed their account. As a long-standing verified member, you're now its admin."
+          - "You can approve requests, renew the link and manage the circle. You can also name another admin."
+        no_verified_admin:
+          - "« %{name} » had no verified admin left. Your account is verified, so you're now its admin."
+          - "You can approve requests, renew the link and manage the circle. You can also name another admin."
       action: "Open the circle"
     circle_closing:
       subject: "« %{name} » will close"

@@ -263,8 +263,12 @@ class User < ApplicationRecord
     saved_change_to_verification_status? || saved_change_to_verification_expires_on? || saved_change_to_closed_at?
   end
 
+  def verification_changed? = saved_change_to_verification_status? || saved_change_to_verification_expires_on?
+
   def sync_events
     Events::HostStatusSync.new(self).call
+    # Circles AC-6.5: admins losing or regaining verification, and admin succession.
+    Circles::Succession.verification_changed!(self) if !closed? && verification_changed?
     # Circles AC-6.4: closing an account leaves every circle (admin succession first).
     Circles::Departure.close_account!(self) if saved_change_to_closed_at? && closed?
   end

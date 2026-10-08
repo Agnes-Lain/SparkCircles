@@ -82,14 +82,10 @@ module Circles
       empty = Circle.transaction do
         @circle.lock!
         others = @circle.memberships.active.where.not(id: membership.id).joins(:user).where(users: { closed_at: nil })
-        if membership.admin? && others.admins.none?
-          successor = others.includes(:user).seniority.find { |other| other.user.verified? }
-          if successor
-            successor.update!(role: "admin", creator: true, admin_since: Time.current)
-            Audit.record!("circle_admin_succession", @circle, subject: successor.user)
-          elsif others.any?
-            @circle.update!(closes_on: Date.current + Circle::CLOSING_NOTICE)
-          end
+        # AC-6.5: other admins without rights don't count; the succession is shared.
+        if membership.admin? && others.admins.includes(:user).none? { |admin| admin.user.verified? }
+          successor = Succession.new(@circle).hand_over!(except: membership)
+          @circle.update!(closes_on: Date.current + Circle::CLOSING_NOTICE) if successor.nil? && others.any?
         end
         end_membership!(membership, "left")
         others.none?
@@ -97,7 +93,7 @@ module Circles
       return delete_circle! if empty
 
       if successor
-        Notifications.new_admin(successor)
+        Notifications.new_admin(successor, reason: :closed_account)
       elsif @circle.closes_on
         Notifications.closing(@circle)
       end
@@ -106,7 +102,8 @@ module Circles
     private
 
     def end_membership!(membership, status)
-      membership.update!(status: status, role: "member", creator: false, decided_at: Time.current, admin_since: nil)
+      membership.update!(status: status, role: "member", creator: false, decided_at: Time.current, admin_since: nil,
+                         former_admin_at: nil)
     end
 
     def upcoming_events

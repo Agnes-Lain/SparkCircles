@@ -143,6 +143,7 @@ CREATE TABLE public.circle_memberships (
     dismissed_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    former_admin_at timestamp(6) without time zone,
     CONSTRAINT circle_memberships_admin_active_check CHECK ((((role)::text = 'member'::text) OR ((status)::text = 'active'::text))),
     CONSTRAINT circle_memberships_role_check CHECK (((role)::text = ANY ((ARRAY['member'::character varying, 'admin'::character varying])::text[]))),
     CONSTRAINT circle_memberships_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'active'::character varying, 'declined'::character varying, 'expired'::character varying, 'cancelled'::character varying, 'left'::character varying, 'removed'::character varying])::text[])))
@@ -1265,6 +1266,7 @@ ALTER TABLE ONLY public.event_reports
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261008120000'),
 ('20261008100000'),
 ('20261008090000'),
 ('20261007090000'),

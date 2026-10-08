@@ -51,9 +51,13 @@ class CircleMailer < ApplicationMailer
     end
   end
 
-  # AC-6.4
-  def new_admin(circle, user)
-    simple(user, "new_admin", circle, "circles/#{circle.id}")
+  # AC-6.4 (`closed_account`), AC-6.5 (`no_verified_admin`): no name, no reason beyond that.
+  def new_admin(circle, user, reason = "closed_account")
+    with_recipient(user) do
+      deliver(user, t("circle_mailer.new_admin.subject", name: circle.name),
+              t("circle_mailer.new_admin.lines.#{reason}", name: circle.name),
+              action: [ "circle_mailer.new_admin.action", app_link("circles/#{circle.id}") ])
+    end
   end
 
   # AC-6.4: 30 days' notice.

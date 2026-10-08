@@ -15,7 +15,7 @@ module Circles
         raise Error.new(:not_verified_member) unless membership.user.verified?
         raise Error.new(:admin_limit) if @circle.admins.count >= Circle::MAX_ADMINS
 
-        membership.update!(role: "admin", admin_since: Time.current)
+        membership.update!(role: "admin", admin_since: Time.current, former_admin_at: nil)
         Audit.record!("circle_admin_promoted", @circle, actor: by, subject: membership.user)
       end
     end

@@ -28,4 +28,14 @@ RSpec.describe CircleMailer do
     expect(left.text_part.decoded).to include("Tu ne peux plus participer à « Goûter au parc » : tu as quitté le cercle.")
     expect(left.text_part.decoded).not_to include(event.exact_address)
   end
+
+  it "AC-6.4, AC-6.5 tells the new admin why, without naming anyone" do
+    member = create(:user, first_name: "Inès", locale: "fr")
+    closed = described_class.new_admin(circle, member)
+    expect(closed.text_part.decoded).to include("a fermé son compte")
+    unverified = described_class.new_admin(circle, member, "no_verified_admin")
+    expect(unverified.subject).to eq("Tu es maintenant admin de « #{circle.name} »")
+    expect(unverified.text_part.decoded).to include("n’avait plus de personne admin vérifiée", "circles/#{circle.id}")
+    expect(unverified.text_part.decoded).not_to include(admin.first_name)
+  end
 end

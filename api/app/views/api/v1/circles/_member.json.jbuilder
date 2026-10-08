@@ -29,6 +29,8 @@ json.my_role mine.display_role
 json.creator mine.creator?
 json.admin_rights_paused policy.rights_paused?
 json.discoverable circle.discoverable?
+# AC-6.5, backlog #38: no admin with rights; members see the notice (private circles too).
+json.has_verified_admin circle.managed?
 json.accepting_requests circle.accepting_requests?
 event_json = lambda do |event|
   { id: event.id, title: event.title, starts_at: event.starts_at&.utc&.iso8601, ends_at: event.ends_at&.utc&.iso8601,

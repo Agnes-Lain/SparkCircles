@@ -151,6 +151,16 @@ RSpec.describe "Circles", type: :request do
       get "/api/v1/circles/#{circle.id}", headers: auth_headers(admin)
       expect(json.dig("circle", "admin_rights_paused")).to be(true)
     end
+
+    it "AC-6.5, backlog #38 tells members whether the circle has a verified admin, private circles too" do
+      private_circle = create(:circle, :private, created_by: admin)
+      member = join(private_circle, create(:user))
+      get "/api/v1/circles/#{private_circle.id}", headers: auth_headers(member.user)
+      expect(json.dig("circle", "has_verified_admin")).to be(true)
+      admin.update!(verification_status: "expired")
+      get "/api/v1/circles/#{private_circle.id}", headers: auth_headers(member.user)
+      expect(json["circle"]).to include("has_verified_admin" => false, "accepting_requests" => false)
+    end
   end
 
   describe "DELETE /circles/:id" do

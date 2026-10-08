@@ -9,6 +9,7 @@ class CircleMailerPreview < ActionMailer::Preview
   def event_access_lost_left = CircleMailer.event_access_lost(event, member, :left)
   def event_access_lost_removed = CircleMailer.event_access_lost(event, member, :removed)
   def new_admin = CircleMailer.new_admin(circle, member)
+  def new_admin_no_verified_admin = CircleMailer.new_admin(circle, member, "no_verified_admin")
   def circle_closing = CircleMailer.circle_closing(circle.tap { |c| c.closes_on = 30.days.from_now.to_date }, member)
 
   private

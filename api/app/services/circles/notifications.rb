@@ -47,8 +47,11 @@ module Circles
       to_person(user) { CircleMailer.event_access_lost(event, user, reason) }
     end
 
-    # AC-6.4: the longest-standing verified member became admin.
-    def new_admin(membership) = to_person(membership.user) { CircleMailer.new_admin(membership.circle, membership.user) }
+    # AC-6.4, AC-6.5: the longest-standing verified member became admin. `reason`:
+    # :closed_account (AC-6.4) or :no_verified_admin (AC-6.5); never a name.
+    def new_admin(membership, reason:)
+      to_person(membership.user) { CircleMailer.new_admin(membership.circle, membership.user, reason.to_s) }
+    end
 
     # AC-6.4: no verified member left to run the circle; it closes in 30 days.
     def closing(circle)
