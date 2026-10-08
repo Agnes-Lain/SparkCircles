@@ -16,7 +16,7 @@ import { displayPhone, telUrl } from './phone';
 
 // US-17 building blocks (design events-dropoff-approval, sections 3.2 to 3.5 and 6).
 
-/** True for a drop-off event ("Adulte accompagnant : facultatif", AC-17.1). */
+/** True for a drop-off event ("Présence d'un adulte : facultatif", AC-17.1). */
 export const isDropoff = (event: Pick<SparkEvent, 'adult_required'>) =>
   event.adult_required === false;
 

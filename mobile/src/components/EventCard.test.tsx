@@ -34,7 +34,7 @@ describe('Event Card (design events 4.2)', () => {
   it('AC-4.1 reads the type first in the card link name', async () => {
     await renderCard();
     expect(screen.getByRole('link').props.accessibilityLabel).toMatch(
-      /^Sortie entre familles, Goûter et jeux au parc, Sam\. 10 oct\. · 15:00–17:00, .*organisée par Camille D\., vérifié/,
+      /^Sortie entre familles, Goûter et jeux au parc, Sam\. 10 oct\. · 15:00–17:00, .*organisée par Camille D\., identité vérifiée/,
     );
   });
 

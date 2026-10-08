@@ -57,7 +57,7 @@ fr:
       event_started: "Cette sortie a déjà commencé."
       already_reported: "Tu as déjà signalé cette sortie. Notre équipe s'en occupe."
       already_requested: "Ta demande est déjà envoyée."
-      request_declined: "L'organisateur ne peut pas donner suite à ta demande."
+      request_declined: "Ta demande n'a pas été acceptée."
       request_not_pending: "Cette demande n'est plus en attente."
       request_expired: "Cette demande a expiré."
       request_closed: "Cette demande est close."
@@ -345,10 +345,10 @@ fr:
       lines:
         one:
           - "Ta vérification n'est plus active, donc ta sortie à venir est en pause : elle n'apparaît plus dans la recherche et personne ne peut la rejoindre."
-          - "Les familles inscrites ont été prévenues, sans détail. Tout reprend automatiquement dès que tu es vérifié de nouveau. Une sortie qui commence pendant la pause est annulée."
+          - "Les familles inscrites ont été prévenues, sans détail. Tout reprend automatiquement dès que ton identité est vérifiée de nouveau. Une sortie qui commence pendant la pause est annulée."
         other:
           - "Ta vérification n'est plus active, donc tes %{count} sorties à venir sont en pause : elles n'apparaissent plus dans la recherche et personne ne peut les rejoindre."
-          - "Les familles inscrites ont été prévenues, sans détail. Tout reprend automatiquement dès que tu es vérifié de nouveau. Une sortie qui commence pendant la pause est annulée."
+          - "Les familles inscrites ont été prévenues, sans détail. Tout reprend automatiquement dès que ton identité est vérifiée de nouveau. Une sortie qui commence pendant la pause est annulée."
       action: "Vérifier mon identité"
     event_resumed:
       subject: "« %{title} » reprend"
@@ -364,9 +364,9 @@ fr:
       subject: "Tes sorties reprennent"
       lines:
         one:
-          - "Te voilà vérifié de nouveau : ta sortie à venir est visible et ouverte aux inscriptions. Les familles inscrites ont été prévenues."
+          - "Ton identité est vérifiée de nouveau : ta sortie à venir est visible et ouverte aux inscriptions. Les familles inscrites ont été prévenues."
         other:
-          - "Te voilà vérifié de nouveau : tes %{count} sorties à venir sont visibles et ouvertes aux inscriptions. Les familles inscrites ont été prévenues."
+          - "Ton identité est vérifiée de nouveau : tes %{count} sorties à venir sont visibles et ouvertes aux inscriptions. Les familles inscrites ont été prévenues."
       action: "Voir mes sorties"
     request_received:
       subject: "Nouvelle demande pour « %{title} »"
@@ -390,19 +390,19 @@ fr:
       lines:
         - "Bonne nouvelle : ta demande est acceptée. Tu as %{places} pour « %{title} », le %{date}, à %{area}."
         - "Ouvre l'application pour voir l'adresse exacte."
-      dropoff: "Pense à convenir avec l'organisateur de la récupération, des repas, des médicaments et des allergies. Son contact est dans l'application."
+      dropoff: "Pense à convenir avec la personne qui organise de la récupération, des repas, des médicaments et des allergies. Son contact est dans l'application."
       action: "Voir la sortie"
     request_declined:
       subject: "Ta demande pour « %{title} »"
       lines:
-        - "L'organisateur ne peut pas donner suite à ta demande pour « %{title} »."
+        - "Ta demande pour « %{title} » n'a pas été acceptée."
         - "Tu peux regarder d'autres sorties près de chez toi."
       extra_places: "Tes places déjà réservées ne changent pas."
       action: "Voir d'autres sorties"
     request_expired:
       subject: "Ta demande pour « %{title} » a expiré"
       lines:
-        - "L'organisateur n'a pas répondu à temps, ta demande a expiré."
+        - "Ta demande a expiré, faute de réponse à temps."
         - "S'il reste des places, tu peux refaire une demande."
       action: "Voir la sortie"
     request_closed_full:

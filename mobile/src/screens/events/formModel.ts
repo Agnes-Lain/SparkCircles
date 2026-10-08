@@ -42,7 +42,7 @@ export type FormValues = {
   ageMin: string;
   ageMax: string;
   tags: string[];
-  /** AC-17.1: "Adulte accompagnant : obligatoire" (true, default) or "facultatif" (drop-off). */
+  /** AC-17.1: "Présence d'un adulte : obligatoire" (true, default) or "facultatif" (drop-off). */
   adultRequired: boolean;
   /** AC-17.13: "Validation des participations : je valide chaque demande". */
   approvalRequired: boolean;

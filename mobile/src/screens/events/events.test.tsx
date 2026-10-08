@@ -674,7 +674,7 @@ describe('E4 Event detail, host', () => {
     expect(screen.getByText('Annuler cette sortie ?')).toBeOnTheScreen();
     expect(
       screen.getByText(
-        'Le participant est prévenu par e-mail. Tu ne pourras pas la remettre en ligne ni changer sa date : tu créeras une nouvelle sortie.',
+        'On prévient par e-mail la personne inscrite. Tu ne pourras pas la remettre en ligne ni changer sa date : tu créeras une nouvelle sortie.',
       ),
     ).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('confirm-cancel'));
@@ -687,12 +687,12 @@ describe('E4 Event detail, host', () => {
     mockEvents.remove.mockResolvedValue(undefined);
     await detail({ ...hostedEvent, status: 'draft' });
     expect(
-      await screen.findByText('Pas encore publiée : toi seul vois ce brouillon.'),
+      await screen.findByText("Pas encore publiée : ce brouillon n'est visible que par toi."),
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Publier ma sortie' })).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('host-delete'));
     expect(
-      screen.getByText("Il est supprimé définitivement. Personne n'est prévenu."),
+      screen.getByText('Il est supprimé définitivement. On ne prévient personne.'),
     ).toBeTruthy();
     await fireEvent.press(screen.getByTestId('confirm-delete'));
     expect(mockEvents.remove).toHaveBeenCalledWith(hostedEvent.id);
@@ -910,7 +910,7 @@ describe('E5 Create / edit', () => {
     expect(screen.getByTestId('rule-verified')).toBeDisabled();
     await fireEvent.changeText(screen.getByTestId('form-title'), 'Nouveau titre');
     await fireEvent.press(screen.getByTestId('form-save'));
-    expect(screen.getByText('Prévenir les participants ?')).toBeOnTheScreen();
+    expect(screen.getByText('Prévenir les personnes inscrites ?')).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId('confirm-notify'));
     expect(mockEvents.update).toHaveBeenCalledWith(
       hostedEvent.id,
@@ -994,5 +994,17 @@ describe('Event language (amendment 2026-10-06)', () => {
     await open(`/events/${english.id}`);
     expect(await screen.findByText(english.title!)).toBeOnTheScreen();
     expect(screen.getByText(english.description!)).toBeOnTheScreen();
+  });
+});
+
+describe('French copy (polish 2026-10)', () => {
+  it('the events copy is gender-neutral (no organisateur, toi seul, participant prévenu or « , vérifié »)', () => {
+    const eventsCopy = JSON.stringify(i18n.getResourceBundle('fr', 'translation').events);
+    expect(eventsCopy).not.toMatch(
+      /organisateur|toi seul|[Pp]articipants? (est|sont)|(est|sont|été) prévenu\b|\b[Tt]u es (inscrit|invité|vérifié)|vérifié de nouveau|Adulte accompagnant|, vérifié"/,
+    );
+    expect(i18n.t('events.detail.deleteBody', { lng: 'fr' })).toBe(
+      'Il est supprimé définitivement. On ne prévient personne.',
+    );
   });
 });

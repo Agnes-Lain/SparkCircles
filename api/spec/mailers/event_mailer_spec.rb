@@ -173,7 +173,7 @@ RSpec.describe EventMailer do
       expect(mail.subject).to eq("Ta demande est acceptée : « Après-midi jeux »")
       expect(text(mail)).to include("Tu as 3 places pour « Après-midi jeux », le samedi 17 oct., 14 h 30, à Paris 11e.",
                                     "Ouvre l'application pour voir l'adresse exacte.",
-                                    "Pense à convenir avec l'organisateur de la récupération")
+                                    "Pense à convenir avec la personne qui organise de la récupération")
       expect_private(mail)
       expect_no_phone(mail)
     end
@@ -181,7 +181,7 @@ RSpec.describe EventMailer do
     it "E-C declined is neutral: no host name, no reason" do
       mail = described_class.request_declined(dropoff, guest)
       expect(mail.subject).to eq("Ta demande pour « Après-midi jeux »")
-      expect(text(mail)).to include("L'organisateur ne peut pas donner suite à ta demande pour « Après-midi jeux ».")
+      expect(text(mail)).to include("Ta demande pour « Après-midi jeux » n'a pas été acceptée.")
       expect(text(mail)).not_to include("Camille")
       expect_private(mail)
     end
@@ -198,7 +198,7 @@ RSpec.describe EventMailer do
 
     it "AC-17.21 E-C for extra places says the places already booked don't change" do
       mail = described_class.request_declined(dropoff, guest, extra_places: true)
-      expect(text(mail)).to include("L'organisateur ne peut pas donner suite à ta demande pour « Après-midi jeux ».",
+      expect(text(mail)).to include("Ta demande pour « Après-midi jeux » n'a pas été acceptée.",
                                     "Tes places déjà réservées ne changent pas.")
       expect(text(described_class.request_declined(dropoff, guest))).not_to include("déjà réservées")
       guest.update!(locale: "en")
@@ -225,5 +225,10 @@ RSpec.describe EventMailer do
         expect([ mail.text_part, mail.html_part ]).to all(be_present)
       end
     end
+  end
+
+  it "the French event e-mails are gender-neutral (no organisateur, no « vérifié de nouveau »)" do
+    copy = I18n.t("event_mailer", locale: :fr).to_s + I18n.t("api.errors", locale: :fr, default: {}).to_s
+    expect(copy).not_to match(/organisateur|tu es vérifié|Te voilà vérifié|(est|sont) prévenu\b/)
   end
 end

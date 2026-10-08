@@ -145,7 +145,7 @@ describe('US-17 phone numbers and form rules', () => {
 describe('US-17 create form', () => {
   it('AC-17.1, AC-17.3 "Facultatif" reveals the notice, the locked rule, the age and the phone', async () => {
     await open('/events/new');
-    expect(await screen.findByText('Adulte accompagnant')).toBeOnTheScreen();
+    expect(await screen.findByText("Présence d'un adulte")).toBeOnTheScreen();
     expect(screen.queryByTestId('form-host-phone')).toBeNull();
     await fireEvent.press(screen.getByTestId('adult-optional'));
     expect(screen.getByText('Sortie avec dépôt d’enfants'.replace('’', "'"))).toBeOnTheScreen();
@@ -173,7 +173,7 @@ describe('US-17 detail', () => {
     show(dropoffEvent);
     await open(`/events/${eid}`);
     expect(await screen.findByText('Envoyer ma demande')).toBeOnTheScreen();
-    expect(screen.getByText(/L'organisateur répond sous 48 h au plus/)).toBeOnTheScreen();
+    expect(screen.getByText(/La personne qui organise répond sous 48 h au plus/)).toBeOnTheScreen();
     expect(screen.getByTestId('detail-on-request')).toBeOnTheScreen();
   });
 
@@ -222,7 +222,7 @@ describe('US-17 detail', () => {
     show(acceptedDropoffEvent);
     await open(`/events/${eid}`);
     const link = await screen.findByRole('link', {
-      name: "Appeler l'organisateur, 06 12 34 56 78",
+      name: 'Appeler la personne qui organise, 06 12 34 56 78',
     });
     await fireEvent.press(link);
     expect(openURL).toHaveBeenCalledWith('tel:+33612345678');
